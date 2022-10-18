@@ -14,6 +14,8 @@ interface User {
     function approve(address, uint256) external;
 }
 
+// NOTE: All contract addresses provided below have been configured for a Binance Smart Chain contract.
+
 contract Utility is DSTest {
 
     Hevm hevm;
@@ -23,22 +25,17 @@ contract Utility is DSTest {
     /***********************/
     Actor  joe;
     Actor  dev;
-    Actor  bob;
 
     /**********************************/
     /*** Mainnet Contract Addresses ***/
     /**********************************/
-    address constant DAI   = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address constant USDC  = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address constant WETH  = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address constant WBTC  = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
-    address constant CDAI  = 0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643;
-    address constant FRAX  = 0x853d955aCEf822Db058eb8505911ED77F175b99e;
+    address constant WBNB  = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
+    address constant DAI   = 0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3;
+    address constant CAKE  = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
 
     IERC20 constant dai  = IERC20(DAI);
-    IERC20 constant usdc = IERC20(USDC);
-    IERC20 constant weth = IERC20(WETH);
-    IERC20 constant wbtc = IERC20(WBTC);
+    IERC20 constant wbnb = IERC20(WBNB);
+    IERC20 constant cake = IERC20(CAKE);
 
     address constant UNISWAP_V2_ROUTER_02 = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D; // Uniswap V2 Router
     address constant UNISWAP_V2_FACTORY   = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f; // Uniswap V2 factory.

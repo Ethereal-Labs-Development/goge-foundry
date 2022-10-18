@@ -620,19 +620,25 @@ contract DogeGaySon is ERC20, Ownable {
         address indexed processor
     );
     
-    constructor() ERC20("DogeGaySon", "GOGE") {
+    constructor(
+        address _marketingWallet,
+        address _teamWallet,
+        uint    _totalSupply
+
+    ) ERC20("DogeGaySon", "GOGE") {
+
         cakeDividendTracker = new CakeDividendTracker();
 
-        marketingWallet = 0x4959bCED128E6F056A6ef959D80Bd1fCB7ba7A4B;
-        teamWallet = 0xe142E9FCbd9E29C4A65C4979348d76147190a05a;
+        marketingWallet = _marketingWallet; //0x4959bCED128E6F056A6ef959D80Bd1fCB7ba7A4B
+        teamWallet = _teamWallet; //0xe142E9FCbd9E29C4A65C4979348d76147190a05a
         cakeDividendToken = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
         
         GogeV1 = 0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe;
         
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);//0x10ED43C718714eb63d5aA57B78B54704E256024E); //0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3
-         // Create a uniswap pair for this new token
-        address _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
-            .createPair(address(this), _uniswapV2Router.WETH());
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E); // bsc pancakeswap router
+
+        // Create a uniswap pair for this new token
+        address _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory()).createPair(address(this), _uniswapV2Router.WETH());
 
         uniswapV2Router = _uniswapV2Router;
         uniswapV2Pair = _uniswapV2Pair;
@@ -657,7 +663,8 @@ contract DogeGaySon is ERC20, Ownable {
             and for migration, and it CANNOT be called for any other reason. The 
             external capability does NOT exist.
         */
-        _mint(owner(), 100000000000 * (10**18));
+        _mint(owner(), _totalSupply * (10**18));
+        //_mint(owner(), 100000000000 * (10**18));
     }
 
     receive() external payable {
@@ -1024,7 +1031,7 @@ contract DogeGaySon is ERC20, Ownable {
         
         bool excludedAccount = isExcludedFromFees[from] || isExcludedFromFees[to];
         
-        if (
+        if ( // NON whitelisted buy
             tradingIsEnabled &&
             automatedMarketMakerPairs[from] &&
             !excludedAccount
@@ -1040,7 +1047,7 @@ contract DogeGaySon is ERC20, Ownable {
 
             lastReceived[to] = block.timestamp;
             
-        } else if (
+        } else if ( // NON whitelisted sell
             tradingIsEnabled &&
             automatedMarketMakerPairs[to] &&
             !excludedAccount
@@ -1359,11 +1366,7 @@ contract CakeDividendTracker is DividendPayingToken {
                 iterationsUntilProcessed = index.sub(int256(lastProcessedIndex));
             }
             else {
-                uint256 processesUntilEndOfArray = tokenHoldersMap.keys.length > lastProcessedIndex ?
-                                                        tokenHoldersMap.keys.length.sub(lastProcessedIndex) :
-                                                        0;
-
-
+                uint256 processesUntilEndOfArray = tokenHoldersMap.keys.length > lastProcessedIndex ? tokenHoldersMap.keys.length.sub(lastProcessedIndex) : 0;
                 iterationsUntilProcessed = index.add(int256(processesUntilEndOfArray));
             }
         }
@@ -1374,13 +1377,9 @@ contract CakeDividendTracker is DividendPayingToken {
 
         lastClaimTime = lastClaimTimes[account];
 
-        nextClaimTime = lastClaimTime > 0 ?
-                                    lastClaimTime.add(claimWait) :
-                                    0;
+        nextClaimTime = lastClaimTime > 0 ? lastClaimTime.add(claimWait) : 0;
 
-        secondsUntilAutoClaimAvailable = nextClaimTime > block.timestamp ?
-                                                    nextClaimTime.sub(block.timestamp) :
-                                                    0;
+        secondsUntilAutoClaimAvailable = nextClaimTime > block.timestamp ? nextClaimTime.sub(block.timestamp) : 0;
     }
 
     function getAccountAtIndex(uint256 index)

@@ -566,7 +566,7 @@ contract DogeGaySon is ERC20, Ownable {
     uint256 private _firstBlock;
     uint256 private _botBlocks;
     uint8 private _botFees;
-    mapping(address => bool) private bots;
+    mapping(address => bool) public isBlacklisted;
     
     struct BuybackParams {
         uint256 initialBalance;
@@ -1027,7 +1027,7 @@ contract DogeGaySon is ERC20, Ownable {
     ) internal override {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
-        require(tradingIsEnabled || (isExcludedFromFees[from] || isExcludedFromFees[to]), "Trading has not started yet");
+        require(tradingIsEnabled || (isExcludedFromFees[from] || isExcludedFromFees[to]), "GogeToken.sol::_transfer() trading is not enabled or wallet is not whitelisted");
         
         bool excludedAccount = isExcludedFromFees[from] || isExcludedFromFees[to];
         
@@ -1036,10 +1036,12 @@ contract DogeGaySon is ERC20, Ownable {
             automatedMarketMakerPairs[from] &&
             !excludedAccount
         ) {
-            require(!bots[from] && !bots[to], "bots cannot trade");
+            // if receiver or sender is blacklisted, revert
+            require(!isBlacklisted[from] && !isBlacklisted[to], "GogeToken.sol::_transfer() address is blacklisted");
             
+            // if the block.timestamp is the same or newer block than when trading went enabled, ban bot, take liquidity, and burn tokens.
             if (block.timestamp <= _firstBlock.add(_botBlocks)) {
-                bots[to] = true;
+                isBlacklisted[to] = true;
                 uint256 toBurn = amount.mul(_botFees).div(100);
                 amount = amount.sub(toBurn);
                 super._transfer(from, deadAddress, toBurn);
@@ -1052,8 +1054,10 @@ contract DogeGaySon is ERC20, Ownable {
             automatedMarketMakerPairs[to] &&
             !excludedAccount
         ) {
-            require(!bots[from] && !bots[to], 'bots cannot trade');
-                            
+            // if receiver or sender is blacklisted, revert
+            require(!isBlacklisted[from] && !isBlacklisted[to], "GogeToken.sol::_transfer() address is blacklisted");
+            
+            // take contract balance of royalty tokens
             uint256 contractTokenBalance = balanceOf(address(this));
             bool canSwap = contractTokenBalance >= swapTokensAtAmount;
             
@@ -1135,7 +1139,7 @@ contract DogeGaySon is ERC20, Ownable {
             } else {
                 fees = amount.mul(totalFees).div(100);
             }
-            if(bots[from] || bots[to]) {
+            if(isBlacklisted[from] || isBlacklisted[to]) {
                 fees = amount.mul(_botFees).div(100);
             }
         
@@ -1167,17 +1171,17 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function isBot(address account) external view returns (bool) {
-        return bots[account];
+        return isBlacklisted[account];
     }
 
     function removeBot(address account) external {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        bots[account] = false;
+        isBlacklisted[account] = false;
     }
 
     function addBot(address account) external {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        bots[account] = true;
+        isBlacklisted[account] = true;
     }
 
     function updateBotBlocks(uint256 botBlocks) external {

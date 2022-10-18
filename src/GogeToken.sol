@@ -1170,18 +1170,9 @@ contract DogeGaySon is ERC20, Ownable {
         }
     }
 
-    function isBot(address account) external view returns (bool) {
-        return isBlacklisted[account];
-    }
-
-    function removeBot(address account) external {
+    function modifyBlacklist(address account, bool blacklisted) external {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        isBlacklisted[account] = false;
-    }
-
-    function addBot(address account) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        isBlacklisted[account] = true;
+        isBlacklisted[account] = blacklisted;
     }
 
     function updateBotBlocks(uint256 botBlocks) external {

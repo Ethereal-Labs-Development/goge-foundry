@@ -1116,7 +1116,7 @@ contract DogeGaySon is ERC20, Ownable {
             require(!isBlacklisted[from] && !isBlacklisted[to], "GogeToken.sol::_transfer() address is blacklisted");
 
             uint256 fees;
-            
+
             if(!automatedMarketMakerPairs[to] && !automatedMarketMakerPairs[from]) { // if transfer
                 uint8 totalTransferFees = totalFees.mul(transferFeeIncreaseFactor).div(100);
                 fees = amount.mul(totalTransferFees).div(100);
@@ -1147,7 +1147,6 @@ contract DogeGaySon is ERC20, Ownable {
                 catch {
 
                 }
-                
             }
         }
     }

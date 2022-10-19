@@ -12,7 +12,11 @@ contract TokenTest is Utility, Test {
         createActors();
         setUpTokens();
         
-        gogeToken = new DogeGaySon();
+        gogeToken = new DogeGaySon(
+            address(1),
+            address(2),
+            100000000000
+        );
     }
 
     function testFail_basic_sanity() public {

@@ -30,10 +30,10 @@ contract Utility is DSTest {
     /*** Mainnet Contract Addresses ***/
     /**********************************/
     address constant WBNB  = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
-    address constant DAI   = 0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3;
+    address constant BUSD  = 0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3;
     address constant CAKE  = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
 
-    IERC20 constant dai  = IERC20(DAI);
+    IERC20 constant dai  = IERC20(BUSD);
     IERC20 constant wbnb = IERC20(WBNB);
     IERC20 constant cake = IERC20(CAKE);
 
@@ -87,7 +87,6 @@ contract Utility is DSTest {
     function createActors() public {
         joe = new Actor();
         dev = new Actor();
-        bob = new Actor();
     }
 
 
@@ -96,20 +95,34 @@ contract Utility is DSTest {
     /******************************/
     function setUpTokens() public {
 
-        tokens["USDC"].addr = USDC;
-        tokens["USDC"].slot = 9;
+        // tokens["USDC"].addr = USDC;
+        // tokens["USDC"].slot = 9;
 
-        tokens["DAI"].addr = DAI;
-        tokens["DAI"].slot = 2;
-        tokens["DAI"].orcl = 0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9;
+        // tokens["DAI"].addr = DAI;
+        // tokens["DAI"].slot = 2;
+        // tokens["DAI"].orcl = 0xAed0c38402a5d19df6E4c03F4E2DceD6e29c1ee9;
 
-        tokens["WETH"].addr = WETH;
-        tokens["WETH"].slot = 3;
-        tokens["WETH"].orcl = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
+        // tokens["WETH"].addr = WETH;
+        // tokens["WETH"].slot = 3;
+        // tokens["WETH"].orcl = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
 
-        tokens["WBTC"].addr = WBTC;
-        tokens["WBTC"].slot = 0;
-        tokens["WBTC"].orcl = 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c;
+        // tokens["WBTC"].addr = WBTC;
+        // tokens["WBTC"].slot = 0;
+        // tokens["WBTC"].orcl = 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c;
+
+        tokens["WBNB"].addr = WBNB;
+        tokens["WBNB"].slot = 0;
+        tokens["WBNB"].orcl = 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE;
+
+        tokens["BUSD"].addr = BUSD;
+        tokens["BUSD"].slot = 2;
+        tokens["BUSD"].orcl = 0xcBb98864Ef56E9042e7d2efef76141f15731B82f;
+
+        tokens["CAKE"].addr = CAKE;
+        tokens["CAKE"].slot = 0;
+        tokens["CAKE"].orcl = 0xB6064eD41d4f67e353768aA239cA86f4F73665a1;
+
+        // NOTE: Slots might be wrong here
     }
 
     // Manipulate mainnet ERC20 balance.

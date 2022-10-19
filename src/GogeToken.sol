@@ -564,8 +564,6 @@ contract DogeGaySon is ERC20, Ownable {
     mapping (address => bool) public automatedMarketMakerPairs;
     mapping(address => uint256) public lastReceived;
     uint256 private _firstBlock;
-    uint256 private _botBlocks;
-    uint8 private _botFees;
     mapping(address => bool) public isBlacklisted;
     
     struct BuybackParams {
@@ -719,7 +717,7 @@ contract DogeGaySon is ERC20, Ownable {
         swapTokensAtAmount = _swapAmount * (10**18);
     }
     
-    function setTradingIsEnabled(uint256 botBlocks, uint8 botFees) external onlyOwner {
+    function setTradingIsEnabled() external onlyOwner {
         require(tradingIsEnabled == false, "Trading is already enabled");
         cakeDividendRewardsFee = 10;
         marketingFee = 2;
@@ -732,8 +730,6 @@ contract DogeGaySon is ERC20, Ownable {
         teamEnabled = true;
         swapTokensAtAmount = 20000000 * (10**18);
         tradingIsEnabled = true;
-        _botBlocks = botBlocks;
-        _botFees = botFees;
         _firstBlock = block.timestamp;
     }
     
@@ -830,12 +826,6 @@ contract DogeGaySon is ERC20, Ownable {
         totalFees = cakeDividendRewardsFee.add(marketingFee).add(buyBackAndLiquidityFee).add(teamFee);
 
         require(totalFees.mul(_multiplier).div(100) <= 40, "Transfer fee must be less than 40");
-    }
-
-    function updateBotFees(uint8 percent) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(percent >= 0 && percent <= 100, "must be between 0 and 100");
-        _botFees = percent;
     }
     
     function updateUniswapV2Router(address newAddress) external {
@@ -1038,18 +1028,10 @@ contract DogeGaySon is ERC20, Ownable {
         ) {
             // if receiver or sender is blacklisted, revert
             require(!isBlacklisted[from] && !isBlacklisted[to], "GogeToken.sol::_transfer() address is blacklisted");
-            
-            // if the block.timestamp is the same or newer block than when trading went enabled, ban bot, take liquidity, and burn tokens.
-            if (block.timestamp <= _firstBlock.add(_botBlocks)) {
-                isBlacklisted[to] = true;
-                uint256 toBurn = amount.mul(_botFees).div(100);
-                amount = amount.sub(toBurn);
-                super._transfer(from, deadAddress, toBurn);
-            }
-
             lastReceived[to] = block.timestamp;
-            
-        } else if ( // NON whitelisted sell
+        }
+        
+        else if ( // NON whitelisted sell
             tradingIsEnabled &&
             automatedMarketMakerPairs[to] &&
             !excludedAccount
@@ -1085,7 +1067,7 @@ contract DogeGaySon is ERC20, Ownable {
                 uint256 contractBalance = params.afterSwap.sub(params.initialBalance);
                 
                 if (marketingEnabled) {
-                    if(block.timestamp < _firstBlock + (1 days)) {
+                    if(block.timestamp < _firstBlock + (60 days)) {
                         uint256 swapTokens = contractBalance.div(totalFees).mul(marketingFee);
                         uint256 teamPortion = swapTokens.div(10**2).mul(57);
                         uint256 devPortion = swapTokens.div(10**2).mul(17);
@@ -1131,16 +1113,16 @@ contract DogeGaySon is ERC20, Ownable {
         bool takeFee = tradingIsEnabled && !swapping && !excludedAccount;
 
         if(takeFee) {
+            require(!isBlacklisted[from] && !isBlacklisted[to], "GogeToken.sol::_transfer() address is blacklisted");
+
             uint256 fees;
+            
             if(!automatedMarketMakerPairs[to] && !automatedMarketMakerPairs[from]) { // if transfer
                 uint8 totalTransferFees = totalFees.mul(transferFeeIncreaseFactor).div(100);
                 fees = amount.mul(totalTransferFees).div(100);
                 lastReceived[to] = block.timestamp;
             } else {
                 fees = amount.mul(totalFees).div(100);
-            }
-            if(isBlacklisted[from] || isBlacklisted[to]) {
-                fees = amount.mul(_botFees).div(100);
             }
         
             amount = amount.sub(fees);
@@ -1173,12 +1155,6 @@ contract DogeGaySon is ERC20, Ownable {
     function modifyBlacklist(address account, bool blacklisted) external {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
         isBlacklisted[account] = blacklisted;
-    }
-
-    function updateBotBlocks(uint256 botBlocks) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(botBlocks < 10, "must be less than 10");
-        _botBlocks = botBlocks;
     }
     
     function updatePairSwapped(bool swapped) external {

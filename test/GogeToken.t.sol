@@ -161,7 +161,7 @@ contract TokenTest is Utility, Test {
         assertEq(gogeToken.totalFees(), 16);
 
         // Call updateFees
-        assert(dev.try_updateFees(address(gogeToken), 14, 6, 3, 3, 100));
+        assert(dev.try_updateFees(address(gogeToken), 14, 6, 3, 3));
 
         // Post-state check.
         assertEq(gogeToken.cakeDividendRewardsFee(), 14);
@@ -172,6 +172,6 @@ contract TokenTest is Utility, Test {
         assertEq(gogeToken.totalFees(), 26);
 
         // Restriction: Cannot set totalFee to be greater than 40
-        assert(!dev.try_updateFees(address(gogeToken), 20, 10, 5, 6, 100)); // 41
+        assert(!dev.try_updateFees(address(gogeToken), 20, 10, 5, 6)); // 41
     }
 }

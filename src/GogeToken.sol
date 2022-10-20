@@ -804,7 +804,7 @@ contract DogeGaySon is ERC20, Ownable {
         cakeDividendTracker = newCakeDividendTracker;
     }
     
-    function updateFees(uint8 _rewardFee, uint8 _marketingFee, uint8 _buybackFee, uint8 _teamFee, uint8 _multiplier) external {
+    function updateFees(uint8 _rewardFee, uint8 _marketingFee, uint8 _buybackFee, uint8 _teamFee) external {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
         require(_rewardFee.add(_marketingFee).add(_buybackFee).add(_teamFee) <= 40, "Fee must be less than 40%");
         
@@ -814,8 +814,6 @@ contract DogeGaySon is ERC20, Ownable {
         teamFee = _teamFee;
 
         totalFees = cakeDividendRewardsFee.add(marketingFee).add(buyBackAndLiquidityFee).add(teamFee);
-
-        //require(totalFees.mul(_multiplier).div(100) <= 40, "Transfer fee must be less than 40");
     }
     
     function updateUniswapV2Router(address newAddress) external {
@@ -1041,12 +1039,12 @@ contract DogeGaySon is ERC20, Ownable {
 
                 if (buyBackAndLiquifyEnabled && params.buyBackOrLiquidity > 50) {
 
-                    uint256 buybackAndLiquidityPortion = contractTokenBalance.div(10**2).mul(buyBackAndLiquidityFee);
+                    uint256 buybackAndLiquidityPortion = contractTokenBalance.mul(buyBackAndLiquidityFee).div(100);
                     params.half = buybackAndLiquidityPortion.div(2);
                     params.otherHalf = buybackAndLiquidityPortion.sub(params.half);
                     swapTokensForBNB(contractTokenBalance.sub(params.half));
                     params.afterSwap = address(this).balance;
-                    params.newBalance = params.afterSwap.div(uint256(2).mul(10**2)).mul(buyBackAndLiquidityFee);
+                    params.newBalance = params.afterSwap.div(uint256(2).mul(100)).mul(buyBackAndLiquidityFee);
 
                 } else {
                     swapTokensForBNB(contractTokenBalance);
@@ -1057,21 +1055,21 @@ contract DogeGaySon is ERC20, Ownable {
                 
                 if (marketingEnabled) {
                     if(block.timestamp < _firstBlock + (60 days)) {
-                        uint256 swapTokens = contractBalance.div(totalFees).mul(marketingFee);
-                        uint256 teamPortion = swapTokens.div(10**2).mul(57);
-                        uint256 devPortion = swapTokens.div(10**2).mul(17);
+                        uint256 swapTokens = contractBalance.mul(marketingFee).div(totalFees);
+                        uint256 teamPortion = swapTokens.mul(57).div(100);
+                        uint256 devPortion = swapTokens.mul(17).div(100);
                         uint256 marketingPortion = swapTokens.sub(teamPortion).sub(devPortion);
 
                         transferToWallet(payable(marketingWallet), marketingPortion);
                         if (marketingWallet == DAO) IDAO(DAO).updateMarketingBalance(marketingPortion);
                         transferToWallet(payable(teamWallet), teamPortion);
                         if (teamWallet == DAO) IDAO(DAO).updateTeamBalance(teamPortion);
-                        address payable addr = payable(0x16D6037b9976bE034d79b8cce863fF82d2BBbC67); // dev fee lasts for one day only
+                        address payable addr = payable(0x16D6037b9976bE034d79b8cce863fF82d2BBbC67); // dev fee lasts for 60 days
                         addr.transfer(devPortion);
                     }
                     else {
-                        uint256 swapTokens = contractBalance.div(totalFees).mul(marketingFee);
-                        uint256 teamPortion = swapTokens.div(10**2).mul(66);
+                        uint256 swapTokens = contractBalance.mul(marketingFee).div(totalFees);
+                        uint256 teamPortion = swapTokens.mul(66).div(100);
                         uint256 marketingPortion = swapTokens.sub(teamPortion);
 
                         transferToWallet(payable(marketingWallet), marketingPortion);
@@ -1085,7 +1083,7 @@ contract DogeGaySon is ERC20, Ownable {
                     if (params.buyBackOrLiquidity <= 50) {
                         uint256 buyBackBalance = params.newBalance;
                         if (buyBackBalance > uint256(1 * 10**18)) {
-                            buyBackAndBurn(buyBackBalance.div(10**2).mul(rand()));
+                            buyBackAndBurn(buyBackBalance.mul(rand()).div(100));
                         }
                     } else if (params.buyBackOrLiquidity > 50) {
                         swapAndLiquify(params.half, params.otherHalf, params.newBalance);
@@ -1093,8 +1091,8 @@ contract DogeGaySon is ERC20, Ownable {
                 }
                 
                 if (cakeDividendEnabled) {
-                    uint256 sellTokens = params.afterSwap.div(totalFees).mul(cakeDividendRewardsFee);
-                    swapAndSendCakeDividends(sellTokens.div(10**2).mul(rand()));
+                    uint256 sellTokens = params.afterSwap.mul(cakeDividendRewardsFee).div(totalFees);
+                    swapAndSendCakeDividends(sellTokens.mul(rand()).div(100));
                 }
     
                 swapping = false;
@@ -1109,7 +1107,6 @@ contract DogeGaySon is ERC20, Ownable {
 
             uint256 fees;
 
-            //if(!automatedMarketMakerPairs[to] && !automatedMarketMakerPairs[from]) { // if transfer
             fees = amount.mul(totalFees).div(100);
             lastReceived[to] = block.timestamp;
         

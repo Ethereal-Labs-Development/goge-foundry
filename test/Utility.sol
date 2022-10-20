@@ -119,7 +119,7 @@ contract Utility is DSTest {
         tokens["BUSD"].orcl = 0xcBb98864Ef56E9042e7d2efef76141f15731B82f;
 
         tokens["CAKE"].addr = CAKE;
-        tokens["CAKE"].slot = 0;
+        tokens["CAKE"].slot = 3;
         tokens["CAKE"].orcl = 0xB6064eD41d4f67e353768aA239cA86f4F73665a1;
 
         // NOTE: Slots might be wrong here

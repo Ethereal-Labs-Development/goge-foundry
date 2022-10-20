@@ -103,6 +103,7 @@ contract TokenTest is Utility, Test {
 
     // ~ Whitelist testing (excludedFromFees) ~
 
+    // This test case verifies that a whitelisted sender is not taxed when transferring tokens.
     function test_gogeToken_whitelist() public {
         // This contract can successfully send assets to address(joe).
         assert(dev.try_transferToken(address(gogeToken), address(joe), 100 ether));
@@ -121,5 +122,56 @@ contract TokenTest is Utility, Test {
 
         // Post-state check. Address(34) has NOT been taxed.
         assertEq(gogeToken.balanceOf(address(34)), 10 ether);
+    }
+
+    // ~ setters ~
+
+    // This tests the proper state change when calling setDAO().
+    function test_gogeToken_setDAO() public {
+        // Pre-state check. DAO is currently set to address(0) (hasnt been set yet).
+        assertEq(gogeToken.DAO(), address(0));
+
+        // Set DAO to address(32).
+        assert(dev.try_setDao(address(gogeToken), address(32)));
+
+        // Post-state check. Verify that DAO is set to address(32).
+        assertEq(gogeToken.DAO(), address(32));
+    }
+
+    // This tests the proper state changes when calling updateSwapTokensAtAmount().
+    function test_gogeToken_updateSwapTokensAtAmount() public {
+        // Pre-state check. Verify current value of swapTokensAtAmount
+        assertEq(gogeToken.swapTokensAtAmount(), 20_000_000 * WAD);
+
+        // Update swapTokensAtAmount
+        assert(dev.try_updateSwapTokensAtAmount(address(gogeToken), 1_000_000));
+
+        // Post-state check. Verify updated value of swapTokensAtAmount
+        assertEq(gogeToken.swapTokensAtAmount(), 1_000_000 * WAD);
+    }
+
+    // updateFees test
+    function test_gogeToken_updateFees() public {
+        //Pre-state check.
+        assertEq(gogeToken.cakeDividendRewardsFee(), 10);
+        assertEq(gogeToken.marketingFee(), 2);
+        assertEq(gogeToken.buyBackAndLiquidityFee(), 2);
+        assertEq(gogeToken.teamFee(), 2);
+
+        assertEq(gogeToken.totalFees(), 16);
+
+        // Call updateFees
+        assert(dev.try_updateFees(address(gogeToken), 14, 6, 3, 3, 100));
+
+        // Post-state check.
+        assertEq(gogeToken.cakeDividendRewardsFee(), 14);
+        assertEq(gogeToken.marketingFee(), 6);
+        assertEq(gogeToken.buyBackAndLiquidityFee(), 3);
+        assertEq(gogeToken.teamFee(), 3);
+
+        assertEq(gogeToken.totalFees(), 26);
+
+        // Restriction: Cannot set totalFee to be greater than 40
+        assert(!dev.try_updateFees(address(gogeToken), 20, 10, 5, 6, 100)); // 41
     }
 }

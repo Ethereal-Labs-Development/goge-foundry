@@ -60,4 +60,19 @@ contract Actor {
         string memory sig = "excludeFromFees(address,bool)";
         (ok,) = address(token).call(abi.encodeWithSignature(sig, account, whitelisted));
     }
+
+    function try_setDao(address token, address dao) external returns (bool ok) {
+        string memory sig = "setDAO(address)";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig, dao));
+    }
+
+    function try_updateSwapTokensAtAmount(address token, uint256 amount) external returns (bool ok) {
+        string memory sig = "updateSwapTokensAtAmount(uint256)";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig, amount));
+    }
+
+    function try_updateFees(address token, uint8 rewardFee, uint8 marketingFee, uint8 buyBackFee, uint8 teamFee, uint8 multiplier) external returns (bool ok) {
+        string memory sig = "updateFees(uint8,uint8,uint8,uint8,uint8)";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig, rewardFee, marketingFee, buyBackFee, teamFee, multiplier));
+    }
 }

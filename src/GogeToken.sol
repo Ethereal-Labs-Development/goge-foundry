@@ -596,31 +596,15 @@ contract DogeGaySon is ERC20, Ownable {
 
     event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
 
-    event Debug(string words);
+    event Debug(uint256 indexed number);
 
-    event SwapAndLiquify(
-        uint256 tokensSwapped,
-        uint256 ethReceived,
-        uint256 tokensIntoLiqudity
-    );
+    event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiqudity);
 
-    event SendDividends(
-        uint256 amount
-    );
+    event SendDividends(uint256 amount);
 
-    event SwapBNBForTokens(
-        uint256 amountIn,
-        address[] path
-    );
+    event SwapBNBForTokens(uint256 amountIn, address[] path);
 
-    event ProcessedCakeDividendTracker(
-        uint256 iterations,
-        uint256 claims,
-        uint256 lastProcessedIndex,
-        bool indexed automatic,
-        uint256 gas,
-        address indexed processor
-    );
+    event ProcessedCakeDividendTracker(uint256 iterations, uint256 claims, uint256 lastProcessedIndex, bool indexed automatic, uint256 gas, address indexed processor);
     
     constructor(
         address _marketingWallet,
@@ -716,7 +700,7 @@ contract DogeGaySon is ERC20, Ownable {
         marketingWallet = _newWallet;
     }
     
-    function setSwapTokensAtAmount(uint256 _swapAmount) external {
+    function updateSwapTokensAtAmount(uint256 _swapAmount) external {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
         swapTokensAtAmount = _swapAmount * (10**18);
     }
@@ -828,9 +812,10 @@ contract DogeGaySon is ERC20, Ownable {
         marketingFee = _marketingFee;
         buyBackAndLiquidityFee = _buybackFee;
         teamFee = _teamFee;
+
         totalFees = cakeDividendRewardsFee.add(marketingFee).add(buyBackAndLiquidityFee).add(teamFee);
 
-        require(totalFees.mul(_multiplier).div(100) <= 40, "Transfer fee must be less than 40");
+        //require(totalFees.mul(_multiplier).div(100) <= 40, "Transfer fee must be less than 40");
     }
     
     function updateUniswapV2Router(address newAddress) external {
@@ -1036,8 +1021,6 @@ contract DogeGaySon is ERC20, Ownable {
             require(!isBlacklisted[from], "GogeToken.sol::_transfer() sender is blacklisted");
             require(!isBlacklisted[to],   "GogeToken.sol::_transfer() receiver is blacklisted");
             lastReceived[to] = block.timestamp;
-
-            emit Debug("buy");
         }
         
         else if ( // NON whitelisted sell
@@ -1048,8 +1031,6 @@ contract DogeGaySon is ERC20, Ownable {
             // if receiver or sender is blacklisted, revert
             require(!isBlacklisted[from], "GogeToken.sol::_transfer() sender is blacklisted");
             require(!isBlacklisted[to],   "GogeToken.sol::_transfer() receiver is blacklisted");
-
-            emit Debug("sell");
             
             // take contract balance of royalty tokens
             uint256 contractTokenBalance = balanceOf(address(this));

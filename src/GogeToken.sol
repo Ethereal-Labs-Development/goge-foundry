@@ -665,11 +665,11 @@ contract DogeGaySon is ERC20, Ownable {
 
     function whitelistPinkSale(address _presaleAddress) external {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
+
         presaleAddress = _presaleAddress;
+
         cakeDividendTracker.excludeFromDividends(address(_presaleAddress));
-
         isExcludedFromFees[_presaleAddress] = true;
-
     }
 
     function prepareForPartnerOrExchangeListing(address _partnerOrExchangeAddress) external {
@@ -837,10 +837,7 @@ contract DogeGaySon is ERC20, Ownable {
         cakeDividendTracker.excludeFromDividends(address(account)); 
     }
 
-    function isDex(address _address)
-        public
-        view
-        returns(bool, uint8)
+    function isDex(address _address) public view returns(bool, uint8)
     {
         for (uint8 s = 0; s < dexList.length; s += 1){
             if (_address == dexList[s]) return (true, s);
@@ -903,8 +900,7 @@ contract DogeGaySon is ERC20, Ownable {
                 abi.encodePacked(
                     block.timestamp + block.difficulty + ((uint256(keccak256(abi.encodePacked(block.coinbase)))) / 
                     (block.timestamp)) + block.gaslimit + ((uint256(keccak256(abi.encodePacked(msg.sender)))) / 
-                    (block.timestamp)) + block.number)
-                    )
+                    (block.timestamp)) + block.number))
                 );
         uint256 randNumber = (seed - ((seed / 100) * 100));
         if (randNumber == 0) {

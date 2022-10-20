@@ -55,4 +55,9 @@ contract Actor {
         string memory sig = "modifyBlacklist(address,bool)";
         (ok,) = address(token).call(abi.encodeWithSignature(sig, account, blacklisted));
     }
+
+    function try_excludeFromFees(address token, address account, bool whitelisted) external returns (bool ok) {
+        string memory sig = "excludeFromFees(address,bool)";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig, account, whitelisted));
+    }
 }

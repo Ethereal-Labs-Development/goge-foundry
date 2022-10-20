@@ -65,21 +65,61 @@ contract TokenTest is Utility, Test {
         assert(!joe.try_transferToken(address(gogeToken), address(32), 10 ether));
     }
 
-    // This tests that a blacklisted wallet can only make transfers to a whitelisted wallet.
-    // function test_taxToken_blacklist_whitelist() public {
-    //     // This contract can successfully send assets to address(32).
-    //     assert(taxToken.transfer(address(32), 1 ether));
+    // This tests that a blacklisted sender can send tokens to a whitelisted receiver.
+    function test_gogeToken_blacklist_to_whitelist() public {
+        // This contract can successfully send assets to address(joe).
+        assert(dev.try_transferToken(address(gogeToken), address(joe), 100 ether));
 
-    //     // Blacklist this contract.
-    //     taxToken.modifyBlacklist(address(this), true);
+        // Blacklist joe.
+        assert(dev.try_modifyBlacklist(address(gogeToken), address(joe), true));
 
-    //     // This contract can no longer send tokens to address(32).
-    //     assert(!taxToken.transfer(address(32), 1 ether));
+        // Joe can no longer send tokens to address(32).
+        assert(!joe.try_transferToken(address(gogeToken), address(32), 10 ether));
 
-    //     // Whitelist address(32).
-    //     taxToken.modifyWhitelist(address(32), true);
+        // Whitelist address(32).
+        assert(dev.try_excludeFromFees(address(gogeToken), address(32), true));
 
-    //     // This contract can successfully send assets to whitelisted address(32).
-    //     assert(taxToken.transfer(address(32), 1 ether));
-    // }
+        // Joe can successfully send assets to whitelisted address(32).
+        assert(joe.try_transferToken(address(gogeToken), address(32), 10 ether));
+    }
+
+    // This tests that a blacklisted sender can send tokens to a whitelisted receiver.
+    function test_gogeToken_whitelist_to_blacklist() public {
+        // This contract can successfully send assets to address(joe).
+        assert(dev.try_transferToken(address(gogeToken), address(joe), 100 ether));
+
+        // Blacklist address(32).
+        assert(dev.try_modifyBlacklist(address(gogeToken), address(32), true));
+
+        // Joe can no longer send tokens to address(32).
+        assert(!joe.try_transferToken(address(gogeToken), address(32), 10 ether));
+
+        // Whitelist Joe.
+        assert(dev.try_excludeFromFees(address(gogeToken), address(joe), true));
+
+        // Joe can successfully send assets to blacklisted address(32).
+        assert(joe.try_transferToken(address(gogeToken), address(32), 10 ether));
+    }
+
+    // ~ Whitelist testing (excludedFromFees) ~
+
+    function test_gogeToken_whitelist() public {
+        // This contract can successfully send assets to address(joe).
+        assert(dev.try_transferToken(address(gogeToken), address(joe), 100 ether));
+
+        // Joe sends tokens to address(32).
+        assert(joe.try_transferToken(address(gogeToken), address(32), 10 ether));
+
+        // Post-state check. Address(32) has been taxed 16% on transfer.
+        assertEq(gogeToken.balanceOf(address(32)), (10 ether) - ((10 ether) * 16/100));
+
+        // Whitelist joe.
+        assert(dev.try_excludeFromFees(address(gogeToken), address(joe), true));
+
+        // Joe is whitelisted thus sends non-taxed tokens to address(34).
+        assert(joe.try_transferToken(address(gogeToken), address(34), 10 ether));
+
+        // Post-state check. Address(34) has NOT been taxed.
+        assertEq(gogeToken.balanceOf(address(34)), 10 ether);
+    }
 }

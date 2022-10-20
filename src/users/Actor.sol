@@ -10,6 +10,12 @@ contract Actor {
     /*** TRY FUNCTIONS ***/
     /*********************/
 
+
+    //////////////////////////////////////////////////////////////////////////
+    ///                             GOGE TOKEN                             ///
+    //////////////////////////////////////////////////////////////////////////
+
+
     function try_transferToken(address token, address to, uint256 amt) external returns (bool ok) {
         string memory sig = "transfer(address,uint256)";
         (ok,) = address(token).call(abi.encodeWithSignature(sig, to, amt));
@@ -25,26 +31,6 @@ contract Actor {
         (ok,) = address(token).call(abi.encodeWithSignature(sig, to, amt));
     }
 
-    function try_mint(address token, address account, uint amt) external returns (bool ok) {
-        string memory sig = "mint(address,uint256)";
-        (ok,) = address(token).call(abi.encodeWithSignature(sig, account, amt));
-    }
-
-    function try_industryMint(address token, address account, uint amt) external returns (bool ok) {
-        string memory sig = "industryMint(address,uint256)";
-        (ok,) = address(token).call(abi.encodeWithSignature(sig, account, amt));
-    }
-
-    function try_burn(address token, address account, uint amt) external returns (bool ok) {
-        string memory sig = "burn(address,uint256)";
-        (ok,) = address(token).call(abi.encodeWithSignature(sig, account, amt));
-    }
-
-    function try_industryBurn(address token, address account, uint amt) external returns (bool ok) {
-        string memory sig = "industryBurn(address,uint256)";
-        (ok,) = address(token).call(abi.encodeWithSignature(sig, account, amt));
-    }
-
     function try_increaseAllowance(address token, address account, uint amt) external returns (bool ok) {
         string memory sig = "increaseAllowance(address,uint256)";
         (ok,) = address(token).call(abi.encodeWithSignature(sig, account, amt));
@@ -58,5 +44,15 @@ contract Actor {
     function try_updateStable(address treasury, address stablecoin) external returns (bool ok) {
         string memory sig = "updateStable(address)";
         (ok,) = address(treasury).call(abi.encodeWithSignature(sig, stablecoin));
+    }
+
+    function try_enableTrading(address token) external returns (bool ok) {
+        string memory sig = "enableTrading()";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig));
+    }
+
+    function try_modifyBlacklist(address token, address account, bool blacklisted) external returns (bool ok) {
+        string memory sig = "modifyBlacklist(address,bool)";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig, account, blacklisted));
     }
 }

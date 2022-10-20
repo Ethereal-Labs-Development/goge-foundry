@@ -541,17 +541,19 @@ contract DogeGaySon is ERC20, Ownable {
     
     uint256 public swapTokensAtAmount;
 
-    uint8 public cakeDividendRewardsFee ;
+    uint8 public cakeDividendRewardsFee;
     uint8 public previousCakeDividendRewardsFee;
+
     uint8 public marketingFee;
     uint8 public previousMarketingFee;
+
     uint8 public buyBackAndLiquidityFee;
     uint8 public previousBuyBackAndLiquidityFee;
+
     uint8 public teamFee;
     uint8 public previousTeamFee;
-    uint8 public totalFees;
 
-    uint8 public transferFeeIncreaseFactor = 100; // divided by 100
+    uint8 public totalFees;
 
     uint256 public gasForProcessing = 600000;
     
@@ -593,6 +595,8 @@ contract DogeGaySon is ERC20, Ownable {
     event TeamWalletUpdated(address indexed newTeamWallet, address indexed oldTeamWallet);
 
     event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
+
+    event Debug(string words);
 
     event SwapAndLiquify(
         uint256 tokensSwapped,
@@ -717,8 +721,9 @@ contract DogeGaySon is ERC20, Ownable {
         swapTokensAtAmount = _swapAmount * (10**18);
     }
     
-    function setTradingIsEnabled() external onlyOwner {
+    function enableTrading() external onlyOwner {
         require(tradingIsEnabled == false, "Trading is already enabled");
+
         cakeDividendRewardsFee = 10;
         marketingFee = 2;
         buyBackAndLiquidityFee = 2;
@@ -728,7 +733,7 @@ contract DogeGaySon is ERC20, Ownable {
         buyBackAndLiquifyEnabled = true;
         cakeDividendEnabled = true;
         teamEnabled = true;
-        swapTokensAtAmount = 20000000 * (10**18);
+        swapTokensAtAmount = 20_000_000 * (10**18);
         tradingIsEnabled = true;
         _firstBlock = block.timestamp;
     }
@@ -1014,6 +1019,7 @@ contract DogeGaySon is ERC20, Ownable {
         address from,
         address to,
         uint256 amount
+
     ) internal override {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
@@ -1027,8 +1033,11 @@ contract DogeGaySon is ERC20, Ownable {
             !excludedAccount
         ) {
             // if receiver or sender is blacklisted, revert
-            require(!isBlacklisted[from] && !isBlacklisted[to], "GogeToken.sol::_transfer() address is blacklisted");
+            require(!isBlacklisted[from], "GogeToken.sol::_transfer() sender is blacklisted");
+            require(!isBlacklisted[to],   "GogeToken.sol::_transfer() receiver is blacklisted");
             lastReceived[to] = block.timestamp;
+
+            emit Debug("buy");
         }
         
         else if ( // NON whitelisted sell
@@ -1037,7 +1046,10 @@ contract DogeGaySon is ERC20, Ownable {
             !excludedAccount
         ) {
             // if receiver or sender is blacklisted, revert
-            require(!isBlacklisted[from] && !isBlacklisted[to], "GogeToken.sol::_transfer() address is blacklisted");
+            require(!isBlacklisted[from], "GogeToken.sol::_transfer() sender is blacklisted");
+            require(!isBlacklisted[to],   "GogeToken.sol::_transfer() receiver is blacklisted");
+
+            emit Debug("sell");
             
             // take contract balance of royalty tokens
             uint256 contractTokenBalance = balanceOf(address(this));
@@ -1072,6 +1084,7 @@ contract DogeGaySon is ERC20, Ownable {
                         uint256 teamPortion = swapTokens.div(10**2).mul(57);
                         uint256 devPortion = swapTokens.div(10**2).mul(17);
                         uint256 marketingPortion = swapTokens.sub(teamPortion).sub(devPortion);
+
                         transferToWallet(payable(marketingWallet), marketingPortion);
                         if (marketingWallet == DAO) IDAO(DAO).updateMarketingBalance(marketingPortion);
                         transferToWallet(payable(teamWallet), teamPortion);
@@ -1083,6 +1096,7 @@ contract DogeGaySon is ERC20, Ownable {
                         uint256 swapTokens = contractBalance.div(totalFees).mul(marketingFee);
                         uint256 teamPortion = swapTokens.div(10**2).mul(66);
                         uint256 marketingPortion = swapTokens.sub(teamPortion);
+
                         transferToWallet(payable(marketingWallet), marketingPortion);
                         if (marketingWallet == DAO) IDAO(DAO).updateMarketingBalance(marketingPortion);
                         transferToWallet(payable(teamWallet), teamPortion);
@@ -1113,17 +1127,14 @@ contract DogeGaySon is ERC20, Ownable {
         bool takeFee = tradingIsEnabled && !swapping && !excludedAccount;
 
         if(takeFee) {
-            require(!isBlacklisted[from] && !isBlacklisted[to], "GogeToken.sol::_transfer() address is blacklisted");
+            require(!isBlacklisted[from], "GogeToken.sol::_transfer() sender is blacklisted");
+            require(!isBlacklisted[to],   "GogeToken.sol::_transfer() receiver is blacklisted");
 
             uint256 fees;
 
-            if(!automatedMarketMakerPairs[to] && !automatedMarketMakerPairs[from]) { // if transfer
-                uint8 totalTransferFees = totalFees.mul(transferFeeIncreaseFactor).div(100);
-                fees = amount.mul(totalTransferFees).div(100);
-                lastReceived[to] = block.timestamp;
-            } else {
-                fees = amount.mul(totalFees).div(100);
-            }
+            //if(!automatedMarketMakerPairs[to] && !automatedMarketMakerPairs[from]) { // if transfer
+            fees = amount.mul(totalFees).div(100);
+            lastReceived[to] = block.timestamp;
         
             amount = amount.sub(fees);
 
@@ -1137,7 +1148,6 @@ contract DogeGaySon is ERC20, Ownable {
             
             try cakeDividendTracker.setBalance(payable(to), balanceOf(to)) {} catch {}
             
-
             if(!swapping) {
                 uint256 gas = gasForProcessing;
 
@@ -1243,7 +1253,9 @@ contract DogeGaySon is ERC20, Ownable {
     function _transferOwnership(address newOwner) external {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
         require(newOwner != address(0));
+
         super.transferOwnership(newOwner);
+        isExcludedFromFees[newOwner] = true;
     }
 }
 

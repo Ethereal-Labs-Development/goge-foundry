@@ -77,6 +77,13 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
+interface IWETH {
+    function deposit() external payable;
+    function withdraw(uint) external;
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address to, uint value) external returns (bool);
+}
+
 interface IUniswapV2Factory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 

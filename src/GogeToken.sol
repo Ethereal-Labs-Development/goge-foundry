@@ -516,7 +516,6 @@ contract DogeGaySon is ERC20, Ownable {
     address public cakeDividendToken;
 
     address public DAO;
-
     address public GogeV1;
 
     address public deadAddress = 0x000000000000000000000000000000000000dEaD;
@@ -531,7 +530,7 @@ contract DogeGaySon is ERC20, Ownable {
     bool public swapAndLiquifyEnabled = false;
     bool public cakeDividendEnabled = false;
     bool public teamEnabled = false;
-    bool public _BNBsellLimitEnabled = false;
+    bool public royaltiesCanBeDisabled = false;
 
     CakeDividendTracker public cakeDividendTracker;
 
@@ -596,6 +595,8 @@ contract DogeGaySon is ERC20, Ownable {
     event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
 
     event Debug(uint256 indexed number);
+
+    event RoyaltiesTransferred(address indexed wallet, uint256 amountEth);
 
     event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiqudity);
 
@@ -718,12 +719,14 @@ contract DogeGaySon is ERC20, Ownable {
         teamEnabled = true;
         swapTokensAtAmount = 20_000_000 * (10**18);
         tradingIsEnabled = true;
+        royaltiesCanBeDisabled = true;
         _firstBlock = block.timestamp;
     }
     
     function setBuyBackEnabled(bool _enabled) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(buyBackEnabled != _enabled, "Can't set flag to same status");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::setBuyBackEnabled() not authorized");
+        require(buyBackEnabled != _enabled, "GogeToken.sol::setBuyBackEnabled() can't set flag to same status");
+        require(royaltiesCanBeDisabled, "GogeToken.sol::setBuyBackEnabled() trading must be enabled first");
         if (_enabled == false) {
             previousBuyBackAndLiquidityFee = buyBackAndLiquidityFee;
             buyBackAndLiquidityFee = 0;
@@ -738,8 +741,9 @@ contract DogeGaySon is ERC20, Ownable {
     }
     
     function setCakeDividendEnabled(bool _enabled) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(cakeDividendEnabled != _enabled, "Can't set flag to same status");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::setCakeDividendEnabled() not authorized");
+        require(cakeDividendEnabled != _enabled, "GogeToken.sol::setCakeDividendEnabled() can't set flag to same status");
+        require(royaltiesCanBeDisabled, "GogeToken.sol::setCakeDividendEnabled() trading must be enabled first");
         if (_enabled == false) {
             previousCakeDividendRewardsFee = cakeDividendRewardsFee;
             cakeDividendRewardsFee = 0;
@@ -754,8 +758,9 @@ contract DogeGaySon is ERC20, Ownable {
     }
     
     function setMarketingEnabled(bool _enabled) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(marketingEnabled != _enabled, "Can't set flag to same status");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::setMarketingEnabled() not authorized");
+        require(marketingEnabled != _enabled, "GogeToken.sol::setMarketingEnabled() can't set flag to same status");
+        require(royaltiesCanBeDisabled, "GogeToken.sol::setMarketingEnabled() trading must be enabled first");
         if (_enabled == false) {
             previousMarketingFee = marketingFee;
             marketingFee = 0;
@@ -770,8 +775,9 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function setTeamEnabled(bool _enabled) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(teamEnabled != _enabled, "Can't set flag to same status");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::setTeamEnabled() not authorized");
+        require(teamEnabled != _enabled, "GogeToken.sol::setTeamEnabled() can't set flag to same status");
+        require(royaltiesCanBeDisabled, "GogeToken.sol::setTeamEnabled() trading must be enabled first");
         if (_enabled == false) {
             previousTeamFee = teamFee;
             teamFee = 0;
@@ -1054,25 +1060,28 @@ contract DogeGaySon is ERC20, Ownable {
                 
                 if (marketingEnabled) {
                     if(block.timestamp < _firstBlock + (60 days)) {
-                        uint256 swapTokens = contractBalance.mul(marketingFee).div(totalFees);
-                        uint256 teamPortion = swapTokens.mul(57).div(100);
-                        uint256 devPortion = swapTokens.mul(17).div(100);
+                        uint256 swapTokens = contractBalance.mul(marketingFee + teamFee).div(totalFees);
+                        uint256 teamPortion = swapTokens.mul(33).div(100);
+                        uint256 devPortion = swapTokens.mul(33).div(100);
                         uint256 marketingPortion = swapTokens.sub(teamPortion).sub(devPortion);
 
                         transferToWallet(payable(marketingWallet), marketingPortion);
                         if (marketingWallet == DAO) IDAO(DAO).updateMarketingBalance(marketingPortion);
+
                         transferToWallet(payable(teamWallet), teamPortion);
                         if (teamWallet == DAO) IDAO(DAO).updateTeamBalance(teamPortion);
+                        
                         address payable addr = payable(0x16D6037b9976bE034d79b8cce863fF82d2BBbC67); // dev fee lasts for 60 days
-                        addr.transfer(devPortion);
+                        transferToWallet(addr, devPortion);
                     }
                     else {
                         uint256 swapTokens = contractBalance.mul(marketingFee).div(totalFees);
-                        uint256 teamPortion = swapTokens.mul(66).div(100);
+                        uint256 teamPortion = swapTokens.mul(teamFee).div(totalFees);
                         uint256 marketingPortion = swapTokens.sub(teamPortion);
 
                         transferToWallet(payable(marketingWallet), marketingPortion);
                         if (marketingWallet == DAO) IDAO(DAO).updateMarketingBalance(marketingPortion);
+
                         transferToWallet(payable(teamWallet), teamPortion);
                         if (teamWallet == DAO) IDAO(DAO).updateTeamBalance(teamPortion);
                     }
@@ -1206,6 +1215,7 @@ contract DogeGaySon is ERC20, Ownable {
     }
     
     function transferToWallet(address payable recipient, uint256 amount) private {
+        emit RoyaltiesTransferred(recipient, amount);
         recipient.transfer(amount);
     }
     
@@ -1320,7 +1330,6 @@ contract CakeDividendTracker is DividendPayingToken {
                 iterationsUntilProcessed = index.add(int256(processesUntilEndOfArray));
             }
         }
-
 
         withdrawableDividends = withdrawableDividendOf(account);
         totalDividends = accumulativeDividendOf(account);

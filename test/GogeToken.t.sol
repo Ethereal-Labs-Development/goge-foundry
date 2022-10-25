@@ -180,6 +180,7 @@ contract TokenTest is Utility, Test {
     //       test distribution of royalties when marketingEnabled is true and other fees are false
     //          - fix royalty distribution
 
+    // setBuyBackEnabled test
     function test_gogeToken_setBuyBackEnabled() public {
         // Pre-state check.
         assertTrue(gogeToken.buyBackEnabled());
@@ -195,6 +196,7 @@ contract TokenTest is Utility, Test {
         assertEq(gogeToken.previousBuyBackAndLiquidityFee(), 2);
     }
 
+    // setMarketingEnabled test
     function test_gogeToken_setMarketingEnabled() public {
         // Pre-state check.
         assertTrue(gogeToken.marketingEnabled());
@@ -210,6 +212,7 @@ contract TokenTest is Utility, Test {
         assertEq(gogeToken.previousMarketingFee(), 2);
     }
 
+    // setCakeDividendEnabled test
     function test_gogeToken_setCakeDividendEnabled() public {
         // Pre-state check.
         assertTrue(gogeToken.cakeDividendEnabled());
@@ -225,6 +228,7 @@ contract TokenTest is Utility, Test {
         assertEq(gogeToken.previousCakeDividendRewardsFee(), 10);
     }
 
+    // setTeamEnabled test
     function test_gogeToken_setTeamEnabled() public {
         // Pre-state check.
         assertTrue(gogeToken.teamEnabled());
@@ -240,25 +244,4 @@ contract TokenTest is Utility, Test {
         assertEq(gogeToken.previousTeamFee(), 2);
     }
 
-    function test_gogeToken_setBuyBackEnabled_preTradingEnable() public {
-        // deploy new token (in which tradingEnabled wasnt executed).
-        DogeGaySon gogeTokenFresh = new DogeGaySon(
-            address(1),
-            address(2),
-            100_000_000_000
-        );
-
-        // Pre-state check.
-        assertTrue(!gogeTokenFresh.buyBackEnabled());
-        assertEq(gogeTokenFresh.buyBackAndLiquidityFee(), 0);
-        assertEq(gogeTokenFresh.previousBuyBackAndLiquidityFee(), 0);
-
-        // Disable buyBack
-        assert(dev.try_setBuyBackEnabled(address(gogeTokenFresh), true));
-
-        //Post-state check.
-        assertTrue(!gogeTokenFresh.buyBackEnabled());
-        assertEq(gogeTokenFresh.buyBackAndLiquidityFee(), 0);
-        assertEq(gogeTokenFresh.previousBuyBackAndLiquidityFee(), 0);
-    }
 }

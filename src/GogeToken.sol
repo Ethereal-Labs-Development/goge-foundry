@@ -564,7 +564,7 @@ contract DogeGaySon is ERC20, Ownable {
     // could be subject to a maximum transfer amount
     mapping (address => bool) public automatedMarketMakerPairs;
     mapping(address => uint256) public lastReceived;
-    uint256 private _firstBlock;
+    uint256 public _firstBlock;
     mapping(address => bool) public isBlacklisted;
     
     struct BuybackParams {

@@ -526,9 +526,8 @@ contract DogeGaySon is ERC20, Ownable {
     bool private swapping;
     bool public tradingIsEnabled = false;
     bool public marketingEnabled = false;
-    bool public buyBackAndLiquifyEnabled = false;
+    bool public buyBackEnabled = false;
     bool public devEnabled = false;
-    bool public pairSwapped = false;
     bool public swapAndLiquifyEnabled = false;
     bool public cakeDividendEnabled = false;
     bool public teamEnabled = false;
@@ -559,7 +558,7 @@ contract DogeGaySon is ERC20, Ownable {
     
     address public presaleAddress;
 
-    mapping (address => bool) private isExcludedFromFees;
+    mapping (address => bool) public isExcludedFromFees;
 
     // store addresses that a automatic market maker pairs. Any transfer *to* these addresses
     // could be subject to a maximum transfer amount
@@ -583,7 +582,7 @@ contract DogeGaySon is ERC20, Ownable {
     
     event SwapAndLiquifyEnabledUpdated(bool enabled);
     event MarketingEnabledUpdated(bool enabled);
-    event BuyBackAndLiquifyEnabledUpdated(bool enabled);
+    event buyBackEnabledUpdated(bool enabled);
     event TeamEnabledUpdated(bool enabled);
     event CakeDividendEnabledUpdated(bool enabled);
    
@@ -714,7 +713,7 @@ contract DogeGaySon is ERC20, Ownable {
         teamFee = 2;
         totalFees = 16;
         marketingEnabled = true;
-        buyBackAndLiquifyEnabled = true;
+        buyBackEnabled = true;
         cakeDividendEnabled = true;
         teamEnabled = true;
         swapTokensAtAmount = 20_000_000 * (10**18);
@@ -722,20 +721,20 @@ contract DogeGaySon is ERC20, Ownable {
         _firstBlock = block.timestamp;
     }
     
-    function setBuyBackAndLiquifyEnabled(bool _enabled) external {
+    function setBuyBackEnabled(bool _enabled) external {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(buyBackAndLiquifyEnabled != _enabled, "Can't set flag to same status");
+        require(buyBackEnabled != _enabled, "Can't set flag to same status");
         if (_enabled == false) {
             previousBuyBackAndLiquidityFee = buyBackAndLiquidityFee;
             buyBackAndLiquidityFee = 0;
-            buyBackAndLiquifyEnabled = _enabled;
+            buyBackEnabled = _enabled;
         } else {
             buyBackAndLiquidityFee = previousBuyBackAndLiquidityFee;
-            buyBackAndLiquifyEnabled = _enabled;
+            buyBackEnabled = _enabled;
         }
         totalFees = buyBackAndLiquidityFee.add(marketingFee).add(cakeDividendRewardsFee).add(teamFee);
         
-        emit BuyBackAndLiquifyEnabledUpdated(_enabled);
+        emit buyBackEnabledUpdated(_enabled);
     }
     
     function setCakeDividendEnabled(bool _enabled) external {
@@ -1037,14 +1036,14 @@ contract DogeGaySon is ERC20, Ownable {
                 params.initialBalance = address(this).balance;
                 params.buyBackOrLiquidity = rand();
 
-                if (buyBackAndLiquifyEnabled && params.buyBackOrLiquidity > 50) {
+                if (buyBackEnabled && params.buyBackOrLiquidity > 50) {
 
                     uint256 buybackAndLiquidityPortion = contractTokenBalance.mul(buyBackAndLiquidityFee).div(100);
                     params.half = buybackAndLiquidityPortion.div(2);
                     params.otherHalf = buybackAndLiquidityPortion.sub(params.half);
                     swapTokensForBNB(contractTokenBalance.sub(params.half));
                     params.afterSwap = address(this).balance;
-                    params.newBalance = params.afterSwap.div(uint256(2).mul(100)).mul(buyBackAndLiquidityFee);
+                    params.newBalance = params.afterSwap.mul(buyBackAndLiquidityFee).div(uint256(2).mul(100));
 
                 } else {
                     swapTokensForBNB(contractTokenBalance);
@@ -1079,7 +1078,7 @@ contract DogeGaySon is ERC20, Ownable {
                     }
                 }
                 
-                if (buyBackAndLiquifyEnabled) {
+                if (buyBackEnabled) {
                     if (params.buyBackOrLiquidity <= 50) {
                         uint256 buyBackBalance = params.newBalance;
                         if (buyBackBalance > uint256(1 * 10**18)) {
@@ -1138,11 +1137,6 @@ contract DogeGaySon is ERC20, Ownable {
     function modifyBlacklist(address account, bool blacklisted) external {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
         isBlacklisted[account] = blacklisted;
-    }
-    
-    function updatePairSwapped(bool swapped) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        pairSwapped = swapped;
     }
     
     function swapAndLiquify(uint256 half, uint256 otherHalf, uint256 newBalance) private {

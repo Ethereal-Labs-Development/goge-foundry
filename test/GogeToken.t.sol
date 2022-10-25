@@ -174,4 +174,91 @@ contract TokenTest is Utility, Test {
         // Restriction: Cannot set totalFee to be greater than 40
         assert(!dev.try_updateFees(address(gogeToken), 20, 10, 5, 6)); // 41
     }
+
+    // TODO: create tests for setBuyBackAndLiquifyEnabled, setMarketingEnabled, setTeamEnabled, setCakeDividendEnabled
+    //       create LP test
+    //       test distribution of royalties when marketingEnabled is true and other fees are false
+    //          - fix royalty distribution
+
+    function test_gogeToken_setBuyBackEnabled() public {
+        // Pre-state check.
+        assertTrue(gogeToken.buyBackEnabled());
+        assertEq(gogeToken.buyBackAndLiquidityFee(), 2);
+        assertEq(gogeToken.previousBuyBackAndLiquidityFee(), 0);
+
+        // Disable buyBack
+        assert(dev.try_setBuyBackEnabled(address(gogeToken), false));
+
+        //Post-state check.
+        assertTrue(!gogeToken.buyBackEnabled());
+        assertEq(gogeToken.buyBackAndLiquidityFee(), 0);
+        assertEq(gogeToken.previousBuyBackAndLiquidityFee(), 2);
+    }
+
+    function test_gogeToken_setMarketingEnabled() public {
+        // Pre-state check.
+        assertTrue(gogeToken.marketingEnabled());
+        assertEq(gogeToken.marketingFee(), 2);
+        assertEq(gogeToken.previousMarketingFee(), 0);
+
+        // Disable buyBack
+        assert(dev.try_setMarketingEnabled(address(gogeToken), false));
+
+        //Post-state check.
+        assertTrue(!gogeToken.marketingEnabled());
+        assertEq(gogeToken.marketingFee(), 0);
+        assertEq(gogeToken.previousMarketingFee(), 2);
+    }
+
+    function test_gogeToken_setCakeDividendEnabled() public {
+        // Pre-state check.
+        assertTrue(gogeToken.cakeDividendEnabled());
+        assertEq(gogeToken.cakeDividendRewardsFee(), 10);
+        assertEq(gogeToken.previousCakeDividendRewardsFee(), 0);
+
+        // Disable buyBack
+        assert(dev.try_setCakeDividendEnabled(address(gogeToken), false));
+
+        //Post-state check.
+        assertTrue(!gogeToken.cakeDividendEnabled());
+        assertEq(gogeToken.cakeDividendRewardsFee(), 0);
+        assertEq(gogeToken.previousCakeDividendRewardsFee(), 10);
+    }
+
+    function test_gogeToken_setTeamEnabled() public {
+        // Pre-state check.
+        assertTrue(gogeToken.teamEnabled());
+        assertEq(gogeToken.teamFee(), 2);
+        assertEq(gogeToken.previousTeamFee(), 0);
+
+        // Disable buyBack
+        assert(dev.try_setTeamEnabled(address(gogeToken), false));
+
+        //Post-state check.
+        assertTrue(!gogeToken.teamEnabled());
+        assertEq(gogeToken.teamFee(), 0);
+        assertEq(gogeToken.previousTeamFee(), 2);
+    }
+
+    function test_gogeToken_setBuyBackEnabled_preTradingEnable() public {
+        // deploy new token (in which tradingEnabled wasnt executed).
+        DogeGaySon gogeTokenFresh = new DogeGaySon(
+            address(1),
+            address(2),
+            100_000_000_000
+        );
+
+        // Pre-state check.
+        assertTrue(!gogeTokenFresh.buyBackEnabled());
+        assertEq(gogeTokenFresh.buyBackAndLiquidityFee(), 0);
+        assertEq(gogeTokenFresh.previousBuyBackAndLiquidityFee(), 0);
+
+        // Disable buyBack
+        assert(dev.try_setBuyBackEnabled(address(gogeTokenFresh), true));
+
+        //Post-state check.
+        assertTrue(!gogeTokenFresh.buyBackEnabled());
+        assertEq(gogeTokenFresh.buyBackAndLiquidityFee(), 0);
+        assertEq(gogeTokenFresh.previousBuyBackAndLiquidityFee(), 0);
+    }
 }

@@ -75,4 +75,24 @@ contract Actor {
         string memory sig = "updateFees(uint8,uint8,uint8,uint8)";
         (ok,) = address(token).call(abi.encodeWithSignature(sig, rewardFee, marketingFee, buyBackFee, teamFee));
     }
+
+    function try_setBuyBackEnabled(address token, bool enabled) external returns (bool ok) {
+        string memory sig = "setBuyBackEnabled(bool)";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig, enabled));
+    }
+
+    function try_setMarketingEnabled(address token, bool enabled) external returns (bool ok) {
+        string memory sig = "setMarketingEnabled(bool)";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig, enabled));
+    }
+
+    function try_setCakeDividendEnabled(address token, bool enabled) external returns (bool ok) {
+        string memory sig = "setCakeDividendEnabled(bool)";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig, enabled));
+    }
+
+    function try_setTeamEnabled(address token, bool enabled) external returns (bool ok) {
+        string memory sig = "setTeamEnabled(bool)";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig, enabled));
+    }
 }

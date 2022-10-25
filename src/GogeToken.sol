@@ -409,17 +409,19 @@ contract DividendPayingToken is ERC20, Ownable, IDividendPayingToken, IDividendP
     /// @dev It emits a `DividendWithdrawn` event if the amount of withdrawn ether is greater than 0.
     function _withdrawDividendOfUser(address payable user) internal returns (uint256) {
         uint256 _withdrawableDividend = withdrawableDividendOf(user);
+
         if (_withdrawableDividend > 0) {
-        withdrawnDividends[user] = withdrawnDividends[user].add(_withdrawableDividend);
-        emit DividendWithdrawn(user, _withdrawableDividend);
-        bool success = IERC20(dividendToken).transfer(user, _withdrawableDividend);
+            withdrawnDividends[user] = withdrawnDividends[user].add(_withdrawableDividend);
+            emit DividendWithdrawn(user, _withdrawableDividend);
 
-        if(!success) {
-            withdrawnDividends[user] = withdrawnDividends[user].sub(_withdrawableDividend);
-            return 0;
-        }
+            bool success = IERC20(dividendToken).transfer(user, _withdrawableDividend);
 
-        return _withdrawableDividend;
+            if(!success) {
+                withdrawnDividends[user] = withdrawnDividends[user].sub(_withdrawableDividend);
+                return 0;
+            }
+
+            return _withdrawableDividend;
         }
 
         return 0;
@@ -1423,6 +1425,10 @@ contract CakeDividendTracker is DividendPayingToken {
     	return (iterations, claims, lastProcessedIndex);
     }
 
+    /// @notice Withdraws the user's available dividend and creates a log of the event.
+    /// @dev withdraws dividend to 'account' wallet with _withdrawDividendOfUser().
+    /// @param account The address to withrdraw dividend of.
+    /// @param automatic Whether or not this process happened automatically.
     function processAccount(address payable account, bool automatic) public onlyOwner returns (bool) {
         uint256 amount = _withdrawDividendOfUser(account);
 

@@ -95,4 +95,9 @@ contract Actor {
         string memory sig = "setTeamEnabled(bool)";
         (ok,) = address(token).call(abi.encodeWithSignature(sig, enabled));
     }
+
+    function try_claim(address token) external returns (bool ok) {
+        string memory sig = "claim()";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig));
+    }
 }

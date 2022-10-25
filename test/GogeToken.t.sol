@@ -7,10 +7,12 @@ import "../src/GogeToken.sol";
 
 contract TokenTest is Utility, Test {
     DogeGaySon gogeToken;
+    address cakeDividendToken;
 
     function setUp() public {
         createActors();
         setUpTokens();
+        cakeDividendToken = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
         
         // deploy token.
         gogeToken = new DogeGaySon(
@@ -260,5 +262,15 @@ contract TokenTest is Utility, Test {
         assertTrue(!gogeTokenFresh.buyBackEnabled());
         assertEq(gogeTokenFresh.buyBackAndLiquidityFee(), 0);
         assertEq(gogeTokenFresh.previousBuyBackAndLiquidityFee(), 0);
+    }
+
+    function test_claim() public {
+
+        // test execution with no available dividend
+        assert(dev.try_claim(address(gogeToken)));
+        assertEq(IERC20(cakeDividendToken).balanceOf(address(dev)), 0);
+
+        // test execution with available dividend
+        // TODO
     }
 }

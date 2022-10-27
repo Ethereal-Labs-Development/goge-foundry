@@ -134,7 +134,8 @@ contract Royalties is Utility, Test {
     }
 
     // NOTE: Error in this test.
-    // FAILED CASES: [8492018911496110081, 88308617632452571546217600], [8227232056021843363, 1000000000000000000] NOTE: passing now
+    // FAILED CASES: [8492018911496110081, 88308617632452571546217600], [8227232056021843363, 1000000000000000000]
+    // NOTE: passing when setting params.buyBackOrLiquidity < 50.
     function test_royaltyTesting_generateFees_specify() public {
         uint256 _amountToBuy  = 8492018911496110081;
         uint256 _amountToSell = 88308617632452571546217600;
@@ -152,7 +153,7 @@ contract Royalties is Utility, Test {
         buy_generateFees(_amountToBuy * 2);
         emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 23_244_038
 
-        //gogeToken.setBuyBackEnabled(false); //<-- ERROR HAPPENING HERE
+        //gogeToken.setBuyBackEnabled(false); <-- ERROR HAPPENING HERE
 
         sell_generateFees(_amountToSell);
         emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 3_411
@@ -180,6 +181,13 @@ contract Royalties is Utility, Test {
 
         sell_generateFees(amountSell);
         emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 3_411
+    }
+
+    function test_royaltyTesting_generateFees_cake() public {
+        // Verify Joe owns 0 tokens
+        assertEq(gogeToken.balanceOf(address(joe)), 0);
+
+        gogeToken.transfer(address(joe), 5_000_000 ether);
     }
 
 }

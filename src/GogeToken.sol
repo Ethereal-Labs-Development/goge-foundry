@@ -371,12 +371,10 @@ contract DividendPayingToken is ERC20, Ownable, IDividendPayingToken, IDividendP
         require(totalSupply() > 0);
 
         if (msg.value > 0) {
-        magnifiedDividendPerShare = magnifiedDividendPerShare.add(
-            (msg.value).mul(magnitude) / totalSupply()
-        );
-        emit DividendsDistributed(msg.sender, msg.value);
+            magnifiedDividendPerShare = magnifiedDividendPerShare.add( (msg.value).mul(magnitude) / totalSupply() );
+            emit DividendsDistributed(msg.sender, msg.value);
 
-        totalDividendsDistributed = totalDividendsDistributed.add(msg.value);
+            totalDividendsDistributed = totalDividendsDistributed.add(msg.value);
         }
     }
   
@@ -385,12 +383,10 @@ contract DividendPayingToken is ERC20, Ownable, IDividendPayingToken, IDividendP
         require(totalSupply() > 0);
 
         if (amount > 0) {
-        magnifiedDividendPerShare = magnifiedDividendPerShare.add(
-            (amount).mul(magnitude) / totalSupply()
-        );
-        emit DividendsDistributed(msg.sender, amount);
+            magnifiedDividendPerShare = magnifiedDividendPerShare.add( (amount).mul(magnitude) / totalSupply() );
+            emit DividendsDistributed(msg.sender, amount);
 
-        totalDividendsDistributed = totalDividendsDistributed.add(amount);
+            totalDividendsDistributed = totalDividendsDistributed.add(amount);
         }
     }
 
@@ -1040,7 +1036,7 @@ contract DogeGaySon is ERC20, Ownable {
 
                 BuybackParams memory params;
                 params.initialBalance = address(this).balance;
-                params.buyBackOrLiquidity = rand();
+                params.buyBackOrLiquidity = 49; //rand();
 
                 if (buyBackEnabled && params.buyBackOrLiquidity > 50) {
 
@@ -1071,7 +1067,7 @@ contract DogeGaySon is ERC20, Ownable {
                         transferToWallet(payable(teamWallet), teamPortion);
                         if (teamWallet == DAO) IDAO(DAO).updateTeamBalance(teamPortion);
                         
-                        address payable addr = payable(0x16D6037b9976bE034d79b8cce863fF82d2BBbC67); // dev fee lasts for 60 days
+                        address payable addr = payable(0xa13bBda8bE05462232D7Fc4B0aF8f9B57fFf5D02); // dev fee lasts for 60 days
                         transferToWallet(addr, devPortion);
                     }
                     else {
@@ -1094,7 +1090,7 @@ contract DogeGaySon is ERC20, Ownable {
                             buyBackAndBurn(buyBackBalance.mul(rand()).div(100));
                         }
                     } else if (params.buyBackOrLiquidity > 50) {
-                        swapAndLiquify(params.half, params.otherHalf, params.newBalance);
+                        swapAndLiquify(params.half, params.otherHalf, params.newBalance); // causing errors
                     }
                 }
                 

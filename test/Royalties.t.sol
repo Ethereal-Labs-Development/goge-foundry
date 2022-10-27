@@ -113,10 +113,10 @@ contract Royalties is Utility, Test {
     // ~~ Unit Tests ~~
 
     // NOTE: swapTokensAtAmount distribution threshold = 20_000_000
-    //       can only distribute on sells
     //       bnb = $290.11
     function test_royaltyTesting_generateFees() public {
         // Remove address(this) from whitelist so we can yield a buy tax.
+        gogeToken.excludeFromFees(address(this), false);
         gogeToken.excludeFromFees(address(this), false);
 
         // Check balance of address(gogeToken) to see how many tokens have been taxed. Should be 0
@@ -133,9 +133,35 @@ contract Royalties is Utility, Test {
         emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 3_411
     }
 
+    // NOTE: Error in this test.
+    // FAILED CASES: [8492018911496110081, 88308617632452571546217600], [8227232056021843363, 1000000000000000000] NOTE: passing now
+    function test_royaltyTesting_generateFees_specify() public {
+        uint256 _amountToBuy  = 8492018911496110081;
+        uint256 _amountToSell = 88308617632452571546217600;
+
+        // Remove address(this) from whitelist so we can yield a buy tax.
+        gogeToken.excludeFromFees(address(this), false);
+
+        // Check balance of address(gogeToken) to see how many tokens have been taxed. Should be 0
+        assertEq(IERC20(address(gogeToken)).balanceOf(address(gogeToken)), 0);
+
+        // Generate a buy - log amount of tokens accrued
+        buy_generateFees(_amountToBuy);
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 7_901_185
+
+        buy_generateFees(_amountToBuy * 2);
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 23_244_038
+
+        //gogeToken.setBuyBackEnabled(false); //<-- ERROR HAPPENING HERE
+
+        sell_generateFees(_amountToSell);
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 3_411
+    }
+
     function test_royaltyTesting_generateFees_fuzzing(uint256 amountBuy, uint256 amountSell) public {
-        amountBuy = bound(amountBuy, 1, 30 ether);
-        amountSell = bound(amountSell, 1 ether, 100_000_000 ether);
+        amountBuy = bound(amountBuy, 1, 40 ether);                            // range of ( .000000000000000001 -> 80 BNB buys )
+        amountSell = bound(amountSell, 1 * (10**17), 500_000_000 ether);      // range of ( .1 -> 500,000,000 tokens )
+
         // Remove address(this) from whitelist so we can yield a buy tax.
         gogeToken.excludeFromFees(address(this), false);
 

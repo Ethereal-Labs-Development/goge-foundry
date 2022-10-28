@@ -148,15 +148,15 @@ contract Royalties is Utility, Test {
 
         // Generate a buy - log amount of tokens accrued
         buy_generateFees(_amountToBuy);
-        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 7_901_185
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
 
         buy_generateFees(_amountToBuy * 2);
-        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 23_244_038
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
 
         //gogeToken.setBuyBackEnabled(false); <-- ERROR HAPPENING HERE
 
         sell_generateFees(_amountToSell);
-        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 3_411
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
     }
 
     function test_royaltyTesting_generateFees_fuzzing(uint256 amountBuy, uint256 amountSell) public {
@@ -171,23 +171,43 @@ contract Royalties is Utility, Test {
 
         // Generate a buy - log amount of tokens accrued
         buy_generateFees(amountBuy);
-        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 7_901_185
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
 
         buy_generateFees(amountBuy * 2);
-        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 23_244_038
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
 
         //gogeToken.setCakeDividendEnabled(false);
         //gogeToken.setBuyBackEnabled(false);
 
         sell_generateFees(amountSell);
-        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 3_411
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
     }
 
     function test_royaltyTesting_generateFees_cake() public {
-        // Verify Joe owns 0 tokens
+        // Verify Joe owns 0 tokens and 0 CAKE
         assertEq(gogeToken.balanceOf(address(joe)), 0);
+        assertEq(IERC20(CAKE).balanceOf(address(joe)), 0);
+        assertEq(IERC20(CAKE).balanceOf(address(gogeToken)), 0);
 
+        // transfer Joe 5M tokens
         gogeToken.transfer(address(joe), 5_000_000 ether);
+
+        // Verify Joe owns 5M tokens and 0 CAKE
+        assertEq(gogeToken.balanceOf(address(joe)), 5_000_000 ether);
+        assertEq(IERC20(CAKE).balanceOf(address(joe)), 0);
+
+        //Generate transactions to trigger dividend payout.
+        buy_generateFees(4 ether);
+        buy_generateFees(6 ether);
+        sell_generateFees(1_000_000 ether);
+        buy_generateFees(4 ether);
+        buy_generateFees(6 ether);
+        sell_generateFees(1_000_000 ether);
+
+        // Verify Joe owns 5M tokens and more than 0 CAKE
+        assertEq(gogeToken.balanceOf(address(joe)), 5_000_000 ether);
+        assertGt(IERC20(CAKE).balanceOf(address(joe)), 0);
+        assertGt(IERC20(CAKE).balanceOf(address(gogeToken)), 0);
     }
 
 }

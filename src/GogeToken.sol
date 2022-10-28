@@ -492,12 +492,15 @@ contract DividendPayingToken is ERC20, Ownable, IDividendPayingToken, IDividendP
     function _setBalance(address account, uint256 newBalance) internal {
         uint256 currentBalance = balanceOf(account);
 
-        if(newBalance > currentBalance) {
-        uint256 mintAmount = newBalance.sub(currentBalance);
-        _mint(account, mintAmount);
-        } else if(newBalance < currentBalance) {
-        uint256 burnAmount = currentBalance.sub(newBalance);
-        _burn(account, burnAmount);
+        if(newBalance > currentBalance)
+        {
+            uint256 mintAmount = newBalance.sub(currentBalance);
+            _mint(account, mintAmount);
+        }
+        else if(newBalance < currentBalance)
+        {
+            uint256 burnAmount = currentBalance.sub(newBalance);
+            _burn(account, burnAmount);
         }
     }
 }

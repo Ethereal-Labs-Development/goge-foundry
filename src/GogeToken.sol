@@ -1232,7 +1232,7 @@ contract DogeGaySon is ERC20, Ownable {
         super.transferOwnership(newOwner);
         isExcludedFromFees[newOwner] = true;
     }
-    
+
 }
 
 contract CakeDividendTracker is DividendPayingToken {
@@ -1256,7 +1256,7 @@ contract CakeDividendTracker is DividendPayingToken {
     event Claim(address indexed account, uint256 amount, bool indexed automatic);
 
     constructor() DividendPayingToken("DogeGaySon_Ethereum_Dividend_Tracker", "DogeGaySon_Ethereum_Dividend_Tracker", 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82) {
-    	claimWait = 3600;
+    	claimWait = 3600; // 1 hour
         minimumTokenBalanceForDividends = 200000 * (10**18); //must hold 10000+ tokens
     }
 
@@ -1442,4 +1442,11 @@ contract CakeDividendTracker is DividendPayingToken {
     	return false;
     }
 
+    function getMapValue(address key) public view returns (uint) {
+        return tokenHoldersMap.values[key];
+    }
+
+    function getMapLength() public view returns (uint) {
+        return tokenHoldersMap.keys.length;
+    }
 }

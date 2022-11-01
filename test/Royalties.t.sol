@@ -9,8 +9,11 @@ import { IUniswapV2Router02, IUniswapV2Router01, IWETH, IERC20 } from "../src/in
 
 contract Royalties is Utility, Test {
     DogeGaySon gogeToken;
+    CakeDividendTracker cakeTracker;
 
     address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E; //bsc
+
+    event log_bool(bool a);
 
     function setUp() public {
         createActors();
@@ -22,6 +25,8 @@ contract Royalties is Utility, Test {
             address(0xe142E9FCbd9E29C4A65C4979348d76147190a05a),
             100_000_000_000
         );
+
+        cakeTracker = gogeToken.cakeDividendTracker();
 
         // Give tokens and ownership to dev.
         //gogeToken.transfer(address(dev), 100_000_000_000 ether);
@@ -208,6 +213,15 @@ contract Royalties is Utility, Test {
         assertEq(gogeToken.balanceOf(address(joe)), 5_000_000 ether);
         assertGt(IERC20(CAKE).balanceOf(address(joe)), 0);
         assertGt(IERC20(CAKE).balanceOf(address(gogeToken)), 0);
+
+        emit log_uint(cakeTracker.withdrawableDividendOf(address(joe)));
+        emit log_uint(cakeTracker.accumulativeDividendOf(address(joe)));
+        emit log_int (cakeTracker.magnifiedDividendCorrections(address(joe)));
+        emit log_bool(cakeTracker.excludedFromDividends(address(joe)));
+        emit log_uint(cakeTracker.lastClaimTimes(address(joe)));
+        
+        emit log_uint(block.timestamp);
+        emit log_address(address(joe));
     }
 
 }

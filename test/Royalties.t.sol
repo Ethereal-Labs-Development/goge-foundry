@@ -215,17 +215,28 @@ contract Royalties is Utility, Test {
         assertEq(gogeToken.balanceOf(address(joe)), 5_000_000 ether);
         assertGt(IERC20(CAKE).balanceOf(address(joe)), 0);
 
-        emit log_uint(cakeTracker.withdrawableDividendOf(address(joe)));        // <-- withdrawable divividends not paid out
-        emit log_uint(cakeTracker.accumulativeDividendOf(address(joe)));        // <-- all dividends paid in total
-        emit log_int (cakeTracker.magnifiedDividendCorrections(address(joe)));  // <-- dont know
-        emit log_bool(cakeTracker.excludedFromDividends(address(joe)));         // <-- should return false
-        emit log_uint(cakeTracker.lastClaimTimes(address(joe)));                // <-- timestamp of last claim
+        emit log_uint(cakeTracker.withdrawableDividendOf(address(joe)));       // <-- withdrawable divividends not paid out
+        emit log_uint(cakeTracker.accumulativeDividendOf(address(joe)));       // <-- all dividends paid in total
+        emit log_int (cakeTracker.magnifiedDividendCorrections(address(joe))); // <-- dont know
+        emit log_bool(cakeTracker.excludedFromDividends(address(joe)));        // <-- should return false
+        emit log_uint(cakeTracker.lastClaimTimes(address(joe)));               // <-- timestamp of last claim
 
-        emit log_uint(cakeTracker.getMapValue(address(joe)));                   // <-- balanceOf address stored in map
-        emit log_uint(cakeTracker.getMapLength());                              // <-- should return 2 (only 2 holders atm)
+        emit log_uint(cakeTracker.getMapValue(address(joe)));      // <-- balanceOf address stored in map
+        emit log_uint(cakeTracker.getMapLength());                 // <-- should return 2 (only 2 holders atm)
 
         //emit log_uint(block.timestamp);
         //emit log_address(address(joe));
+    }
+
+    function test_royaltyTesting_fees() public {
+        uint256 amountToSend = 1_000_000 ether;
+
+        assertEq(gogeToken.balanceOf(address(joe)), 0);
+
+        gogeToken.excludeFromFees(address(this), false);
+        gogeToken.transfer(address(joe), amountToSend);
+
+        assertEq(gogeToken.balanceOf(address(joe)), amountToSend - (amountToSend * 16/100)); // Tx is taxed 16%
     }
 
 }

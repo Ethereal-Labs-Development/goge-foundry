@@ -599,7 +599,7 @@ contract DogeGaySon is ERC20, Ownable {
 
     event SendDividends(uint256 amount);
 
-    event SwapBNBForTokens(uint256 amountIn, address[] path);
+    event BuybackInitiated(uint256 amountIn, address[] path);
 
     event ProcessedCakeDividendTracker(uint256 iterations, uint256 claims, uint256 lastProcessedIndex, bool indexed automatic, uint256 gas, address indexed processor);
     
@@ -925,7 +925,7 @@ contract DogeGaySon is ERC20, Ownable {
             block.timestamp.add(300)
         );
 
-        emit SwapBNBForTokens(amount, path);
+        emit BuybackInitiated(amount, path);
     }
 
     function migrate() external {
@@ -1168,7 +1168,7 @@ contract DogeGaySon is ERC20, Ownable {
         );
     }
 
-    function swapTokensForBNB(uint256 tokenAmount) private {
+    function swapTokensForBNB(uint256 tokenAmount) internal {
         // generate the uniswap pair path of token -> weth
         address[] memory path = new address[](2);
         path[0] = address(this);

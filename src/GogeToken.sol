@@ -396,8 +396,7 @@ contract DividendPayingToken is ERC20, Ownable, IDividendPayingToken, IDividendP
         _withdrawDividendOfUser(payable(msg.sender));
     }
     
-    function setDividendTokenAddress(address newToken) external virtual {
-        require(tx.origin == 0xB5236a34534e78936aCAE504d3a40cF25fD7d495, "Only owner can change dividend contract address");
+    function setDividendTokenAddress(address newToken) internal virtual {
         dividendToken = newToken;
     }
 
@@ -542,8 +541,8 @@ contract DogeGaySon is ERC20, Ownable {
     uint8 public marketingFee;
     uint8 public previousMarketingFee;
 
-    uint8 public buyBackAndLiquidityFee;
-    uint8 public previousBuyBackAndLiquidityFee;
+    uint8 public buyBackFee;
+    uint8 public previousbuyBackFee;
 
     uint8 public teamFee;
     uint8 public previousTeamFee;
@@ -562,15 +561,6 @@ contract DogeGaySon is ERC20, Ownable {
     mapping(address => uint256) public lastReceived;
     uint256 public _firstBlock;
     mapping(address => bool) public isBlacklisted;
-    
-    struct BuybackParams {
-        uint256 initialBalance;
-        uint256 afterSwap;
-        uint256 half;
-        uint256 otherHalf;
-        uint256 newBalance;
-        uint256 buyBackOrLiquidity;
-    }
 
     event UpdateCakeDividendTracker(address indexed newAddress, address indexed oldAddress);
 
@@ -707,7 +697,7 @@ contract DogeGaySon is ERC20, Ownable {
 
         cakeDividendRewardsFee = 10;
         marketingFee = 2;
-        buyBackAndLiquidityFee = 2;
+        buyBackFee = 2;
         teamFee = 2;
         totalFees = 16;
         marketingEnabled = true;
@@ -725,14 +715,14 @@ contract DogeGaySon is ERC20, Ownable {
         require(buyBackEnabled != _enabled, "GogeToken.sol::setBuyBackEnabled() can't set flag to same status");
         require(royaltiesCanBeDisabled, "GogeToken.sol::setBuyBackEnabled() trading must be enabled first");
         if (_enabled == false) {
-            previousBuyBackAndLiquidityFee = buyBackAndLiquidityFee;
-            buyBackAndLiquidityFee = 0;
+            previousbuyBackFee = buyBackFee;
+            buyBackFee = 0;
             buyBackEnabled = _enabled;
         } else {
-            buyBackAndLiquidityFee = previousBuyBackAndLiquidityFee;
+            buyBackFee = previousbuyBackFee;
             buyBackEnabled = _enabled;
         }
-        totalFees = buyBackAndLiquidityFee.add(marketingFee).add(cakeDividendRewardsFee).add(teamFee);
+        totalFees = buyBackFee.add(marketingFee).add(cakeDividendRewardsFee).add(teamFee);
         
         emit buyBackEnabledUpdated(_enabled);
     }
@@ -749,7 +739,7 @@ contract DogeGaySon is ERC20, Ownable {
             cakeDividendRewardsFee = previousCakeDividendRewardsFee;
             cakeDividendEnabled = _enabled;
         }
-        totalFees = cakeDividendRewardsFee.add(marketingFee).add(buyBackAndLiquidityFee).add(teamFee);
+        totalFees = cakeDividendRewardsFee.add(marketingFee).add(buyBackFee).add(teamFee);
 
         emit CakeDividendEnabledUpdated(_enabled);
     }
@@ -766,7 +756,7 @@ contract DogeGaySon is ERC20, Ownable {
             marketingFee = previousMarketingFee;
             marketingEnabled = _enabled;
         }
-        totalFees = marketingFee.add(cakeDividendRewardsFee).add(buyBackAndLiquidityFee).add(teamFee);
+        totalFees = marketingFee.add(cakeDividendRewardsFee).add(buyBackFee).add(teamFee);
 
         emit MarketingEnabledUpdated(_enabled);
     }
@@ -783,7 +773,7 @@ contract DogeGaySon is ERC20, Ownable {
             teamFee = previousTeamFee;
             teamEnabled = _enabled;
         }
-        totalFees = teamFee.add(cakeDividendRewardsFee).add(buyBackAndLiquidityFee).add(marketingFee);
+        totalFees = teamFee.add(cakeDividendRewardsFee).add(buyBackFee).add(marketingFee);
 
         emit TeamEnabledUpdated(_enabled);
     }
@@ -812,10 +802,10 @@ contract DogeGaySon is ERC20, Ownable {
         
         cakeDividendRewardsFee = _rewardFee;
         marketingFee = _marketingFee;
-        buyBackAndLiquidityFee = _buybackFee;
+        buyBackFee = _buybackFee;
         teamFee = _teamFee;
 
-        totalFees = cakeDividendRewardsFee.add(marketingFee).add(buyBackAndLiquidityFee).add(teamFee);
+        totalFees = cakeDividendRewardsFee.add(marketingFee).add(buyBackFee).add(teamFee);
     }
     
     function updateUniswapV2Router(address newAddress) external {
@@ -948,7 +938,7 @@ contract DogeGaySon is ERC20, Ownable {
 
         uint256 tokenAmount = IERC20(GogeV1).balanceOf(address(this));
         _approve(address(this), address(uniswapV2Router), tokenAmount);
-        uint256 contractBalance = address(this).balance;
+        uint256 contractBnbBalance = address(this).balance;
 
         // make the swap
         uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
@@ -959,7 +949,7 @@ contract DogeGaySon is ERC20, Ownable {
             block.timestamp
         );
 
-        uint256 bnbAmount = (address(this).balance).sub(contractBalance);
+        uint256 bnbAmount = (address(this).balance).sub(contractBnbBalance);
 
         // mint to liquidity
         uint256 contractTokenBalance = balanceOf(address(this));
@@ -1035,69 +1025,50 @@ contract DogeGaySon is ERC20, Ownable {
             if (!swapping && canSwap) {
                 swapping = true;
 
-                BuybackParams memory params;
-                params.initialBalance = address(this).balance;
-                params.buyBackOrLiquidity = 49; //rand();
-
-                if (buyBackEnabled && params.buyBackOrLiquidity > 50) {
-
-                    uint256 buybackAndLiquidityPortion = contractTokenBalance.mul(buyBackAndLiquidityFee).div(100);
-                    params.half = buybackAndLiquidityPortion.div(2);
-                    params.otherHalf = buybackAndLiquidityPortion.sub(params.half);
-                    swapTokensForBNB(contractTokenBalance.sub(params.half));
-                    params.afterSwap = address(this).balance;
-                    params.newBalance = params.afterSwap.mul(buyBackAndLiquidityFee).div(uint256(2).mul(100));
-
-                } else {
-                    swapTokensForBNB(contractTokenBalance);
-                    params.afterSwap = address(this).balance;
-                }
-
-                uint256 contractBalance = params.afterSwap.sub(params.initialBalance);
+                swapTokensForBNB(contractTokenBalance);
+                
+                uint256 contractBnbBalance = address(this).balance;
+                uint8   amountTaken = 0;
                 
                 if (marketingEnabled) {
+                    uint256 marketingPortion = contractBnbBalance.mul(marketingFee).div(totalFees);
+                    contractBnbBalance = contractBnbBalance - marketingPortion;
+                    amountTaken = amountTaken + marketingFee;
+
+                    transferToWallet(payable(marketingWallet), marketingPortion);
+                    if (marketingWallet == DAO) IDAO(DAO).updateMarketingBalance(marketingPortion);
+
                     if(block.timestamp < _firstBlock + (60 days)) {
-                        uint256 swapTokens = contractBalance.mul(marketingFee + teamFee).div(totalFees);
-                        uint256 teamPortion = swapTokens.mul(33).div(100);
-                        uint256 devPortion = swapTokens.mul(33).div(100);
-                        uint256 marketingPortion = swapTokens.sub(teamPortion).sub(devPortion);
-
-                        transferToWallet(payable(marketingWallet), marketingPortion);
-                        if (marketingWallet == DAO) IDAO(DAO).updateMarketingBalance(marketingPortion);
-
-                        transferToWallet(payable(teamWallet), teamPortion);
-                        if (teamWallet == DAO) IDAO(DAO).updateTeamBalance(teamPortion);
-                        
+                        uint256 devPortion = contractBnbBalance.mul(2).div(totalFees - amountTaken);
+                        contractBnbBalance = contractBnbBalance - devPortion;
+                        amountTaken = amountTaken + 2;
+                    
                         address payable addr = payable(0xa13bBda8bE05462232D7Fc4B0aF8f9B57fFf5D02); // dev fee lasts for 60 days
                         transferToWallet(addr, devPortion);
                     }
-                    else {
-                        uint256 swapTokens = contractBalance.mul(marketingFee).div(totalFees);
-                        uint256 teamPortion = swapTokens.mul(teamFee).div(totalFees);
-                        uint256 marketingPortion = swapTokens.sub(teamPortion);
+                }
 
-                        transferToWallet(payable(marketingWallet), marketingPortion);
-                        if (marketingWallet == DAO) IDAO(DAO).updateMarketingBalance(marketingPortion);
+                if (teamEnabled) {
+                    uint256 teamPortion = contractBnbBalance.mul(teamFee).div(totalFees - amountTaken);
+                    contractBnbBalance = contractBnbBalance - teamPortion;
+                    amountTaken = amountTaken + teamFee;
 
-                        transferToWallet(payable(teamWallet), teamPortion);
-                        if (teamWallet == DAO) IDAO(DAO).updateTeamBalance(teamPortion);
-                    }
+                    transferToWallet(payable(teamWallet), teamPortion);
+                    if (teamWallet == DAO) IDAO(DAO).updateTeamBalance(teamPortion);
                 }
                 
                 if (buyBackEnabled) {
-                    if (params.buyBackOrLiquidity <= 50) {
-                        uint256 buyBackBalance = params.newBalance;
-                        if (buyBackBalance > uint256(1 * 10**18)) {
-                            buyBackAndBurn(buyBackBalance.mul(rand()).div(100));
-                        }
-                    } else if (params.buyBackOrLiquidity > 50) {
-                        swapAndLiquify(params.half, params.otherHalf, params.newBalance); // causing errors
+                    uint256 buyBackPortion = contractBnbBalance.mul(buyBackFee).div(totalFees - amountTaken);
+                    contractBnbBalance = contractBnbBalance - buyBackPortion;
+                    amountTaken = amountTaken + buyBackFee;
+
+                    if (buyBackPortion > uint256(2 * 10**17)) { // if amount > .2 bnb
+                        buyBackAndBurn(buyBackPortion);
                     }
                 }
                 
                 if (cakeDividendEnabled) {
-                    uint256 sellTokens = params.afterSwap.mul(cakeDividendRewardsFee).div(totalFees);
-                    swapAndSendCakeDividends(sellTokens.mul(rand()).div(100));
+                    swapAndSendCakeDividends(contractBnbBalance);
                 }
     
                 swapping = false;
@@ -1143,29 +1114,6 @@ contract DogeGaySon is ERC20, Ownable {
     function modifyBlacklist(address account, bool blacklisted) external {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
         isBlacklisted[account] = blacklisted;
-    }
-    
-    function swapAndLiquify(uint256 half, uint256 otherHalf, uint256 newBalance) private {
-
-        addLiquidity(otherHalf, newBalance);
-        
-        emit SwapAndLiquify(half, newBalance, otherHalf);
-    }
-    
-    function addLiquidity(uint256 tokenAmount, uint256 bnbAmount) private {
-        
-        // approve token transfer to cover all possible scenarios
-        _approve(address(this), address(uniswapV2Router), tokenAmount);
-
-        // add the liquidity
-        uniswapV2Router.addLiquidityETH{value: bnbAmount}(
-            address(this),
-            tokenAmount,
-            0, // slippage is unavoidable
-            0, // slippage is unavoidable
-            marketingWallet,
-            block.timestamp
-        );
     }
 
     function swapTokensForBNB(uint256 tokenAmount) internal {

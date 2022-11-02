@@ -155,7 +155,7 @@ contract TokenTest is Utility, Test {
         //Pre-state check.
         assertEq(gogeToken.cakeDividendRewardsFee(), 10);
         assertEq(gogeToken.marketingFee(), 2);
-        assertEq(gogeToken.buyBackAndLiquidityFee(), 2);
+        assertEq(gogeToken.buyBackFee(), 2);
         assertEq(gogeToken.teamFee(), 2);
 
         assertEq(gogeToken.totalFees(), 16);
@@ -166,7 +166,7 @@ contract TokenTest is Utility, Test {
         // Post-state check.
         assertEq(gogeToken.cakeDividendRewardsFee(), 14);
         assertEq(gogeToken.marketingFee(), 6);
-        assertEq(gogeToken.buyBackAndLiquidityFee(), 3);
+        assertEq(gogeToken.buyBackFee(), 3);
         assertEq(gogeToken.teamFee(), 3);
 
         assertEq(gogeToken.totalFees(), 26);
@@ -184,16 +184,16 @@ contract TokenTest is Utility, Test {
     function test_gogeToken_setBuyBackEnabled() public {
         // Pre-state check.
         assertTrue(gogeToken.buyBackEnabled());
-        assertEq(gogeToken.buyBackAndLiquidityFee(), 2);
-        assertEq(gogeToken.previousBuyBackAndLiquidityFee(), 0);
+        assertEq(gogeToken.buyBackFee(), 2);
+        assertEq(gogeToken.previousbuyBackFee(), 0);
 
         // Disable buyBack
         assert(dev.try_setBuyBackEnabled(address(gogeToken), false));
 
         //Post-state check.
         assertTrue(!gogeToken.buyBackEnabled());
-        assertEq(gogeToken.buyBackAndLiquidityFee(), 0);
-        assertEq(gogeToken.previousBuyBackAndLiquidityFee(), 2);
+        assertEq(gogeToken.buyBackFee(), 0);
+        assertEq(gogeToken.previousbuyBackFee(), 2);
     }
 
     // setMarketingEnabled test

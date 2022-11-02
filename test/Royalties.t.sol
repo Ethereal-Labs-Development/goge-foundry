@@ -65,6 +65,9 @@ contract Royalties is Utility, Test {
         assertEq(gogeToken.teamWallet(),      address(0xe142E9FCbd9E29C4A65C4979348d76147190a05a));
         assertEq(gogeToken.totalSupply(),     100_000_000_000 ether);
         assertEq(gogeToken.balanceOf(address(this)), 95_000_000_000 ether);
+        assertEq(gogeToken.marketingFee(), 2);
+        assertEq(gogeToken.teamFee(), 2);
+        assertEq(gogeToken.buyBackFee(), 2);
 
         assertTrue(gogeToken.tradingIsEnabled());
     }
@@ -237,6 +240,62 @@ contract Royalties is Utility, Test {
         gogeToken.transfer(address(joe), amountToSend);
 
         assertEq(gogeToken.balanceOf(address(joe)), amountToSend - (amountToSend * 16/100)); // Tx is taxed 16%
+    }
+
+    function test_royaltyTesting_feeDistributions() public {
+        // Royalty Recipients
+        address marketingAddy = 0x4959bCED128E6F056A6ef959D80Bd1fCB7ba7A4B;
+        address teamAddy      = 0xe142E9FCbd9E29C4A65C4979348d76147190a05a;
+        address devAddy       = 0xa13bBda8bE05462232D7Fc4B0aF8f9B57fFf5D02;
+        address deadAddy      = 0x000000000000000000000000000000000000dEaD;
+
+        // Get pre balances of royalty recipients
+        uint256 preBalMarketing = marketingAddy.balance;
+        uint256 preBalTeam      = teamAddy.balance;
+        uint256 preBalDev       = devAddy.balance;
+        uint256 preBalDead      = gogeToken.balanceOf(deadAddy);
+
+        // Remove address(this) from whitelist so we can yield a buy tax.
+        gogeToken.excludeFromFees(address(this), false);
+
+        // Check balance of address(gogeToken) to see how many tokens have been taxed. Should be 0
+        assertEq(IERC20(address(gogeToken)).balanceOf(address(gogeToken)), 0);
+
+        // Generate buy -> log amount of tokens accrued
+        buy_generateFees(10 ether);
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 72561945.896794726074107751
+        emit log_uint(address(gogeToken).balance); // 0
+
+        // Generate sell -> Distribute fees
+        sell_generateFees(1_000 ether);
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken))); // 1600.00000000000000000
+        emit log_uint(address(gogeToken).balance); // .144348772684070455
+
+        // take post balanaces
+        uint256 postBalMarketing = marketingAddy.balance;
+        uint256 postBalTeam      = teamAddy.balance;
+        uint256 postBalDev       = devAddy.balance;
+        uint256 postBalDead      = gogeToken.balanceOf(deadAddy);
+
+        // verify that the royalty recipients have indeed recieved royalties
+        assertGt(postBalMarketing, preBalMarketing);
+        assertGt(postBalTeam,      preBalTeam);
+        assertGt(postBalDev,       preBalDev);
+        assertGt(postBalDead,      preBalDead);
+
+        // very amount received
+        uint256 marketingReceived = postBalMarketing - preBalMarketing;
+        uint256 teamReceived      = postBalTeam - preBalTeam;
+        uint256 devReceived       = postBalDev - preBalDev;
+
+        // log amounts
+        emit log_uint(marketingReceived);
+        emit log_uint(teamReceived);
+        emit log_uint(devReceived);
+
+        //emit log_uint(address(cakeTracker).balance);
+        //emit log_uint(IERC20(CAKE).balanceOf(address(cakeTracker)));
+
     }
 
 }

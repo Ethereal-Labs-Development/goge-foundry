@@ -396,7 +396,7 @@ contract DividendPayingToken is ERC20, Ownable, IDividendPayingToken, IDividendP
         _withdrawDividendOfUser(payable(msg.sender));
     }
     
-    function setDividendTokenAddress(address newToken) internal virtual {
+    function setDividendTokenAddress(address newToken) external virtual onlyOwner {
         dividendToken = newToken;
     }
 

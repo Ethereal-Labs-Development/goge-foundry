@@ -32,6 +32,7 @@ contract Utility is DSTest {
     address constant WBNB  = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address constant BUSD  = 0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3;
     address constant CAKE  = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
+    address constant BUNY  = 0xC9849E6fdB743d08fAeE3E34dd2D1bc69EA11a51;
 
     IERC20 constant dai  = IERC20(BUSD);
     IERC20 constant wbnb = IERC20(WBNB);

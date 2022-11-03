@@ -449,17 +449,125 @@ contract Royalties is Utility, Test {
         assertEq(gogeToken.balanceOf(address(joe)), 5_000_000 ether);
         assertGt(IERC20(CAKE).balanceOf(address(joe)), 0);
 
-        emit log_uint(cakeTracker.withdrawableDividendOf(address(joe)));       // <-- withdrawable divividends not paid out
-        emit log_uint(cakeTracker.accumulativeDividendOf(address(joe)));       // <-- all dividends paid in total
-        emit log_int (cakeTracker.magnifiedDividendCorrections(address(joe))); // <-- dont know
-        emit log_bool(cakeTracker.excludedFromDividends(address(joe)));        // <-- should return false
-        emit log_uint(cakeTracker.lastClaimTimes(address(joe)));               // <-- timestamp of last claim
+        emit log_named_uint("withdrawable dividends",       cakeTracker.withdrawableDividendOf(address(joe)));       // <-- withdrawable divividends not paid out
+        emit log_named_uint("all dividends paid",           cakeTracker.accumulativeDividendOf(address(joe)));       // <-- all dividends paid in total
+        emit log_named_int ("magnifiedDividendCorrections", cakeTracker.magnifiedDividendCorrections(address(joe))); // <-- dont know
+        emit log_named_bool("is excluded from dividends",   cakeTracker.excludedFromDividends(address(joe)));        // <-- should return false
+        emit log_named_uint("timestamp of last claim",      cakeTracker.lastClaimTimes(address(joe)));               // <-- timestamp of last claim
 
-        emit log_uint(cakeTracker.getMapValue(address(joe)));      // <-- balanceOf address stored in map
-        emit log_uint(cakeTracker.getMapLength());                 // <-- should return 2 (only 2 holders atm)
+        emit log_named_uint("GOGE balance in Map",  cakeTracker.getMapValue(address(joe)));      // <-- balanceOf address stored in map
+        emit log_named_uint("Map length",           cakeTracker.getMapLength());                 // <-- should return 2 (only 2 holders atm)
+    }
 
-        //emit log_uint(block.timestamp);
-        //emit log_address(address(joe));
+    function test_royaltyTesting_updateCakeDividendToken() public {
+
+        // Verify Joe owns 0 tokens and 0 CAKE.
+        assertEq(gogeToken.balanceOf(address(joe)), 0);
+        assertEq(IERC20(CAKE).balanceOf(address(joe)), 0);
+        assertEq(IERC20(BUNY).balanceOf(address(joe)), 0);
+
+        // transfer Joe 5M tokens.
+        gogeToken.transfer(address(joe), 5_000_000 ether);
+
+        // remove deployer contract from whitelist.
+        gogeToken.excludeFromFees(address(this), false);
+
+        // Verify Joe owns 5M tokens and 0 CAKE.
+        assertEq(gogeToken.balanceOf(address(joe)), 5_000_000 ether);
+        assertEq(IERC20(CAKE).balanceOf(address(joe)), 0);
+        assertEq(IERC20(BUNY).balanceOf(address(joe)), 0);
+
+        // transfer ownership to dev so dev can change dividend token to BUNNY token.
+        gogeToken._transferOwnership(address(dev));
+        assert(dev.try_updateCakeDividendToken(address(gogeToken), BUNY));
+        assertEq(cakeTracker.dividendToken(), BUNY);
+
+        //Generate transactions to trigger dividend payout.
+        buy_generateFees(4 ether);
+        buy_generateFees(6 ether);
+        sell_generateFees(1_000_000 ether);
+
+        assertEq(IERC20(CAKE).balanceOf(address(joe)), 0);
+        assertGt(IERC20(BUNY).balanceOf(address(joe)), 0);
+
+        emit log_named_uint("withdrawable dividends",       cakeTracker.withdrawableDividendOf(address(joe)));       // <-- withdrawable divividends not paid out
+        emit log_named_uint("all dividends paid",           cakeTracker.accumulativeDividendOf(address(joe)));       // <-- all dividends paid in total
+        emit log_named_int ("magnifiedDividendCorrections", cakeTracker.magnifiedDividendCorrections(address(joe))); // <-- dont know
+        emit log_named_bool("is excluded from dividends",   cakeTracker.excludedFromDividends(address(joe)));        // <-- should return false
+        emit log_named_uint("timestamp of last claim",      cakeTracker.lastClaimTimes(address(joe)));               // <-- timestamp of last claim
+
+        emit log_named_uint("GOGE balance in Map",  cakeTracker.getMapValue(address(joe)));      // <-- balanceOf address stored in map
+        emit log_named_uint("Map length",           cakeTracker.getMapLength());                 // <-- should return 2 (only 2 holders atm)
+    }
+
+    function test_royaltyTesting_updateCakeDividendToken_afterCake() public {
+
+        // Verify Joe owns 0 tokens and 0 CAKE.
+        assertEq(gogeToken.balanceOf(address(joe)), 0);
+        assertEq(IERC20(CAKE).balanceOf(address(joe)), 0);
+        assertEq(IERC20(BUNY).balanceOf(address(joe)), 0);
+
+        // transfer Joe 5M tokens.
+        gogeToken.transfer(address(joe), 5_000_000 ether);
+
+        // remove deployer contract from whitelist.
+        gogeToken.excludeFromFees(address(this), false);
+
+        // Verify Joe owns 5M tokens 0 CAKE, and 0 BUNY.
+        assertEq(gogeToken.balanceOf(address(joe)), 5_000_000 ether);
+        assertEq(IERC20(CAKE).balanceOf(address(joe)), 0);
+        assertEq(IERC20(BUNY).balanceOf(address(joe)), 0);
+
+        //Generate transactions to trigger dividend payout.
+        buy_generateFees(4 ether);
+        buy_generateFees(6 ether);
+        sell_generateFees(1_000_000 ether);
+
+        uint256 cakeBal = IERC20(CAKE).balanceOf(address(joe));
+
+        // Verify Joe owns 5M tokens and more than 0 CAKE.
+        assertEq(gogeToken.balanceOf(address(joe)), 5_000_000 ether);
+        assertGt(cakeBal, 0);
+
+        emit log_named_uint("withdrawable dividends",       cakeTracker.withdrawableDividendOf(address(joe)));
+        emit log_named_uint("all dividends paid",           cakeTracker.accumulativeDividendOf(address(joe)));
+        emit log_named_uint("timestamp of last claim",      cakeTracker.lastClaimTimes(address(joe)));
+
+        emit log_named_uint("GOGE balance in Map",  cakeTracker.getMapValue(address(joe)));
+        emit log_named_uint("Map length",           cakeTracker.getMapLength());
+
+        emit log_named_uint("cake  balance", cakeBal);
+        emit log_named_uint("bunny balance", IERC20(BUNY).balanceOf(address(joe)));
+
+
+        //***********************************************
+        //**               CAKE --> BUNY               **
+        //***********************************************
+
+        // transfer ownership to dev so dev can change dividend token to BUNNY token.
+        gogeToken._transferOwnership(address(dev));
+        assert(dev.try_updateCakeDividendToken(address(gogeToken), BUNY));
+        assertEq(cakeTracker.dividendToken(), BUNY);
+
+        vm.warp(block.timestamp + 1 hours); // get past the claimWait time period
+
+        //Generate transactions to trigger dividend payout.
+        buy_generateFees(4 ether);
+        buy_generateFees(6 ether);
+        sell_generateFees(1_000_000 ether);
+
+        assertEq(IERC20(CAKE).balanceOf(address(joe)), cakeBal);
+        assertGt(IERC20(BUNY).balanceOf(address(joe)), 0);
+
+        emit log_named_uint("withdrawable dividends",       cakeTracker.withdrawableDividendOf(address(joe)));
+        emit log_named_uint("all dividends paid",           cakeTracker.accumulativeDividendOf(address(joe)));
+        emit log_named_uint("timestamp of last claim",      cakeTracker.lastClaimTimes(address(joe)));
+
+        emit log_named_uint("GOGE balance in Map",  cakeTracker.getMapValue(address(joe)));
+        emit log_named_uint("Map length",           cakeTracker.getMapLength());
+
+        emit log_named_uint("cake  balance", cakeBal);
+        emit log_named_uint("bunny balance", IERC20(BUNY).balanceOf(address(joe)));
     }
 
     function test_royaltyTesting_fees() public {

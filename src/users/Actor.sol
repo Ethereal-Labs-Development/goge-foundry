@@ -95,4 +95,9 @@ contract Actor {
         string memory sig = "setTeamEnabled(bool)";
         (ok,) = address(token).call(abi.encodeWithSignature(sig, enabled));
     }
+
+    function try_updateCakeDividendToken(address token, address newToken) external returns (bool ok) {
+        string memory sig = "updateCakeDividendToken(address)";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig, newToken));
+    }
 }

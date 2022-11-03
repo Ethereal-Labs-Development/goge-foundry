@@ -1196,7 +1196,7 @@ contract CakeDividendTracker is DividendPayingToken {
 
     constructor() DividendPayingToken("DogeGaySon_Ethereum_Dividend_Tracker", "DogeGaySon_Ethereum_Dividend_Tracker", 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82) {
     	claimWait = 3600; // 1 hour
-        minimumTokenBalanceForDividends = 200000 * (10**18); //must hold 10000+ tokens
+        minimumTokenBalanceForDividends = 200000 * (10**18); //must hold 200000+ tokens
     }
 
     function _transfer(address, address, uint256) pure internal override {

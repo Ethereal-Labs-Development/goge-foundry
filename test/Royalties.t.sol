@@ -75,6 +75,7 @@ contract Royalties is Utility, Test {
 
     // ~~ Utility ~~
 
+
     // Perform a buy to generate fees
     function buy_generateFees(uint256 tradeAmt) public {
 
@@ -119,6 +120,236 @@ contract Royalties is Utility, Test {
 
 
     // ~~ Unit Tests ~~
+
+
+    // verify taxed buy
+    function test_royaltyTesting_buy() public {
+        gogeToken.excludeFromFees(address(this), false);
+
+        // Verify address(this) is NOT excluded from fees and grab pre balance.
+        assert(!gogeToken.isExcludedFromFees(address(this)));
+        uint256 preBal = gogeToken.balanceOf(address(this));
+
+        // Deposit 10 BNB
+        uint BNB_DEPOSIT = 10 ether;
+        IWETH(WBNB).deposit{value: BNB_DEPOSIT}();
+
+        // approve purchase
+        IERC20(WBNB).approve(address(UNIV2_ROUTER), 5 ether);
+
+        address[] memory path = new address[](2);
+        path[0] = WBNB;
+        path[1] = address(gogeToken);
+
+        // Get Quoted amount
+        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( 5 ether, path );
+
+        // Execute purchase
+        IUniswapV2Router02(UNIV2_ROUTER).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            5 ether,
+            0,
+            path,
+            address(this),
+            block.timestamp + 300
+        );
+
+        // Grab post balanace and calc amount goge tokens received.
+        uint256 postBal        = gogeToken.balanceOf(address(this));
+        uint256 amountReceived = (postBal - preBal);
+        uint256 taxedAmount    = amounts[1] * gogeToken.totalFees()/100;
+
+        // Verify the quoted amount is the amount received and no royalties were generated.
+        assertEq(amounts[1] - taxedAmount, amountReceived);
+        assertEq(IERC20(address(gogeToken)).balanceOf(address(gogeToken)), taxedAmount);
+
+        // Log
+        emit log_uint(amounts[1]);
+        emit log_uint(amountReceived);
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
+    }
+
+    // verify whitelisted buy
+    function test_royaltyTesting_buy_noTax() public {
+        // Verify address(this) is excluded from fees and grab pre balance.
+        assert(gogeToken.isExcludedFromFees(address(this)));
+        uint256 preBal = gogeToken.balanceOf(address(this));
+
+        // Deposit 10 BNB
+        uint BNB_DEPOSIT = 10 ether;
+        IWETH(WBNB).deposit{value: BNB_DEPOSIT}();
+
+        // approve purchase
+        IERC20(WBNB).approve(address(UNIV2_ROUTER), 5 ether);
+
+        address[] memory path = new address[](2);
+        path[0] = WBNB;
+        path[1] = address(gogeToken);
+
+        // Get Quoted amount
+        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( 5 ether, path );
+
+        // Execute purchase
+        IUniswapV2Router02(UNIV2_ROUTER).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            5 ether,
+            0,
+            path,
+            address(this),
+            block.timestamp + 300
+        );
+
+        // Grab post balanace and calc amount goge tokens received.
+        uint256 postBal        = gogeToken.balanceOf(address(this));
+        uint256 amountReceived = (postBal - preBal);
+
+        // Verify the quoted amount is the amount received and no royalties were generated.
+        assertEq(amounts[1], amountReceived);
+        assertEq(IERC20(address(gogeToken)).balanceOf(address(gogeToken)), 0);
+
+        // Log
+        emit log_uint(amounts[1]);
+        emit log_uint(amountReceived);
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
+    }
+
+    // verify taxed sell
+    function test_royaltyTesting_sell() public {
+        gogeToken.excludeFromFees(address(this), false);
+
+        // Verify address(this) is NOT excluded from fees and grab pre balance.
+        assert(!gogeToken.isExcludedFromFees(address(this)));
+        uint256 preBal = IERC20(WBNB).balanceOf(address(this));
+
+        uint256 tradeAmt = 1_000_000 ether;
+
+        // approve purchase
+        IERC20(address(gogeToken)).approve(address(UNIV2_ROUTER), tradeAmt);
+
+        address[] memory path = new address[](2);
+        path[0] = address(gogeToken);
+        path[1] = WBNB;
+
+        // Get Quoted amount
+        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( tradeAmt, path );
+
+        // Execute purchase
+        IUniswapV2Router02(UNIV2_ROUTER).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            tradeAmt,
+            0,
+            path,
+            address(this),
+            block.timestamp + 300
+        );
+
+        // Grab post balanace and calc amount goge tokens received.
+        uint256 postBal        = IERC20(WBNB).balanceOf(address(this));
+        uint256 amountReceived = (postBal - preBal);
+        uint256 afterTaxAmount = amounts[1] * 84/100;
+
+        // Verify the quoted amount is the amount received and no royalties were generated.
+        withinDiff(afterTaxAmount, amountReceived, 10**12);
+        assertEq(IERC20(address(gogeToken)).balanceOf(address(gogeToken)), amounts[0] * 16/100);
+
+        // Log
+        emit log_named_uint("amount bnb quoted", amounts[1]);
+        emit log_named_uint("amount bnb received", amountReceived);
+        emit log_named_uint("amount royalties", IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
+    }
+
+    // verify whitelisted buy
+    function test_royaltyTesting_sell_noTax() public {
+        // Verify address(this) is NOT excluded from fees and grab pre balance.
+        assert(gogeToken.isExcludedFromFees(address(this)));
+        uint256 preBal = IERC20(WBNB).balanceOf(address(this));
+
+        uint256 tradeAmt = 1_000_000 ether;
+
+        // approve purchase
+        IERC20(address(gogeToken)).approve(address(UNIV2_ROUTER), tradeAmt);
+
+        address[] memory path = new address[](2);
+        path[0] = address(gogeToken);
+        path[1] = WBNB;
+
+        // Get Quoted amount
+        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( tradeAmt, path );
+
+        // Execute purchase
+        IUniswapV2Router02(UNIV2_ROUTER).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            tradeAmt,
+            0,
+            path,
+            address(this),
+            block.timestamp + 300
+        );
+
+        // Grab post balanace and calc amount goge tokens received.
+        uint256 postBal        = IERC20(WBNB).balanceOf(address(this));
+        uint256 amountReceived = (postBal - preBal);
+
+        // Verify the quoted amount is the amount received and no royalties were generated.
+        assertEq(amountReceived, amounts[1]);
+        assertEq(IERC20(address(gogeToken)).balanceOf(address(gogeToken)), 0);
+
+        // Log
+        emit log_named_uint("amount bnb quoted", amounts[1]);
+        emit log_named_uint("amount bnb received", amountReceived);
+        emit log_named_uint("amount royalties", IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
+    }
+
+    // verify taxed transfer
+    function test_royaltyTesting_transfer() public {
+        gogeToken.excludeFromFees(address(this), false);
+
+        // Verify address(this) is NOT excluded from fees and grab pre balance.
+        assert(!gogeToken.isExcludedFromFees(address(this)));
+        uint256 preBal = gogeToken.balanceOf(address(joe));
+
+        uint256 sendAmt = 1_000_000;
+
+        gogeToken.transfer(address(joe), sendAmt);
+
+        // Grab post balanace and calc amount goge tokens received.
+        uint256 postBal        = gogeToken.balanceOf(address(joe));
+        uint256 amountReceived = (postBal - preBal);
+        uint256 taxedAmount    = sendAmt * gogeToken.totalFees()/100;
+
+        // Verify the quoted amount is the amount received and no royalties were generated.
+        assertEq(sendAmt - taxedAmount, amountReceived);
+        assertEq(IERC20(address(gogeToken)).balanceOf(address(gogeToken)), taxedAmount);
+
+        // Log
+        emit log_uint(sendAmt);
+        emit log_uint(amountReceived);
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
+    }
+
+    // verify whitelisted transfer
+    function test_royaltyTesting_transfer_noTax() public {
+        // Verify address(this) is NOT excluded from fees and grab pre balance.
+        assert(gogeToken.isExcludedFromFees(address(this)));
+        uint256 preBal = gogeToken.balanceOf(address(joe));
+
+        uint256 sendAmt = 1_000_000;
+
+        gogeToken.transfer(address(joe), sendAmt);
+
+        // Grab post balanace and calc amount goge tokens received.
+        uint256 postBal        = gogeToken.balanceOf(address(joe));
+        uint256 amountReceived = (postBal - preBal);
+
+        // Verify the quoted amount is the amount received and no royalties were generated.
+        assertEq(amountReceived, sendAmt);
+        assertEq(IERC20(address(gogeToken)).balanceOf(address(gogeToken)), 0);
+
+        // Log
+        emit log_uint(sendAmt);
+        emit log_uint(amountReceived);
+        emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
+    }
+
+
+    // ~~ Fee Generation and Tax Distributions ~~
+
 
     // NOTE: swapTokensAtAmount distribution threshold = 20_000_000
     //       bnb = $290.11
@@ -295,11 +526,11 @@ contract Royalties is Utility, Test {
         assertEq(devReceived,       gogeToken.royaltiesSent(2));
 
         // log amount
-        emit log_uint(gogeToken.royaltiesSent(1)); // marketing
-        emit log_uint(gogeToken.royaltiesSent(2)); // dev
-        emit log_uint(gogeToken.royaltiesSent(3)); // team
-        emit log_uint(gogeToken.royaltiesSent(4)); // buyBack
-        emit log_uint(gogeToken.royaltiesSent(5)); // cake
+        emit log_named_uint("marketing", gogeToken.royaltiesSent(1));
+        emit log_named_uint("dev",       gogeToken.royaltiesSent(2));
+        emit log_named_uint("team",      gogeToken.royaltiesSent(3));
+        emit log_named_uint("buyback",   gogeToken.royaltiesSent(4));
+        emit log_named_uint("cake",      gogeToken.royaltiesSent(5));
 
     }
 
@@ -358,12 +589,11 @@ contract Royalties is Utility, Test {
         assertEq(devReceived,       0);
 
         // log amount
-        emit log_uint(gogeToken.royaltiesSent(1)); // marketing
-        emit log_uint(gogeToken.royaltiesSent(2)); // dev
-        emit log_uint(gogeToken.royaltiesSent(3)); // team
-        emit log_uint(gogeToken.royaltiesSent(4)); // buyBack
-        emit log_uint(gogeToken.royaltiesSent(5)); // cake
-
+        emit log_named_uint("marketing", gogeToken.royaltiesSent(1));
+        emit log_named_uint("dev",       gogeToken.royaltiesSent(2));
+        emit log_named_uint("team",      gogeToken.royaltiesSent(3));
+        emit log_named_uint("buyback",   gogeToken.royaltiesSent(4));
+        emit log_named_uint("cake",      gogeToken.royaltiesSent(5));
     }
 
 }

@@ -8,6 +8,8 @@ import "../src/GogeToken.sol";
 contract TokenTest is Utility, Test {
     DogeGaySon gogeToken;
 
+    address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
+
     function setUp() public {
         createActors();
         setUpTokens();

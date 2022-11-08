@@ -100,4 +100,9 @@ contract Actor {
         string memory sig = "updateCakeDividendToken(address)";
         (ok,) = address(token).call(abi.encodeWithSignature(sig, newToken));
     }
+
+    function try_migrate(address token) external returns (bool ok) {
+        string memory sig = "migrate()";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig));
+    }
 }

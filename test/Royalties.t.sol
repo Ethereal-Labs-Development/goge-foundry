@@ -23,7 +23,8 @@ contract Royalties is Utility, Test {
         gogeToken = new DogeGaySon(
             address(0x4959bCED128E6F056A6ef959D80Bd1fCB7ba7A4B), //0x4959bCED128E6F056A6ef959D80Bd1fCB7ba7A4B
             address(0xe142E9FCbd9E29C4A65C4979348d76147190a05a),
-            100_000_000_000
+            100_000_000_000,
+            address(0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe) // goge v1
         );
 
         cakeTracker = gogeToken.cakeDividendTracker();

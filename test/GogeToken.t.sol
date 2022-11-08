@@ -18,7 +18,8 @@ contract TokenTest is Utility, Test {
         gogeToken = new DogeGaySon(
             address(1),
             address(2),
-            100_000_000_000
+            100_000_000_000,
+            address(0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe) // govev1
         );
 
         // Give tokens and ownership to dev.

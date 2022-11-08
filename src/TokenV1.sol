@@ -1289,7 +1289,7 @@ library SafeMathUint {
 /////////// Tokens /////////////
 ////////////////////////////////
 
-contract DogeGaySon is ERC20, Ownable {
+contract DogeGaySon1 is ERC20, Ownable {
     using SafeMath for uint256;
 
     IUniswapV2Router02 public uniswapV2Router;

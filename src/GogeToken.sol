@@ -598,7 +598,8 @@ contract DogeGaySon is ERC20, Ownable {
     constructor(
         address _marketingWallet,
         address _teamWallet,
-        uint    _totalSupply
+        uint    _totalSupply,
+        address _gogeV1
 
     ) ERC20("DogeGaySon", "GOGE") {
 
@@ -608,7 +609,7 @@ contract DogeGaySon is ERC20, Ownable {
         teamWallet = _teamWallet; //0xe142E9FCbd9E29C4A65C4979348d76147190a05a
         cakeDividendToken = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
         
-        GogeV1 = 0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe;
+        GogeV1 = _gogeV1; //0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe;
         
         IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E); // bsc pancakeswap router
 
@@ -916,13 +917,18 @@ contract DogeGaySon is ERC20, Ownable {
         captureLiquidity();
     }
 
+    // NOTE: Why add tokens to the LP the same # that we're minting the user that's migrating?
+    // NOTE: Check for balance? Continue if balance is greater than x?
+    // NOTE: Does v2 need an LP before migration? most likely
+
     function captureLiquidity() internal {
         address[] memory path = new address[](2);
-        path[0] = address(this);
+        path[0] = GogeV1;
         path[1] = uniswapV2Router.WETH();
 
         uint256 tokenAmount = IERC20(GogeV1).balanceOf(address(this));
-        _approve(address(this), address(uniswapV2Router), tokenAmount);
+        //_approve(address(this), address(uniswapV2Router), tokenAmount);
+        IERC20(GogeV1).approve(address(uniswapV2Router), tokenAmount);
         uint256 contractBnbBalance = address(this).balance;
 
         // make the swap
@@ -944,13 +950,13 @@ contract DogeGaySon is ERC20, Ownable {
         _approve(address(this), address(uniswapV2Router), tokenAmount);
 
         // add the liquidity
-        uniswapV2Router.addLiquidityETH{value: bnbAmount}(
+        uniswapV2Router.addLiquidityETH{value: bnbAmount}( // NOTE: if does not maintain ratio, will refund
             address(this),
             tokenAmount,
-            0, // slippage is unavoidable
-            0, // slippage is unavoidable
+            0, // slippage is unavoidable NOTE: CHECK
+            0, // slippage is unavoidable NOTE: CHECK
             owner(),
-            block.timestamp
+            block.timestamp + 100
         );
 
         // burn surplus of minted tokens

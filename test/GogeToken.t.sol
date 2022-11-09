@@ -247,4 +247,16 @@ contract TokenTest is Utility, Test {
         assertEq(gogeToken.previousTeamFee(), 2);
     }
 
+    function test_gogeToken_safeWithdraw() public {
+        mint("BUSD", address(gogeToken), 1_000 ether);
+
+        assertEq(IERC20(BUSD).balanceOf(address(gogeToken)), 1_000 ether);
+        assertEq(IERC20(BUSD).balanceOf(address(dev)), 0);
+
+        assert(dev.try_safeWithdraw(address(gogeToken), BUSD));
+
+        assertEq(IERC20(BUSD).balanceOf(address(gogeToken)), 0);
+        assertEq(IERC20(BUSD).balanceOf(address(dev)), 1_000 ether);
+    }
+
 }

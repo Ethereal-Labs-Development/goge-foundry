@@ -25,6 +25,10 @@ contract Utility is DSTest {
     /***********************/
     Actor  joe;
     Actor  dev;
+    Actor  sal;
+    Actor  jon;
+    Actor  nik;
+    Actor  tim;
 
     /**********************************/
     /*** Mainnet Contract Addresses ***/
@@ -86,7 +90,12 @@ contract Utility is DSTest {
     /*** Actor/Multisig Setup Functions ***/
     /**************************************/
     function createActors() public {
+        sal = new Actor();
+        jon = new Actor();
+        nik = new Actor();
+        tim = new Actor();
         joe = new Actor();
+
         dev = new Actor();
     }
 
@@ -116,7 +125,7 @@ contract Utility is DSTest {
         tokens["WBNB"].orcl = 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE;
 
         tokens["BUSD"].addr = BUSD;
-        tokens["BUSD"].slot = 2;
+        tokens["BUSD"].slot = 1;
         tokens["BUSD"].orcl = 0xcBb98864Ef56E9042e7d2efef76141f15731B82f;
 
         tokens["CAKE"].addr = CAKE;

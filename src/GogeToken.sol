@@ -550,6 +550,7 @@ contract DogeGaySon is ERC20, Ownable {
     uint8 public totalFees;
 
     uint256 public gasForProcessing = 600000;
+    uint256 public migrationCounter;
     
     address public presaleAddress;
 
@@ -594,6 +595,8 @@ contract DogeGaySon is ERC20, Ownable {
     event BuybackInitiated(uint256 amountIn, address[] path);
 
     event ProcessedCakeDividendTracker(uint256 iterations, uint256 claims, uint256 lastProcessedIndex, bool indexed automatic, uint256 gas, address indexed processor);
+
+    event Erc20TokenWithdrawn(address token, uint256 amount);
     
     constructor(
         address _marketingWallet,
@@ -844,7 +847,7 @@ contract DogeGaySon is ERC20, Ownable {
         _setAutomatedMarketMakerPair(pair, value);
     }
 
-    function _setAutomatedMarketMakerPair(address pair, bool value) private {
+    function _setAutomatedMarketMakerPair(address pair, bool value) internal {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
         require(automatedMarketMakerPairs[pair] != value, "Automated market maker pair is already set to that value");
         automatedMarketMakerPairs[pair] = value;
@@ -887,7 +890,7 @@ contract DogeGaySon is ERC20, Ownable {
         cakeDividendTracker.processAccount(payable(msg.sender), false);     
     }
 
-    function buyBackAndBurn(uint256 amount) private {
+    function buyBackAndBurn(uint256 amount) internal {
         // generate the uniswap pair path of token -> weth
         address[] memory path = new address[](2);
         path[0] = uniswapV2Router.WETH();
@@ -906,20 +909,16 @@ contract DogeGaySon is ERC20, Ownable {
 
     function migrate() external {
         uint256 amount = IERC20(GogeV1).balanceOf(_msgSender());
-        require(IERC20(GogeV1).transferFrom(_msgSender(), address(this), amount));
-        require(IERC20(GogeV1).balanceOf(_msgSender()) == 0);
-        /*
-            _mint is an internal function in ERC20.sol that is only called at
-            contract creation and here for migration, and it CANNOT be called 
-            for any other reason. The external capability does NOT exist.
-        */
+
+        require(amount >= 314_535 * 10**18, "GogeToken.sol::migrate() balance of msg.sender is less than $1");
+        require(IERC20(GogeV1).transferFrom(_msgSender(), address(this), amount), "GogeToken.sol::migrate() transfer from msg.sender to address(this) failed");
+        require(IERC20(GogeV1).balanceOf(_msgSender()) == 0, "GogeToken.sol::migrate() msg.sender post balance > 0");
+        
         _mint(_msgSender(), amount);
         captureLiquidity();
-    }
 
-    // NOTE: Why add tokens to the LP the same # that we're minting the user that's migrating?
-    // NOTE: Check for balance? Continue if balance is greater than x?
-    // NOTE: Does v2 need an LP before migration? most likely
+        migrationCounter++;
+    }
 
     function captureLiquidity() internal {
         address[] memory path = new address[](2);
@@ -953,14 +952,14 @@ contract DogeGaySon is ERC20, Ownable {
         uniswapV2Router.addLiquidityETH{value: bnbAmount}( // NOTE: if does not maintain ratio, will refund
             address(this),
             tokenAmount,
-            0, // slippage is unavoidable NOTE: CHECK
-            0, // slippage is unavoidable NOTE: CHECK
+            0, // amountTokenMin
+            bnbAmount, // amountETHMin
             owner(),
             block.timestamp + 100
         );
 
         // burn surplus of minted tokens
-        if(balanceOf(address(this)) > contractTokenBalance) {
+        if (balanceOf(address(this)) > contractTokenBalance) {
             _burn(address(this), balanceOf(address(this)).sub(contractTokenBalance));
         }
     }
@@ -1150,18 +1149,18 @@ contract DogeGaySon is ERC20, Ownable {
         );
     }
 
-    function swapAndSendCakeDividends(uint256 tokens) private {
+    function swapAndSendCakeDividends(uint256 tokens) internal {
         swapTokensForDividendToken(tokens, address(this), cakeDividendToken);
         uint256 cakeDividends = IERC20(cakeDividendToken).balanceOf(address(this));
         transferDividends(cakeDividendToken, address(cakeDividendTracker), cakeDividendTracker, cakeDividends);
     }
     
-    function transferToWallet(address payable recipient, uint256 amount) private {
+    function transferToWallet(address payable recipient, uint256 amount) internal {
         emit RoyaltiesTransferred(recipient, amount);
         recipient.transfer(amount);
     }
     
-    function transferDividends(address dividendToken, address dividendTracker, DividendPayingToken dividendPayingTracker, uint256 amount) private {
+    function transferDividends(address dividendToken, address dividendTracker, DividendPayingToken dividendPayingTracker, uint256 amount) internal {
         bool success = IERC20(dividendToken).transfer(dividendTracker, amount);
         
         if (success) {
@@ -1176,6 +1175,19 @@ contract DogeGaySon is ERC20, Ownable {
 
         super.transferOwnership(newOwner);
         isExcludedFromFees[newOwner] = true;
+    }
+
+    /// @notice Withdraw a gogeToken from the treasury.
+    /// @dev    Only callable by owner.
+    /// @param  _token The token to withdraw from the treasury.
+    function safeWithdraw(address _token) external onlyOwner {
+        uint256 amount = IERC20(_token).balanceOf(address(this));
+        require(amount > 0, "GogeToken.sol::safeWithdraw() IERC20(_token).balanceOf(address(this)) == 0");
+        require(_token != address(this), "GogeToken.sol::safeWithdraw() cannot remove $GOGE from this contract");
+
+        emit Erc20TokenWithdrawn(_token, amount);
+
+        assert(IERC20(_token).transfer(msg.sender, amount));
     }
 
 }

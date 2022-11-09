@@ -105,4 +105,9 @@ contract Actor {
         string memory sig = "migrate()";
         (ok,) = address(token).call(abi.encodeWithSignature(sig));
     }
+
+    function try_safeWithdraw(address token, address tokenToWithdraw) external returns (bool ok) {
+        string memory sig = "safeWithdraw(address)";
+        (ok,) = address(token).call(abi.encodeWithSignature(sig, tokenToWithdraw));
+    }
 }

@@ -751,15 +751,6 @@ contract Royalties is Utility, Test {
         assertEq(_isExcluded69, true);
         assertEq(pos2, 1);
 
-        // Verify dexList is updating accordingly.
-        (bool _isDexPair, uint8 pos3) = gogeToken.isDex(gogeToken.uniswapV2Pair());
-        assertEq(_isDexPair, true);
-        assertEq(pos3, 0);
-
-        (bool _isDex69, uint8 pos4) = gogeToken.isDex(address(69));
-        assertEq(_isDex69, false);
-        assertEq(pos4, 0);
-
         // Add address(79) to excluded list.
         gogeToken.setAutomatedMarketMakerPair(address(79), true);
 
@@ -775,19 +766,6 @@ contract Royalties is Utility, Test {
         (bool _isExcluded79, uint pos5) = gogeToken.isExcludedFromCirculatingSupply(address(79));
         assertEq(_isExcluded79, true);
         assertEq(pos5, 2);
-
-        // Verify dexList is updating accordingly.
-        (_isDexPair, pos4) = gogeToken.isDex(gogeToken.uniswapV2Pair());
-        assertEq(_isDexPair, true);
-        assertEq(pos4, 0);
-
-        (_isDex69, pos3) = gogeToken.isDex(address(69));
-        assertEq(_isDex69, false);
-        assertEq(pos3, 0);
-
-        (bool _isDex79, uint8 pos6) = gogeToken.isDex(address(79));
-        assertEq(_isDex79, true);
-        assertEq(pos6, 1);
 
         // NOTE: Cant run below code if we cant remove pair from dexList.
 
@@ -809,20 +787,6 @@ contract Royalties is Utility, Test {
         // (_isExcluded79, pos5) = gogeToken.isExcludedFromCirculatingSupply(address(79));
         // assertEq(_isExcluded79, true);
         // assertEq(pos5, 0);
-
-        // // Verify dexList is updating accordingly.
-        // (_isDexPair, pos4) = gogeToken.isDex(gogeToken.uniswapV2Pair());
-        // assertEq(_isDexPair, false);
-        // assertEq(pos4, 0);
-
-        // (_isDex69, pos3) = gogeToken.isDex(address(69));
-        // assertEq(_isDex69, false);
-        // assertEq(pos3, 0);
-
-        // (_isDex79, pos6) = gogeToken.isDex(address(79));
-        // assertEq(_isDex79, true);
-        // assertEq(pos6, 0);
-
     }
 
 }

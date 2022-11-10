@@ -516,7 +516,6 @@ contract DogeGaySon is ERC20, Ownable {
 
     address public deadAddress = 0x000000000000000000000000000000000000dEaD;
 
-    address[] public dexList;
     address[] public excludedFromCirculatingSupply;
 
     bool private swapping;
@@ -563,7 +562,6 @@ contract DogeGaySon is ERC20, Ownable {
     mapping(address => bool) public automatedMarketMakerPairs;
     mapping(address => uint256) public lastReceived;
     mapping(uint8 => uint256) public royaltiesSent;
-    mapping(address => bool) public excludedFromCirculatingSupplyMap;
 
     uint256 public _firstBlock;
 
@@ -850,17 +848,16 @@ contract DogeGaySon is ERC20, Ownable {
 
     function excludeFromCirculatingSupply(address account, bool excluded) public {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(excludedFromCirculatingSupplyMap[account] != excluded, "Account already set to that boolean value");
-        excludedFromCirculatingSupplyMap[account] = excluded;
+
+        (bool _isExcluded, uint8 i) = isExcludedFromCirculatingSupply(account);
+        require(_isExcluded != excluded, "Account already set to that boolean value");
 
         if(excluded) {
             if (!cakeDividendTracker.excludedFromDividends(account)) {
                 cakeDividendTracker.excludeFromDividends(account);
             }
-            (bool _isExcluded, ) = isExcludedFromCirculatingSupply(account);
             if(!_isExcluded) excludedFromCirculatingSupply.push(account);        
         } else {
-            (bool _isExcluded, uint8 i) = isExcludedFromCirculatingSupply(account);
             if(_isExcluded){
                 excludedFromCirculatingSupply[i] = excludedFromCirculatingSupply[excludedFromCirculatingSupply.length - 1];
                 excludedFromCirculatingSupply.pop();
@@ -868,13 +865,6 @@ contract DogeGaySon is ERC20, Ownable {
         }
 
         emit AddressExcludedFromCirculatingSupply(account, excluded);
-    }
-
-    function isDex(address _address) public view returns(bool, uint8) {
-        for (uint8 s = 0; s < dexList.length; s += 1){
-            if (_address == dexList[s]) return (true, s);
-        }
-        return (false, 0);
     }
 
     function setAutomatedMarketMakerPair(address pair, bool value) external {
@@ -886,24 +876,11 @@ contract DogeGaySon is ERC20, Ownable {
     function _setAutomatedMarketMakerPair(address pair, bool value) internal {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
         require(automatedMarketMakerPairs[pair] != value, "Automated market maker pair is already set to that value");
-        automatedMarketMakerPairs[pair] = value;
-        excludeFromCirculatingSupply(pair, value);
-
-        if(value) {
-            if (!cakeDividendTracker.excludedFromDividends(pair)) {
-                cakeDividendTracker.excludeFromDividends(pair);
-            }
-            (bool _isDex, ) = isDex(pair);
-            if(!_isDex) dexList.push(pair);        
-        } else {
-            (bool _isDex, uint8 s) = isDex(pair);
-            if(_isDex){
-                dexList[s] = dexList[dexList.length - 1];
-                dexList.pop();
-            } 
-        }
 
         emit SetAutomatedMarketMakerPair(pair, value);
+
+        automatedMarketMakerPairs[pair] = value;
+        excludeFromCirculatingSupply(pair, value);
     }
 
     function updateGasForProcessing(uint256 newValue) external {
@@ -1008,9 +985,6 @@ contract DogeGaySon is ERC20, Ownable {
         for (uint8 i = 0; i < excludedFromCirculatingSupply.length; i++) {
             circulating = circulating - balanceOf(excludedFromCirculatingSupply[i]);
         }
-        // for (uint8 d = 0; d < dexList.length; d += 1) {
-        //     circulating = circulating - balanceOf(dexList[d]);
-        // }
         return circulating;
     }
 

@@ -453,7 +453,7 @@ contract Royalties is Utility, Test {
         emit log_named_uint("withdrawable dividends",       cakeTracker.withdrawableDividendOf(address(joe)));       // <-- withdrawable divividends not paid out
         emit log_named_uint("all dividends paid",           cakeTracker.accumulativeDividendOf(address(joe)));       // <-- all dividends paid in total
         emit log_named_int ("magnifiedDividendCorrections", cakeTracker.magnifiedDividendCorrections(address(joe))); // <-- dont know
-        emit log_named_bool("is excluded from dividends",   cakeTracker.excludedFromDividends(address(joe)));        // <-- should return false
+        emit log_named_string("is excluded from dividends",   (cakeTracker.excludedFromDividends(address(joe)) ? "true":"false"));        // <-- should return false
         emit log_named_uint("timestamp of last claim",      cakeTracker.lastClaimTimes(address(joe)));               // <-- timestamp of last claim
 
         emit log_named_uint("GOGE balance in Map",  cakeTracker.getMapValue(address(joe)));      // <-- balanceOf address stored in map
@@ -494,7 +494,7 @@ contract Royalties is Utility, Test {
         emit log_named_uint("withdrawable dividends",       cakeTracker.withdrawableDividendOf(address(joe)));       // <-- withdrawable divividends not paid out
         emit log_named_uint("all dividends paid",           cakeTracker.accumulativeDividendOf(address(joe)));       // <-- all dividends paid in total
         emit log_named_int ("magnifiedDividendCorrections", cakeTracker.magnifiedDividendCorrections(address(joe))); // <-- dont know
-        emit log_named_bool("is excluded from dividends",   cakeTracker.excludedFromDividends(address(joe)));        // <-- should return false
+        emit log_named_string("is excluded from dividends",   (cakeTracker.excludedFromDividends(address(joe)) ? "true":"false"));        // <-- should return false
         emit log_named_uint("timestamp of last claim",      cakeTracker.lastClaimTimes(address(joe)));               // <-- timestamp of last claim
 
         emit log_named_uint("GOGE balance in Map",  cakeTracker.getMapValue(address(joe)));      // <-- balanceOf address stored in map

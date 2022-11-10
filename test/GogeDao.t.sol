@@ -6,14 +6,14 @@ import "./Utility.sol";
 import { GogeDAO } from "../src/GogeDao.sol";
 import { DogeGaySon } from "../src/GogeToken.sol";
 
-import "../src/libraries/PollTypes.sol";
+// import "../src/libraries/PollTypes.sol";
 
 contract DaoTest is Utility, Test {
     GogeDAO gogeDao;
     DogeGaySon gogeToken;
 
-    using PollTypes for PollTypes.PollType;
-    using PollTypes for PollTypes.Metadata;
+    // using PollTypes for PollTypes.PollType;
+    // using PollTypes for PollTypes.Metadata;
 
     function setUp() public {
         createActors();
@@ -30,7 +30,6 @@ contract DaoTest is Utility, Test {
             address(gogeToken)
         );
 
-        //pollType = gogeDao.PollType();
     }
 
     function test_gogeDao_init_state() public {
@@ -41,22 +40,22 @@ contract DaoTest is Utility, Test {
     function test_gogeDao_createPoll() public {
 
         // create poll metadata
-        PollTypes.Metadata memory metadata;
+        GogeDAO.Metadata memory metadata;
         metadata.description = "I want to add Joe to the naughty list";
         metadata.time1 = block.timestamp + 1 seconds;
         metadata.time2 = block.timestamp + 2 days;
         metadata.addr1 = address(joe);
         metadata.boolVar = true;
 
-        gogeDao.createPoll(PollTypes.PollType.modifyBlacklist, metadata);
+        gogeDao.createPoll(GogeDAO.PollType.modifyBlacklist, metadata);
 
         assertEq(gogeDao.pollNum(), 1);
-        assert(gogeDao.pollTypes(1) == PollTypes.PollType.modifyBlacklist);
+        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.modifyBlacklist);
 
         emit log_string  (gogeDao.getMetadata(1).description);
         emit log_uint    (gogeDao.getMetadata(1).time1);
         emit log_uint    (gogeDao.getMetadata(1).time2);
         emit log_address (gogeDao.getMetadata(1).addr1);
-        emit log_bool    (gogeDao.getMetadata(1).boolVar);
+        emit log_string  ((gogeDao.getMetadata(1).boolVar ? "true":"false"));
     }
 }

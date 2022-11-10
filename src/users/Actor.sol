@@ -110,4 +110,12 @@ contract Actor {
         string memory sig = "safeWithdraw(address)";
         (ok,) = address(token).call(abi.encodeWithSignature(sig, tokenToWithdraw));
     }
+
+
+    /////////////////////////////////////////////////////////////////////////
+    ///                             GOGE DAO                              ///
+    /////////////////////////////////////////////////////////////////////////
+
+
+    //
 }

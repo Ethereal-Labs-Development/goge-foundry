@@ -188,5 +188,268 @@ contract Utility is DSTest {
         else if (max == min)           return max;
         else                           return val % (max - min) + min;
     }
+
+    // DAO vars
+
+    // enum PollType {
+    //     taxChange,
+    //     funding,
+    //     setDao,
+    //     setCex,
+    //     setDex,
+    //     updateDividendToken,
+    //     updateMarketingWallet,
+    //     updateTeamWallet,
+    //     updateTeamMember,
+    //     updateVetoAuthority,
+    //     setVetoEnabled,
+    //     setSwapTokensAtAmount,
+    //     setBuyBackEnabled,
+    //     setCakeDividendEnabled,
+    //     setMarketingEnabled,
+    //     setTeamEnabled,
+    //     updateCakeDividendTracker,
+    //     updateUniswapV2Router,
+    //     excludeFromFees,
+    //     excludeFromDividends,
+    //     updateGasForProcessing,
+    //     updateMinimumBalanceForDividends,
+    //     modifyBlacklist,
+    //     transferOwnership,
+    //     migrateTreasury,
+    //     setQuorum,
+    //     setMinPollPeriod,
+    //     updateGovernanceToken,
+    //     other
+    // }
+
+    struct TaxChange {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        uint8 cakeDividendRewardsFee;
+        uint8 marketingFee;
+        uint8 buyBackAndLiquidityFee;
+        uint8 teamFee;
+        uint8 transferMultiplier;
+    }
+
+    struct Funding {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address payable recipient;
+        address token;
+        uint256 amount;
+    }
+
+    struct SetDao {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address addr;
+    }
+
+    struct SetDex {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address addr;
+        bool boolVar;
+    }
+
+    struct SetCex {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address addr; 
+    }
+
+    struct UpdateDividendToken {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address addr;
+    }
+
+    struct UpdateMarketingWallet {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address payable addr;
+    }
+
+    struct UpdateTeamWallet {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address payable addr;
+    }
+
+    struct UpdateTeamMember {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address payable addr;
+        bool boolVar;
+    }
+
+    struct UpdateVetoAuthority {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address addr;
+        bool boolVar;  
+    }
+
+    struct SetVetoEnabled {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        bool boolVar;      
+    }
+
+    struct SetSwapTokensAtAmount {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        uint256 amount;  
+    }
+
+    struct SetBuyBackAndLiquifyEnabled {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        bool boolVar;      
+    }
+
+    struct SetCakeDividendEnabled {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        bool boolVar;      
+    }
+
+    struct SetMarketingEnabled {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        bool boolVar;      
+    }
+
+    struct SetTeamEnabled {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        bool boolVar;      
+    }
+
+    struct UpdateCakeDividendTracker {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address payable addr;
+    }
+
+    struct UpdateUniswapV2Router {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address payable addr;
+    }
+
+    struct ExcludeFromFees {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address payable addr;
+        bool boolVar;
+    }
+
+    struct ExcludeFromDividends {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address payable addr;
+    }
+
+    struct UpdateGasForProcessing {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        uint256 amount;  
+    }
+
+    struct UpdateMinimumBalanceForDividends {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        uint256 amount;  
+    }
+
+    struct ModifyBlacklist {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address payable addr;
+        bool blacklisted;
+    }
+
+    struct TransferOwnership {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address payable addr;
+    }
+
+    struct MigrateTreasury {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address payable addr;
+        address token;
+    }
+
+    struct SetQuorum {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        uint256 amount;
+    }
+
+    struct SetMinPollPeriod {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        uint256 amount;
+    }
+
+    struct UpdateGovernanceToken {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address addr;
+    }
+
+    struct Other {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+    }
+
+    struct Metadata {
+        string description;
+        uint256 time1;
+        uint256 time2;
+        uint8 fee1;
+        uint8 fee2;
+        uint8 fee3;
+        uint8 fee4;
+	    uint8 multiplier;
+        address addr1;
+        address addr2;
+        uint256 amount;
+        bool boolVar;
+    }
     
 }

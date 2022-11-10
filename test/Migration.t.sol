@@ -5,6 +5,7 @@ import "../lib/forge-std/src/Test.sol";
 import "./Utility.sol";
 
 import { IUniswapV2Router02, IUniswapV2Pair, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
+import { ERC20 } from "../src/extensions/ERC20.sol";
 
 import { DogeGaySon } from "../src/GogeToken.sol";
 import { DogeGaySon1 } from "../src/TokenV1.sol";
@@ -185,22 +186,6 @@ contract MigrationTesting is Utility, Test {
         assertEq(gogeToken_v1.balanceOf(address(tim)), amountTim);
         assertEq(gogeToken_v2.balanceOf(address(tim)), 0);
 
-        // // Approve TaxToken for UniswapV2Router.
-        // IERC20(address(gogeToken_v2)).approve(
-        //     address(UNIV2_ROUTER),
-        //     137_376_887 ether
-        // );
-
-        // // Create v2 LP
-        // IUniswapV2Router01(UNIV2_ROUTER).addLiquidityETH{value: 1 ether}(
-        //     address(gogeToken_v2),
-        //     137_376_887 ether,
-        //     0,
-        //     0,
-        //     address(this),
-        //     block.timestamp
-        // );
-
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
         (uint112 v1_reserveTokens, uint112 v1_reserveBnb,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
         (uint112 v2_reserveTokens, uint112 v2_reserveBnb,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves();
@@ -343,6 +328,12 @@ contract MigrationTesting is Utility, Test {
         emit log_named_uint("v1 LP BNB balance",  v1_reserveBnb);
         emit log_named_uint("v2 LP GOGE balance", v2_reserveTokens);
         emit log_named_uint("v2 LP BNB balance",  v2_reserveBnb);
+
+        emit log_named_uint("circulating supply minus reserve", ERC20(address(gogeToken_v2)).getCirculatingMinusReserve());
+        emit log_named_uint("total supply", ERC20(address(gogeToken_v2)).totalSupply());
+        emit log_named_uint("uniswap balance", ERC20(address(gogeToken_v2)).balanceOf(gogeToken_v2.uniswapV2Pair()));
+        emit log_named_uint("dead balance", ERC20(address(gogeToken_v2)).balanceOf(address(0)));
+        emit log_named_uint("dead balance", ERC20(address(gogeToken_v2)).balanceOf(gogeToken_v2.deadAddress()));
     }
 
     function test_migration_fuzzing(uint256 amountTokens) public {

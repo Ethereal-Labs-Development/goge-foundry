@@ -3,9 +3,10 @@ pragma solidity ^0.8.6;
 
 import "../lib/forge-std/src/Test.sol";
 import "./Utility.sol";
-import "../src/GogeToken.sol";
+import { DogeGaySon, CakeDividendTracker } from "../src/GogeToken.sol";
 
 import { IUniswapV2Router02, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
+import { ERC20 } from "../src/extensions/ERC20.sol";
 
 contract Royalties is Utility, Test {
     DogeGaySon gogeToken;
@@ -703,6 +704,125 @@ contract Royalties is Utility, Test {
         emit log_named_uint("team",      gogeToken.royaltiesSent(3));
         emit log_named_uint("buyback",   gogeToken.royaltiesSent(4));
         emit log_named_uint("cake",      gogeToken.royaltiesSent(5));
+    }
+
+    function test_royaltyTesting_getCirculatingMinusReserve() public {
+
+        // 100_000_000_000 ether -> total supply
+        //   5_000_000_000 ether -> used for liquidity
+
+        // Verify circulating supply is 95B tokens.
+        assertEq(ERC20(address(gogeToken)).getCirculatingMinusReserve(), 95_000_000_000 ether);
+
+        // send 5B tokens to 0 address.
+        gogeToken.transfer(address(gogeToken.deadAddress()), 5_000_000_000 ether);
+
+        // Verify circulating supply is 90B tokens.
+        assertEq(ERC20(address(gogeToken)).getCirculatingMinusReserve(), 90_000_000_000 ether);
+
+        // Add address(69) to excluded list and transfer address(69) tokens.
+        gogeToken.transfer(address(69), 2_000_000_000 ether);
+        gogeToken.excludeFromCirculatingSupply(address(69), true);
+
+        // Verify circulating supply is 88B tokens.
+        assertEq(ERC20(address(gogeToken)).getCirculatingMinusReserve(), 88_000_000_000 ether);
+
+        // Remove address(69) from excluded list.
+        gogeToken.excludeFromCirculatingSupply(address(69), false);
+
+        // Verify circulating supply is 88B tokens.
+        assertEq(ERC20(address(gogeToken)).getCirculatingMinusReserve(), 90_000_000_000 ether);
+
+        emit log_named_uint("circulating supply minus reserve", ERC20(address(gogeToken)).getCirculatingMinusReserve());
+        emit log_named_uint("total supply", ERC20(address(gogeToken)).totalSupply());
+        emit log_named_uint("uniswap balance", ERC20(address(gogeToken)).balanceOf(gogeToken.uniswapV2Pair()));
+        emit log_named_uint("dead balance", ERC20(address(gogeToken)).balanceOf(address(0)));
+        emit log_named_uint("dead balance", ERC20(address(gogeToken)).balanceOf(gogeToken.deadAddress()));
+
+        // Add address(69) to the excluded list.
+        gogeToken.excludeFromCirculatingSupply(address(69), true);
+
+        // Verify excludedFromCirculatingSupply is updating accordingly.
+        (bool _isExcludedPair, uint8 pos1) = gogeToken.isExcludedFromCirculatingSupply(gogeToken.uniswapV2Pair());
+        assertEq(_isExcludedPair, true);
+        assertEq(pos1, 0);
+
+        (bool _isExcluded69, uint8 pos2) = gogeToken.isExcludedFromCirculatingSupply(address(69));
+        assertEq(_isExcluded69, true);
+        assertEq(pos2, 1);
+
+        // Verify dexList is updating accordingly.
+        (bool _isDexPair, uint8 pos3) = gogeToken.isDex(gogeToken.uniswapV2Pair());
+        assertEq(_isDexPair, true);
+        assertEq(pos3, 0);
+
+        (bool _isDex69, uint8 pos4) = gogeToken.isDex(address(69));
+        assertEq(_isDex69, false);
+        assertEq(pos4, 0);
+
+        // Add address(79) to excluded list.
+        gogeToken.setAutomatedMarketMakerPair(address(79), true);
+
+        // Verify excludedFromCirculatingSupply is updating accordingly.
+        (_isExcludedPair, pos1) = gogeToken.isExcludedFromCirculatingSupply(gogeToken.uniswapV2Pair());
+        assertEq(_isExcludedPair, true);
+        assertEq(pos1, 0);
+
+        (_isExcluded69, pos2) = gogeToken.isExcludedFromCirculatingSupply(address(69));
+        assertEq(_isExcluded69, true);
+        assertEq(pos2, 1);
+
+        (bool _isExcluded79, uint pos5) = gogeToken.isExcludedFromCirculatingSupply(address(79));
+        assertEq(_isExcluded79, true);
+        assertEq(pos5, 2);
+
+        // Verify dexList is updating accordingly.
+        (_isDexPair, pos4) = gogeToken.isDex(gogeToken.uniswapV2Pair());
+        assertEq(_isDexPair, true);
+        assertEq(pos4, 0);
+
+        (_isDex69, pos3) = gogeToken.isDex(address(69));
+        assertEq(_isDex69, false);
+        assertEq(pos3, 0);
+
+        (bool _isDex79, uint8 pos6) = gogeToken.isDex(address(79));
+        assertEq(_isDex79, true);
+        assertEq(pos6, 1);
+
+        // NOTE: Cant run below code if we cant remove pair from dexList.
+
+        // // Remove uniswapPair from dexList
+        // gogeToken.setAutomatedMarketMakerPair(gogeToken.uniswapV2Pair(), false);
+
+        // // Verify circulating supply is 93B tokens -> 100B - 5B(dead) - 2B(address69)
+        // assertEq(ERC20(address(gogeToken)).getCirculatingMinusReserve(), 93_000_000_000 ether);
+
+        // // Verify excludedFromCirculatingSupply is updating accordingly.
+        // (_isExcludedPair, pos1) = gogeToken.isExcludedFromCirculatingSupply(gogeToken.uniswapV2Pair());
+        // assertEq(_isExcludedPair, false);
+        // assertEq(pos1, 0);
+
+        // (_isExcluded69, pos2) = gogeToken.isExcludedFromCirculatingSupply(address(69));
+        // assertEq(_isExcluded69, true);
+        // assertEq(pos2, 1);
+
+        // (_isExcluded79, pos5) = gogeToken.isExcludedFromCirculatingSupply(address(79));
+        // assertEq(_isExcluded79, true);
+        // assertEq(pos5, 0);
+
+        // // Verify dexList is updating accordingly.
+        // (_isDexPair, pos4) = gogeToken.isDex(gogeToken.uniswapV2Pair());
+        // assertEq(_isDexPair, false);
+        // assertEq(pos4, 0);
+
+        // (_isDex69, pos3) = gogeToken.isDex(address(69));
+        // assertEq(_isDex69, false);
+        // assertEq(pos3, 0);
+
+        // (_isDex79, pos6) = gogeToken.isDex(address(79));
+        // assertEq(_isDex79, true);
+        // assertEq(pos6, 0);
+
     }
 
 }

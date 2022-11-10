@@ -6,14 +6,11 @@ import "./Utility.sol";
 import { GogeDAO } from "../src/GogeDao.sol";
 import { DogeGaySon } from "../src/GogeToken.sol";
 
-// import "../src/libraries/PollTypes.sol";
 
 contract DaoTest is Utility, Test {
     GogeDAO gogeDao;
     DogeGaySon gogeToken;
 
-    // using PollTypes for PollTypes.PollType;
-    // using PollTypes for PollTypes.Metadata;
 
     function setUp() public {
         createActors();
@@ -56,6 +53,6 @@ contract DaoTest is Utility, Test {
         emit log_uint    (gogeDao.getMetadata(1).time1);
         emit log_uint    (gogeDao.getMetadata(1).time2);
         emit log_address (gogeDao.getMetadata(1).addr1);
-        emit log_string  ((gogeDao.getMetadata(1).boolVar ? "true":"false"));
+        emit log_bool    (gogeDao.getMetadata(1).boolVar);
     }
 }

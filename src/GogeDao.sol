@@ -32,10 +32,6 @@ import "./libraries/Libraries.sol";
 import "./extensions/Ownable.sol";
 import "./extensions/ERC20.sol";
 
-import "./libraries/PollTypes.sol";
-
-// using PollTypes for PollTypes.PollType;
-// using PollTypes for PollTypes.Metadata;
 
 contract GogeDAO is Ownable {
     using SafeMath for uint256;
@@ -957,30 +953,6 @@ contract GogeDAO is Ownable {
         return (historicalTally[_pollNum], modifyBlacklist, passed[_pollNum]);
     }
 
-    // function getAddBot(uint256 _pollNum) public view returns(uint256, AddBot memory, bool) {
-    //     require(pollTypes[_pollNum] == PollType.addBot, "Not addBot");
-    //     Metadata memory poll = pollMap[_pollNum];
-    //     AddBot memory addBot;
-    //     addBot.description = poll.description;
-    //     addBot.startTime = poll.time1;
-    //     addBot.endTime = poll.time2;
-    //     addBot.addr = payable(poll.addr1);
-
-    //     return (historicalTally[_pollNum], addBot, passed[_pollNum]);
-    // }
-
-    // function getRemoveBot(uint256 _pollNum) public view returns(uint256, RemoveBot memory, bool) {
-    //     require(pollTypes[_pollNum] == PollType.removeBot, "Not removeBot");
-    //     Metadata memory poll = pollMap[_pollNum];
-    //     RemoveBot memory removeBot;
-    //     removeBot.description = poll.description;
-    //     removeBot.startTime = poll.time1;
-    //     removeBot.endTime = poll.time2;
-    //     removeBot.addr = payable(poll.addr1);
-
-    //     return (historicalTally[_pollNum], removeBot, passed[_pollNum]);
-    // }
-
     function getTransferOwnership(uint256 _pollNum) public view returns(uint256, TransferOwnership memory, bool) {
         require(pollTypes[_pollNum] == PollType.transferOwnership, "Not transferOwnership");
         Metadata memory poll = pollMap[_pollNum];
@@ -1059,7 +1031,7 @@ contract GogeDAO is Ownable {
         return polls[_pollNum][addr];
     }
 
-    function getMetadata(uint256 pollNum) public view returns (Metadata memory) {
-        return pollMap[pollNum];
+    function getMetadata(uint256 _pollNum) public view returns (Metadata memory) {
+        return pollMap[_pollNum];
     }
 }

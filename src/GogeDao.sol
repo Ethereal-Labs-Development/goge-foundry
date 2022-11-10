@@ -1038,9 +1038,13 @@ contract GogeDAO is Ownable {
         return (historicalTally[_pollNum], poll.description, poll.time1, poll.time2, passed[_pollNum]);
     }
 
+    // READ
+
     function getVotes(address addr, uint256 _pollNum) public view returns (uint256) {
         return polls[_pollNum][addr];
     }
 
-    
+    function getMetadata(uint256 pollNum) public view returns (PollTypes.Metadata memory) {
+        return pollMap[pollNum];
+    }
 }

@@ -13,7 +13,7 @@ contract Royalties is Utility, Test {
 
     address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E; //bsc
 
-    event log_bool(bool a);
+    //event log_bool(bool a);
 
     function setUp() public {
         createActors();

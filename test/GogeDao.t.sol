@@ -42,16 +42,21 @@ contract DaoTest is Utility, Test {
 
         // create poll metadata
         PollTypes.Metadata memory metadata;
+        metadata.description = "I want to add Joe to the naughty list";
         metadata.time1 = block.timestamp + 1 seconds;
         metadata.time2 = block.timestamp + 2 days;
         metadata.addr1 = address(joe);
         metadata.boolVar = true;
 
-
         gogeDao.createPoll(PollTypes.PollType.modifyBlacklist, metadata);
 
         assertEq(gogeDao.pollNum(), 1);
         assert(gogeDao.pollTypes(1) == PollTypes.PollType.modifyBlacklist);
-        assertEq(gogeDao.pollMap(1), metadata);
+
+        emit log_string  (gogeDao.getMetadata(1).description);
+        emit log_uint    (gogeDao.getMetadata(1).time1);
+        emit log_uint    (gogeDao.getMetadata(1).time2);
+        emit log_address (gogeDao.getMetadata(1).addr1);
+        emit log_bool    (gogeDao.getMetadata(1).boolVar);
     }
 }

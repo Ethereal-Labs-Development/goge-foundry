@@ -6,11 +6,14 @@ import "./Utility.sol";
 import { GogeDAO } from "../src/GogeDao.sol";
 import { DogeGaySon } from "../src/GogeToken.sol";
 
+import "../src/libraries/PollTypes.sol";
+
 contract DaoTest is Utility, Test {
     GogeDAO gogeDao;
     DogeGaySon gogeToken;
 
-    //Polltype pollType;
+    using PollTypes for PollTypes.PollType;
+    using PollTypes for PollTypes.Metadata;
 
     function setUp() public {
         createActors();
@@ -38,19 +41,17 @@ contract DaoTest is Utility, Test {
     function test_gogeDao_createPoll() public {
 
         // create poll metadata
-        Metadata memory metadata;
+        PollTypes.Metadata memory metadata;
         metadata.time1 = block.timestamp + 1 seconds;
-        metadata.time2 = block.timestamp + 1 days;
+        metadata.time2 = block.timestamp + 2 days;
         metadata.addr1 = address(joe);
         metadata.boolVar = true;
 
-        PollType pollType = PollType.modifyBlacklist;
 
-        gogeDao.createPoll(pollType, metadata);
+        gogeDao.createPoll(PollTypes.PollType.modifyBlacklist, metadata);
 
         assertEq(gogeDao.pollNum(), 1);
-
-        //assertEq(gogeDao.pollTypes(1), modifyBlacklist);
-        //assertEq(gogeDao.pollMap(1), metadata);
+        assert(gogeDao.pollTypes(1) == PollTypes.PollType.modifyBlacklist);
+        assertEq(gogeDao.pollMap(1), metadata);
     }
 }

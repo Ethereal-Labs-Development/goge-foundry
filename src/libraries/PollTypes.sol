@@ -2,7 +2,7 @@
 pragma solidity ^0.8.6;
 
 library PollTypes {
-    
+
     enum PollType {
         taxChange,
         funding,
@@ -33,6 +33,21 @@ library PollTypes {
         setMinPollPeriod,
         updateGovernanceToken,
         other
+    }
+
+    struct Metadata {
+        string description;
+        uint256 time1;
+        uint256 time2;
+        uint8 fee1;
+        uint8 fee2;
+        uint8 fee3;
+        uint8 fee4;
+	    uint8 multiplier;
+        address addr1;
+        address addr2;
+        uint256 amount;
+        bool boolVar;
     }
 
 }

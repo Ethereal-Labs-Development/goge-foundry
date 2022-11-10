@@ -32,9 +32,10 @@ import "./libraries/Libraries.sol";
 import "./extensions/Ownable.sol";
 import "./extensions/ERC20.sol";
 
-//import "./libraries/PollTypes.sol";
+import "./libraries/PollTypes.sol";
 
-//using PollTypes for PollTypes.PollType;
+using PollTypes for PollTypes.PollType;
+using PollTypes for PollTypes.Metadata;
 
 contract GogeDAO is Ownable {
     using SafeMath for uint256;
@@ -59,37 +60,37 @@ contract GogeDAO is Ownable {
 
     //PollTypes.PollType public PollType;
 
-    enum PollType {
-        taxChange,
-        funding,
-        setDao,
-        setCex,
-        setDex,
-        updateDividendToken,
-        updateMarketingWallet,
-        updateTeamWallet,
-        updateTeamMember,
-        updateVetoAuthority,
-        setVetoEnabled,
-        setSwapTokensAtAmount,
-        setBuyBackEnabled,
-        setCakeDividendEnabled,
-        setMarketingEnabled,
-        setTeamEnabled,
-        updateCakeDividendTracker,
-        updateUniswapV2Router,
-        excludeFromFees,
-        excludeFromDividends,
-        updateGasForProcessing,
-        updateMinimumBalanceForDividends,
-        modifyBlacklist,
-        transferOwnership,
-        migrateTreasury,
-        setQuorum,
-        setMinPollPeriod,
-        updateGovernanceToken,
-        other
-    }
+    // enum PollType {
+    //     taxChange,
+    //     funding,
+    //     setDao,
+    //     setCex,
+    //     setDex,
+    //     updateDividendToken,
+    //     updateMarketingWallet,
+    //     updateTeamWallet,
+    //     updateTeamMember,
+    //     updateVetoAuthority,
+    //     setVetoEnabled,
+    //     setSwapTokensAtAmount,
+    //     setBuyBackEnabled,
+    //     setCakeDividendEnabled,
+    //     setMarketingEnabled,
+    //     setTeamEnabled,
+    //     updateCakeDividendTracker,
+    //     updateUniswapV2Router,
+    //     excludeFromFees,
+    //     excludeFromDividends,
+    //     updateGasForProcessing,
+    //     updateMinimumBalanceForDividends,
+    //     modifyBlacklist,
+    //     transferOwnership,
+    //     migrateTreasury,
+    //     setQuorum,
+    //     setMinPollPeriod,
+    //     updateGovernanceToken,
+    //     other
+    // }
 
     // -------- Data Structures -----------
     struct TaxChange {
@@ -306,25 +307,10 @@ contract GogeDAO is Ownable {
         uint256 endTime;
     }
 
-    struct Metadata {
-        string description;
-        uint256 time1;
-        uint256 time2;
-        uint8 fee1;
-        uint8 fee2;
-        uint8 fee3;
-        uint8 fee4;
-	    uint8 multiplier;
-        address addr1;
-        address addr2;
-        uint256 amount;
-        bool boolVar;
-    }
+    mapping(uint256 => PollTypes.PollType) public pollTypes;
+    mapping(uint256 => PollTypes.Metadata) public pollMap;
 
-    mapping(uint256 => PollType) public pollTypes;
-    mapping(uint256 => Metadata) public pollMap;
-
-    event ProposalCreated(uint256 pollNum, PollType pollType, uint256 startTime, uint256 endTime);
+    event ProposalCreated(uint256 pollNum, PollTypes.PollType pollType, uint256 startTime, uint256 endTime);
     event VetoEnabledUpdated(bool enabled);
 
     constructor(address _governanceToken) {
@@ -394,144 +380,144 @@ contract GogeDAO is Ownable {
         if (enactChange) {
             pollEndTime[_pollNum] = block.timestamp;
             passed[_pollNum] = true;
-            if (pollTypes[_pollNum] == PollType.taxChange) {
+            if (pollTypes[_pollNum] == PollTypes.PollType.taxChange) {
                 TaxChange memory taxchange;
                 (,taxchange,) = getTaxChange(_pollNum);
                 ERC20(governanceTokenAddr).updateFees(taxchange.cakeDividendRewardsFee, taxchange.marketingFee, taxchange.buyBackAndLiquidityFee, taxchange.teamFee, taxchange.transferMultiplier);
             }
-            else if (pollTypes[_pollNum] == PollType.funding) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.funding) {
                 Funding memory funding;
                 (,funding,) = getFunding(_pollNum);
                 require(funding.amount <= marketingBalance, "Insufficient Funds");
                 ERC20(funding.token).transfer(funding.recipient, funding.amount);
                 marketingBalance -= funding.amount;
             }
-            else if (pollTypes[_pollNum] == PollType.setDao) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.setDao) {
                 SetDao memory setDao;
                 (,setDao,) = getSetDao(_pollNum);
                 ERC20(governanceTokenAddr).setDAO(setDao.addr);
             }
-            else if (pollTypes[_pollNum] == PollType.setCex) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.setCex) {
                 SetCex memory setCex;
                 (,setCex,) = getSetCex(_pollNum);
                 ERC20(governanceTokenAddr).prepareForPartnerOrExchangeListing(setCex.addr);
             }
-            else if (pollTypes[_pollNum] == PollType.setDex) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.setDex) {
                 SetDex memory setDex;
                 (,setDex,) = getSetDex(_pollNum);
                 ERC20(governanceTokenAddr).setAutomatedMarketMakerPair(setDex.addr, setDex.boolVar);
             }
-            else if (pollTypes[_pollNum] == PollType.updateDividendToken) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.updateDividendToken) {
                 UpdateDividendToken memory updateDividendToken;
                 (,updateDividendToken,) = getUpdateDividendToken(_pollNum);
                 ERC20(governanceTokenAddr).updateCakeDividendToken(updateDividendToken.addr);
             }
-            else if (pollTypes[_pollNum] == PollType.updateMarketingWallet) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.updateMarketingWallet) {
                 UpdateMarketingWallet memory updateMarketingWallet;
                 (,updateMarketingWallet,) = getUpdateMarketingWallet(_pollNum);
                 ERC20(governanceTokenAddr).updateMarketingWallet(updateMarketingWallet.addr);
             }
-            else if (pollTypes[_pollNum] == PollType.updateTeamWallet) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.updateTeamWallet) {
                 UpdateTeamWallet memory updateTeamWallet;
                 (,updateTeamWallet,) = getUpdateTeamWallet(_pollNum);
                 ERC20(governanceTokenAddr).updateTeamWallet(updateTeamWallet.addr);
             }
-            else if (pollTypes[_pollNum] == PollType.updateTeamMember) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.updateTeamMember) {
                 UpdateTeamMember memory updateTeamMember;
                 (,updateTeamMember,) = getUpdateTeamMember(_pollNum);
                 setTeamMember(updateTeamMember.addr, updateTeamMember.boolVar);
             }
-            else if (pollTypes[_pollNum] == PollType.updateVetoAuthority) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.updateVetoAuthority) {
                 UpdateVetoAuthority memory updateVetoAuthority;
                 (,updateVetoAuthority,) = getUpdateVetoAuthority(_pollNum);
                 setVetoAuthority(updateVetoAuthority.addr, updateVetoAuthority.boolVar);
             }
-            else if (pollTypes[_pollNum] == PollType.setVetoEnabled) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.setVetoEnabled) {
                 SetVetoEnabled memory setVetoEnabled;
                 (,setVetoEnabled,) = getSetVetoEnabled(_pollNum);
                 updateVetoEnabled(setVetoEnabled.boolVar);
             }
-            else if (pollTypes[_pollNum] == PollType.setSwapTokensAtAmount) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.setSwapTokensAtAmount) {
                 SetSwapTokensAtAmount memory setSwapTokensAtAmount;
                 (,setSwapTokensAtAmount,) = getSetSwapTokensAtAmount(_pollNum);
                 ERC20(governanceTokenAddr).setSwapTokensAtAmount(setSwapTokensAtAmount.amount);
             }
-            else if (pollTypes[_pollNum] == PollType.setBuyBackEnabled) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.setBuyBackEnabled) {
                 SetBuyBackEnabled memory setBuyBackEnabled;
                 (,setBuyBackEnabled,) = getSetBuyBackEnabled(_pollNum);
                 ERC20(governanceTokenAddr).setBuyBackEnabled(setBuyBackEnabled.boolVar);
             }
-            else if (pollTypes[_pollNum] == PollType.setCakeDividendEnabled) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.setCakeDividendEnabled) {
                 SetCakeDividendEnabled memory setCakeDividendEnabled;
                 (,setCakeDividendEnabled,) = getSetCakeDividendEnabled(_pollNum);
                 ERC20(governanceTokenAddr).setCakeDividendEnabled(setCakeDividendEnabled.boolVar);
             }
-            else if (pollTypes[_pollNum] == PollType.setMarketingEnabled) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.setMarketingEnabled) {
                 SetMarketingEnabled memory setMarketingEnabled;
                 (,setMarketingEnabled,) = getSetMarketingEnabled(_pollNum);
                 ERC20(governanceTokenAddr).setMarketingEnabled(setMarketingEnabled.boolVar);
             }
-            else if (pollTypes[_pollNum] == PollType.setTeamEnabled) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.setTeamEnabled) {
                 SetTeamEnabled memory setTeamEnabled;
                 (,setTeamEnabled,) = getSetTeamEnabled(_pollNum);
                 ERC20(governanceTokenAddr).setTeamEnabled(setTeamEnabled.boolVar);
             }
-            else if (pollTypes[_pollNum] == PollType.updateCakeDividendTracker) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.updateCakeDividendTracker) {
                 UpdateCakeDividendTracker memory updateCakeDividendTracker;
                 (,updateCakeDividendTracker,) = getUpdateCakeDividendTracker(_pollNum);
                 ERC20(governanceTokenAddr).updateCakeDividendTracker(updateCakeDividendTracker.addr);
             }
-            else if (pollTypes[_pollNum] == PollType.updateUniswapV2Router) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.updateUniswapV2Router) {
                 UpdateUniswapV2Router memory updateUniswapV2Router;
                 (,updateUniswapV2Router,) = getUpdateUniswapV2Router(_pollNum);
                 ERC20(governanceTokenAddr).updateUniswapV2Router(updateUniswapV2Router.addr);
             }
-            else if (pollTypes[_pollNum] == PollType.excludeFromFees) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.excludeFromFees) {
                 ExcludeFromFees memory excludeFromFees;
                 (,excludeFromFees,) = getExcludeFromFees(_pollNum);
                 ERC20(governanceTokenAddr).excludeFromFees(excludeFromFees.addr, excludeFromFees.boolVar);
             }
-            else if (pollTypes[_pollNum] == PollType.excludeFromDividends) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.excludeFromDividends) {
                 ExcludeFromDividends memory excludeFromDividends;
                 (,excludeFromDividends,) = getExcludeFromDividends(_pollNum);
                 ERC20(governanceTokenAddr).excludeFromDividend(excludeFromDividends.addr);
             }
-            else if (pollTypes[_pollNum] == PollType.updateGasForProcessing) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.updateGasForProcessing) {
                 UpdateGasForProcessing memory updateGasForProcessing;
                 (,updateGasForProcessing,) = getUpdateGasForProcessing(_pollNum);
                 ERC20(governanceTokenAddr).updateGasForProcessing(updateGasForProcessing.amount);
             }
-            else if (pollTypes[_pollNum] == PollType.updateMinimumBalanceForDividends) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.updateMinimumBalanceForDividends) {
                 UpdateMinimumBalanceForDividends memory updateMinimumBalanceForDividends;
                 (,updateMinimumBalanceForDividends,) = getUpdateMinimumBalanceForDividends(_pollNum);
                 ERC20(governanceTokenAddr).updateMinimumBalanceForDividends(updateMinimumBalanceForDividends.amount);
             }
-            else if (pollTypes[_pollNum] == PollType.modifyBlacklist) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.modifyBlacklist) {
                 ModifyBlacklist memory modifyBlacklist;
                 (,modifyBlacklist,) = getModifyBlacklist(_pollNum);
                 ERC20(governanceTokenAddr).modifyBlacklist(modifyBlacklist.addr, modifyBlacklist.blacklisted);               
             }
-            else if (pollTypes[_pollNum] == PollType.transferOwnership) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.transferOwnership) {
                 TransferOwnership memory transferOwnership;
                 (,transferOwnership,) = getTransferOwnership(_pollNum);
                 ERC20(governanceTokenAddr)._transferOwnership(transferOwnership.addr);
             }
-            else if (pollTypes[_pollNum] == PollType.migrateTreasury) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.migrateTreasury) {
                 MigrateTreasury memory migrateTreasury;
                 (,migrateTreasury,) = getMigrateTreasury(_pollNum);
                 ERC20(migrateTreasury.token).transfer(migrateTreasury.addr, ERC20(migrateTreasury.token).balanceOf(address(this)));
             }
-            else if (pollTypes[_pollNum] == PollType.setQuorum) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.setQuorum) {
                 SetQuorum memory setQuorum;
                 (,setQuorum,) = getSetQuorum(_pollNum);
                 updateQuorum(setQuorum.amount);
             }
-            else if (pollTypes[_pollNum] == PollType.setMinPollPeriod) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.setMinPollPeriod) {
                 SetMinPollPeriod memory setMinPollPeriod;
                 (,setMinPollPeriod,) = getSetMinPollPeriod(_pollNum);
                 updateMinPollPeriod(setMinPollPeriod.amount);
             }
-            else if (pollTypes[_pollNum] == PollType.updateGovernanceToken) {
+            else if (pollTypes[_pollNum] == PollTypes.PollType.updateGovernanceToken) {
                 UpdateGovernanceToken memory updateGovernanceToken;
                 (,updateGovernanceToken,) = getUpdateGovernanceToken(_pollNum);
                 changeGovernanceToken(updateGovernanceToken.addr);
@@ -573,7 +559,7 @@ contract GogeDAO is Ownable {
     /// @notice is used to create a new poll.
     /// @param  _pollType enum type of poll being created.
     /// @param  _change the matching metadata that will result in the execution of the poll.
-    function createPoll(PollType _pollType, Metadata memory _change) public {
+    function createPoll(PollTypes.PollType _pollType, PollTypes.Metadata memory _change) public {
         require(_change.time1 < _change.time2, "End time must be later than start time");
         require(_change.time2.sub(_change.time1) >= minPeriod, "Polling period must be greater than 24 hours");
         require(_change.time1 > block.timestamp, "Start time must be in the future");
@@ -648,14 +634,14 @@ contract GogeDAO is Ownable {
     }
 
     // ---------- Views ----------
-    function getHistoricalResults(uint256 _pollNum) public view returns (uint256, PollType, string memory, bool) {
+    function getHistoricalResults(uint256 _pollNum) public view returns (uint256, PollTypes.PollType, string memory, bool) {
         require(_pollNum <= pollNum, "does not exist");
         return(_pollNum, pollTypes[_pollNum], pollMap[_pollNum].description, passed[_pollNum]);
     }
 
     function getTaxChange(uint256 _pollNum) public view returns(uint256, TaxChange memory, bool) {
-        require(pollTypes[_pollNum] == PollType.taxChange, "Not TaxChange");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.taxChange, "Not TaxChange");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         TaxChange memory taxChange;
         taxChange.description = poll.description;
         taxChange.startTime = poll.time1;
@@ -670,8 +656,8 @@ contract GogeDAO is Ownable {
     }
 
     function getFunding(uint256 _pollNum) public view returns(uint256, Funding memory, bool) {
-        require(pollTypes[_pollNum] == PollType.funding, "Not Funding");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.funding, "Not Funding");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         Funding memory funding;
         funding.description = poll.description;
         funding.startTime = poll.time1;
@@ -685,8 +671,8 @@ contract GogeDAO is Ownable {
     }
 
     function getSetDao(uint256 _pollNum) public view returns(uint256, SetDao memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setDao, "Not setDao");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.setDao, "Not setDao");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         SetDao memory setDao;
         setDao.description = poll.description;
         setDao.startTime = poll.time1;
@@ -698,8 +684,8 @@ contract GogeDAO is Ownable {
     }
 
     function getSetCex(uint256 _pollNum) public view returns(uint256, SetCex memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setCex, "Not setCex");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.setCex, "Not setCex");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         SetCex memory setCex;
         setCex.description = poll.description;
         setCex.startTime = poll.time1;
@@ -710,8 +696,8 @@ contract GogeDAO is Ownable {
     }
 
     function getSetDex(uint256 _pollNum) public view returns(uint256, SetDex memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setDex, "Not setDex");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.setDex, "Not setDex");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         SetDex memory setDex;
         setDex.description = poll.description;
         setDex.startTime = poll.time1;
@@ -722,8 +708,8 @@ contract GogeDAO is Ownable {
     }
 
     function getUpdateDividendToken(uint256 _pollNum) public view returns(uint256, UpdateDividendToken memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateDividendToken, "Not updateDividendToken");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.updateDividendToken, "Not updateDividendToken");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         UpdateDividendToken memory updateDividendToken;
         updateDividendToken.description = poll.description;
         updateDividendToken.startTime = poll.time1;
@@ -734,8 +720,8 @@ contract GogeDAO is Ownable {
     }
 
     function getUpdateMarketingWallet(uint256 _pollNum) public view returns(uint256, UpdateMarketingWallet memory, bool) {
-        require(pollTypes[_pollNum] == PollType.funding, "Not updateMarketingWallet");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.funding, "Not updateMarketingWallet");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         UpdateMarketingWallet memory updateMarketingWallet;
         updateMarketingWallet.description = poll.description;
         updateMarketingWallet.startTime = poll.time1;
@@ -746,8 +732,8 @@ contract GogeDAO is Ownable {
     }
 
     function getUpdateTeamWallet(uint256 _pollNum) public view returns(uint256, UpdateTeamWallet memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateTeamWallet, "Not updateTeamWallet");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.updateTeamWallet, "Not updateTeamWallet");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         UpdateTeamWallet memory updateTeamWallet;
         updateTeamWallet.description = poll.description;
         updateTeamWallet.startTime = poll.time1;
@@ -758,8 +744,8 @@ contract GogeDAO is Ownable {
     }
 
     function getUpdateTeamMember(uint256 _pollNum) public view returns(uint256, UpdateTeamMember memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateTeamMember, "Not updateTeamMember");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.updateTeamMember, "Not updateTeamMember");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         UpdateTeamMember memory updateTeamMember;
         updateTeamMember.description = poll.description;
         updateTeamMember.startTime = poll.time1;
@@ -782,8 +768,8 @@ contract GogeDAO is Ownable {
     }
 
     function getUpdateVetoAuthority(uint256 _pollNum) public view returns(uint256, UpdateVetoAuthority memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateVetoAuthority, "Not updateVetoAuthority");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.updateVetoAuthority, "Not updateVetoAuthority");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         UpdateVetoAuthority memory updateVetoAuthority;
         updateVetoAuthority.description = poll.description;
         updateVetoAuthority.startTime = poll.time1;
@@ -799,8 +785,8 @@ contract GogeDAO is Ownable {
     }
 
     function getSetVetoEnabled(uint256 _pollNum) public view returns(uint256, SetVetoEnabled memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setVetoEnabled, "Not setVetoEnabled");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.setVetoEnabled, "Not setVetoEnabled");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         SetVetoEnabled memory setVetoEnabled;
         setVetoEnabled.description = poll.description;
         setVetoEnabled.startTime = poll.time1;
@@ -811,8 +797,8 @@ contract GogeDAO is Ownable {
     }
 
     function getSetSwapTokensAtAmount(uint256 _pollNum) public view returns(uint256, SetSwapTokensAtAmount memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setSwapTokensAtAmount, "Not setSwapTokensAtAmount");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.setSwapTokensAtAmount, "Not setSwapTokensAtAmount");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         SetSwapTokensAtAmount memory setSwapTokensAtAmount;
         setSwapTokensAtAmount.description = poll.description;
         setSwapTokensAtAmount.startTime = poll.time1;
@@ -823,8 +809,8 @@ contract GogeDAO is Ownable {
     }
 
     function getSetBuyBackEnabled(uint256 _pollNum) public view returns(uint256, SetBuyBackEnabled memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setBuyBackEnabled, "Not setBuyBackEnabled");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.setBuyBackEnabled, "Not setBuyBackEnabled");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         SetBuyBackEnabled memory setBuyBackEnabled;
         setBuyBackEnabled.description = poll.description;
         setBuyBackEnabled.startTime = poll.time1;
@@ -835,8 +821,8 @@ contract GogeDAO is Ownable {
     }
 
     function getSetCakeDividendEnabled(uint256 _pollNum) public view returns(uint256, SetCakeDividendEnabled memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setVetoEnabled, "Not setCakeDividendEnabled");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.setVetoEnabled, "Not setCakeDividendEnabled");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         SetCakeDividendEnabled memory setCakeDividendEnabled;
         setCakeDividendEnabled.description = poll.description;
         setCakeDividendEnabled.startTime = poll.time1;
@@ -847,8 +833,8 @@ contract GogeDAO is Ownable {
     }
 
     function getSetMarketingEnabled(uint256 _pollNum) public view returns(uint256, SetMarketingEnabled memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setMarketingEnabled, "Not setMarketingEnabled");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.setMarketingEnabled, "Not setMarketingEnabled");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         SetMarketingEnabled memory setMarketingEnabled;
         setMarketingEnabled.description = poll.description;
         setMarketingEnabled.startTime = poll.time1;
@@ -859,8 +845,8 @@ contract GogeDAO is Ownable {
     }
 
     function getSetTeamEnabled(uint256 _pollNum) public view returns(uint256, SetTeamEnabled memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setTeamEnabled, "Not setTeamEnabled");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.setTeamEnabled, "Not setTeamEnabled");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         SetTeamEnabled memory setTeamEnabled;
         setTeamEnabled.description = poll.description;
         setTeamEnabled.startTime = poll.time1;
@@ -871,8 +857,8 @@ contract GogeDAO is Ownable {
     }
 
     function getUpdateCakeDividendTracker(uint256 _pollNum) public view returns(uint256, UpdateCakeDividendTracker memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateCakeDividendTracker, "Not updateCakeDividendTracker");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.updateCakeDividendTracker, "Not updateCakeDividendTracker");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         UpdateCakeDividendTracker memory updateCakeDividendTracker;
         updateCakeDividendTracker.description = poll.description;
         updateCakeDividendTracker.startTime = poll.time1;
@@ -883,8 +869,8 @@ contract GogeDAO is Ownable {
     }
 
     function getUpdateUniswapV2Router(uint256 _pollNum) public view returns(uint256, UpdateUniswapV2Router memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateUniswapV2Router, "Not updateUniswapV2Router");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.updateUniswapV2Router, "Not updateUniswapV2Router");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         UpdateUniswapV2Router memory updateUniswapV2Router;
         updateUniswapV2Router.description = poll.description;
         updateUniswapV2Router.startTime = poll.time1;
@@ -895,8 +881,8 @@ contract GogeDAO is Ownable {
     }
 
     function getExcludeFromFees(uint256 _pollNum) public view returns(uint256, ExcludeFromFees memory, bool) {
-        require(pollTypes[_pollNum] == PollType.excludeFromFees, "Not excludeFromFees");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.excludeFromFees, "Not excludeFromFees");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         ExcludeFromFees memory excludeFromFees;
         excludeFromFees.description = poll.description;
         excludeFromFees.startTime = poll.time1;
@@ -908,8 +894,8 @@ contract GogeDAO is Ownable {
     }
 
     function getExcludeFromDividends(uint256 _pollNum) public view returns(uint256, ExcludeFromDividends memory, bool) {
-        require(pollTypes[_pollNum] == PollType.excludeFromDividends, "Not excludeFromDividends");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.excludeFromDividends, "Not excludeFromDividends");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         ExcludeFromDividends memory excludeFromDividends;
         excludeFromDividends.description = poll.description;
         excludeFromDividends.startTime = poll.time1;
@@ -920,8 +906,8 @@ contract GogeDAO is Ownable {
     }
 
     function getUpdateGasForProcessing(uint256 _pollNum) public view returns(uint256, UpdateGasForProcessing memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateGasForProcessing, "Not updateGasForProcessing");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.updateGasForProcessing, "Not updateGasForProcessing");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         UpdateGasForProcessing memory updateGasForProcessing;
         updateGasForProcessing.description = poll.description;
         updateGasForProcessing.startTime = poll.time1;
@@ -932,8 +918,8 @@ contract GogeDAO is Ownable {
     }
 
     function getUpdateMinimumBalanceForDividends(uint256 _pollNum) public view returns(uint256, UpdateMinimumBalanceForDividends memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateMinimumBalanceForDividends, "Not updateMinimumBalanceForDividends");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.updateMinimumBalanceForDividends, "Not updateMinimumBalanceForDividends");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         UpdateMinimumBalanceForDividends memory updateMinimumBalanceForDividends;
         updateMinimumBalanceForDividends.description = poll.description;
         updateMinimumBalanceForDividends.startTime = poll.time1;
@@ -944,8 +930,8 @@ contract GogeDAO is Ownable {
     }
 
     function getModifyBlacklist(uint256 _pollNum) public view returns(uint256, ModifyBlacklist memory, bool) {
-        require(pollTypes[_pollNum] == PollType.modifyBlacklist, "Not modifyBlacklist");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.modifyBlacklist, "Not modifyBlacklist");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         ModifyBlacklist memory modifyBlacklist;
         modifyBlacklist.description = poll.description;
         modifyBlacklist.startTime = poll.time1;
@@ -981,8 +967,8 @@ contract GogeDAO is Ownable {
     // }
 
     function getTransferOwnership(uint256 _pollNum) public view returns(uint256, TransferOwnership memory, bool) {
-        require(pollTypes[_pollNum] == PollType.transferOwnership, "Not transferOwnership");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.transferOwnership, "Not transferOwnership");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         TransferOwnership memory transferOwnership;
         transferOwnership.description = poll.description;
         transferOwnership.startTime = poll.time1;
@@ -993,8 +979,8 @@ contract GogeDAO is Ownable {
     }
 
     function getMigrateTreasury(uint256 _pollNum) public view returns(uint256, MigrateTreasury memory, bool) {
-        require(pollTypes[_pollNum] == PollType.migrateTreasury, "Not migrateTreasury");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.migrateTreasury, "Not migrateTreasury");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         MigrateTreasury memory migrateTreasury;
         migrateTreasury.description = poll.description;
         migrateTreasury.startTime = poll.time1;
@@ -1006,8 +992,8 @@ contract GogeDAO is Ownable {
     }
 
     function getSetQuorum(uint256 _pollNum) public view returns(uint256, SetQuorum memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setQuorum, "Not setQuorum");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.setQuorum, "Not setQuorum");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         SetQuorum memory setQuorum;
         setQuorum.description = poll.description;
         setQuorum.startTime = poll.time1;
@@ -1018,8 +1004,8 @@ contract GogeDAO is Ownable {
     }
 
     function getSetMinPollPeriod(uint256 _pollNum) public view returns(uint256, SetMinPollPeriod memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setMinPollPeriod, "Not setMinPollPeriod");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.setMinPollPeriod, "Not setMinPollPeriod");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         SetMinPollPeriod memory setMinPollPeriod;
         setMinPollPeriod.description = poll.description;
         setMinPollPeriod.startTime = poll.time1;
@@ -1030,8 +1016,8 @@ contract GogeDAO is Ownable {
     }
 
     function getUpdateGovernanceToken(uint256 _pollNum) public view returns(uint256, UpdateGovernanceToken memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateGovernanceToken, "Not updateGovernanceToken");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.updateGovernanceToken, "Not updateGovernanceToken");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         UpdateGovernanceToken memory updateGovernanceToken;
         updateGovernanceToken.description = poll.description;
         updateGovernanceToken.startTime = poll.time1;
@@ -1042,8 +1028,8 @@ contract GogeDAO is Ownable {
     }
 
     function getOther(uint256 _pollNum) public view returns(uint256, string memory, uint256, uint256, bool) {
-        require(pollTypes[_pollNum] == PollType.other, "Not Other");
-        Metadata memory poll = pollMap[_pollNum];
+        require(pollTypes[_pollNum] == PollTypes.PollType.other, "Not Other");
+        PollTypes.Metadata memory poll = pollMap[_pollNum];
         Other memory other;
         other.description = poll.description;
         other.startTime = poll.time1;

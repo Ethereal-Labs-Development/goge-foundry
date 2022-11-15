@@ -14,6 +14,7 @@ contract DaoTest is Utility, Test {
     GogeDAO gogeDao;
     DogeGaySon gogeToken;
 
+    address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
 
     function setUp() public {
         createActors();
@@ -25,11 +26,31 @@ contract DaoTest is Utility, Test {
             100_000_000_000,
             address(0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe) // goge v1
         );
+
+        uint BNB_DEPOSIT = 200 ether;
+        uint TOKEN_DEPOSIT = 5000000000 ether;
+
+        IWETH(WBNB).deposit{value: BNB_DEPOSIT}();
+
+        // Approve TaxToken for UniswapV2Router.
+        IERC20(address(gogeToken)).approve(
+            address(UNIV2_ROUTER), TOKEN_DEPOSIT
+        );
+
+        IUniswapV2Router01(UNIV2_ROUTER).addLiquidityETH{value: 100 ether}(
+            address(gogeToken),
+            TOKEN_DEPOSIT,
+            5_000_000_000 ether,
+            100 ether,
+            address(this),
+            block.timestamp + 300
+        );
         
         gogeDao = new GogeDAO(
             address(gogeToken)
         );
 
+        gogeToken.enableTrading();
         gogeToken.setDAO(address(gogeDao));
     }
 
@@ -133,7 +154,7 @@ contract DaoTest is Utility, Test {
 
         test_gogeDao_createPoll();
         
-        joe_votes = bound(joe_votes, 1, 100_000_000_000 ether);
+        joe_votes = bound(joe_votes, 1, 95_000_000_000 ether);
         
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), joe_votes);
@@ -189,7 +210,7 @@ contract DaoTest is Utility, Test {
 
         // Verify quorum math.
         uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve(); // => 10%
-        assertEq(num, 50);
+        assertTrue(num >= 50);
 
         // Post-state check => gogeToken.
         assertEq(gogeToken.isBlacklisted(address(joe)), true);

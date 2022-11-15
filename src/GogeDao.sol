@@ -369,16 +369,16 @@ contract GogeDAO is Ownable {
     function addVote(uint256 _pollNum, uint256 _numVotes) public {
 
         require(block.timestamp - ERC20(governanceTokenAddr).getLastReceived(_msgSender()) >= (5 minutes), "Must wait 5 minutes after purchasing tokens to place any votes.");
-        require(_pollNum < pollNum, "Poll doesn't Exist");
+        require(_pollNum <= pollNum, "Poll doesn't Exist");
         require(ERC20(governanceTokenAddr).balanceOf(_msgSender()) >= _numVotes, "Exceeds Balance");
-        require(block.timestamp >= pollStartTime[_pollNum] && block.timestamp <= pollEndTime[_pollNum], "Poll Closed");
+        require(block.timestamp >= pollStartTime[_pollNum] && block.timestamp < pollEndTime[_pollNum], "Poll Closed");
         require(ERC20(governanceTokenAddr).transferFrom(_msgSender(), address(this), _numVotes));
 
         polls[_pollNum][_msgSender()] = _numVotes;
         totalVotes[_pollNum] += _numVotes;
         historicalTally[_pollNum] += _numVotes;
 
-        bool quorumMet = totalVotes[_pollNum].div(ERC20(governanceTokenAddr).getCirculatingMinusReserve()) >= quorum.div(100);
+        bool quorumMet = ( totalVotes[_pollNum] * 100 / ERC20(governanceTokenAddr).getCirculatingMinusReserve() ) >= quorum;
         bool enactChange = false;
 
         if (!veto && quorumMet) {
@@ -389,8 +389,10 @@ contract GogeDAO is Ownable {
         }
 
         if (enactChange) {
+
             pollEndTime[_pollNum] = block.timestamp;
             passed[_pollNum] = true;
+
             if (pollTypes[_pollNum] == PollType.taxChange) {
                 TaxChange memory taxchange;
                 (,taxchange,) = getTaxChange(_pollNum);
@@ -446,7 +448,7 @@ contract GogeDAO is Ownable {
             else if (pollTypes[_pollNum] == PollType.setVetoEnabled) {
                 SetVetoEnabled memory setVetoEnabled;
                 (,setVetoEnabled,) = getSetVetoEnabled(_pollNum);
-                updateVetoEnabled(setVetoEnabled.boolVar);
+                _updateVetoEnabled(setVetoEnabled.boolVar);
             }
             else if (pollTypes[_pollNum] == PollType.setSwapTokensAtAmount) {
                 SetSwapTokensAtAmount memory setSwapTokensAtAmount;
@@ -506,7 +508,7 @@ contract GogeDAO is Ownable {
             else if (pollTypes[_pollNum] == PollType.modifyBlacklist) {
                 ModifyBlacklist memory modifyBlacklist;
                 (,modifyBlacklist,) = getModifyBlacklist(_pollNum);
-                ERC20(governanceTokenAddr).modifyBlacklist(modifyBlacklist.addr, modifyBlacklist.blacklisted);               
+                ERC20(governanceTokenAddr).modifyBlacklist(modifyBlacklist.addr, modifyBlacklist.blacklisted);
             }
             else if (pollTypes[_pollNum] == PollType.transferOwnership) {
                 TransferOwnership memory transferOwnership;
@@ -571,15 +573,19 @@ contract GogeDAO is Ownable {
     /// @param  _pollType enum type of poll being created.
     /// @param  _change the matching metadata that will result in the execution of the poll.
     function createPoll(PollType _pollType, Metadata memory _change) public {
+        _change.time1 = block.timestamp;
+
         require(_change.time1 < _change.time2, "End time must be later than start time");
         require(_change.time2.sub(_change.time1) >= minPeriod, "Polling period must be greater than 24 hours");
-        require(_change.time1 > block.timestamp, "Start time must be in the future");
 
         emit ProposalCreated(pollNum, _pollType, _change.time1, _change.time2);
 
         pollNum += 1;
         pollTypes[pollNum] = _pollType;
-        pollMap[pollNum] = _change;
+        pollMap[pollNum]   = _change;
+
+        pollStartTime[pollNum] = _change.time1;
+        pollEndTime[pollNum]   = _change.time2;
     }
 
     // ---------- Admin ----------
@@ -598,10 +604,15 @@ contract GogeDAO is Ownable {
     }
 
     // ---------- Mutative -----------
-    function updateVetoEnabled(bool enabled) internal {
+
+    function _updateVetoEnabled(bool enabled) internal {
         require(veto != enabled, "Already set");
         veto = enabled;
         emit VetoEnabledUpdated(enabled);
+    }
+
+    function updateVetoEnabled(bool enabled) external onlyOwner() {
+        _updateVetoEnabled(enabled);
     }
 
     function setTeamMember(address addr, bool value) internal {
@@ -767,11 +778,7 @@ contract GogeDAO is Ownable {
         return (historicalTally[_pollNum], updateTeamMember, passed[_pollNum]);
     }
 
-    function isTeamMember(address _address)
-        public
-        view
-        returns(bool, uint8)
-    {
+    function isTeamMember(address _address) public view returns(bool, uint8) {
         for (uint8 s = 0; s < teamMembers.length; s += 1){
             if (_address == teamMembers[s]) return (true, s);
         }

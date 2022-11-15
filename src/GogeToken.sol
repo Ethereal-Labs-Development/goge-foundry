@@ -656,7 +656,11 @@ contract DogeGaySon is ERC20, Ownable {
     function setDAO(address _dao) external {
         require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
         require(DAO != _dao, "This address is already the DAO");
+
         DAO = _dao;
+
+        isExcludedFromFees[DAO] = true;
+        cakeDividendTracker.excludeFromDividends(DAO);
     }
 
     function whitelistPinkSale(address _presaleAddress) external {

@@ -71,7 +71,15 @@ contract MainDeploymentTesting is Utility, Test {
         gogeToken_v1.excludeFromFees(address(gogeToken_v2), true);
 
         // (4) Perform migration
-        
+        migrateActor(joe);
+        migrateActor(sal);
+        migrateActor(nik);
+        migrateActor(jon);
+        migrateActor(tim);
+
+        // Show price of v2
+        price = getPrice(address(gogeToken_v2));
+        emit log_named_uint("cost of 1 v2 token", price); // 0.000002119865796663
     }
 
 
@@ -116,6 +124,18 @@ contract MainDeploymentTesting is Utility, Test {
         assertEq(gogeToken_v1.balanceOf(address(nik)), amountNik);
         assertEq(gogeToken_v1.balanceOf(address(jon)), amountJon);
         assertEq(gogeToken_v1.balanceOf(address(tim)), amountTim);
+    }
+
+    /// @notice migrate tokens from v1 to v2
+    function migrateActor(Actor actor) internal {
+        uint256 bal = gogeToken_v1.balanceOf(address(actor));
+
+        // Approve and migrate
+        assert(actor.try_approveToken(address(gogeToken_v1), address(gogeToken_v2), gogeToken_v1.balanceOf(address(actor))));
+        assert(actor.try_migrate(address(gogeToken_v2)));
+
+        assertEq(gogeToken_v1.balanceOf(address(actor)), 0);
+        assertEq(gogeToken_v2.balanceOf(address(actor)), bal);
     }
 
 

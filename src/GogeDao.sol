@@ -687,7 +687,6 @@ contract GogeDAO is Ownable {
         funding.amount = poll.amount;
 
         return (historicalTally[_pollNum], funding, passed[_pollNum]);
-
     }
 
     function getSetDao(uint256 _pollNum) public view returns(uint256, SetDao memory, bool) {

@@ -312,4 +312,71 @@ contract DaoTest is Utility, Test {
         assertEq(gogeToken.teamFee(), 5);
         assertEq(gogeToken.totalFees(), 20);        
     }
+
+    function test_gogeDao_funding() public {
+
+        // ~~ create poll ~~
+
+        // create poll metadata
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "I want to propose a funding";
+        metadata.time2 = block.timestamp + 2 days;
+        metadata.addr1 = address(joe);
+        metadata.addr2 = BUSD;
+        metadata.amount = 1_000 ether;
+
+        // create poll
+        gogeDao.createPoll(GogeDAO.PollType.funding, metadata);
+
+        // Verify state change
+        assertEq(gogeDao.pollNum(), 1);
+        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.funding);
+
+        // Verify poll metadata
+        assertEq(gogeDao.getMetadata(1).description, "I want to propose a funding");
+        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
+        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).addr1, address(joe));
+        assertEq(gogeDao.getMetadata(1).addr2, BUSD);
+        assertEq(gogeDao.getMetadata(1).amount, 1_000 ether);
+
+        // ~~ pass poll ~~
+        
+        uint256 joe_votes = 50_000_000_000 ether;
+        gogeDao.updateVetoEnabled(false);
+
+        mint("BUSD", address(gogeDao), 1_000 ether);
+
+        // Pre-state check.
+        assertEq(IERC20(BUSD).balanceOf(address(joe)), 0);
+        assertEq(IERC20(BUSD).balanceOf(address(gogeDao)), 1_000 ether);
+        assertEq(gogeDao.passed(1), false);
+        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+
+        // Transfer Joe tokens so he can vote on a poll.
+        gogeToken.transfer(address(joe), joe_votes);
+        assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
+
+        // Approve the transfer of tokens and add vote.
+        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
+        assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
+
+        // Verify tokens were sent from Joe to Dao
+        assertEq(gogeToken.balanceOf(address(joe)), 0);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), joe_votes);
+
+        // Post-state check => gogeDao.
+        assertEq(gogeDao.polls(1, address(joe)), joe_votes);
+        assertEq(gogeDao.totalVotes(1), joe_votes);
+        assertEq(gogeDao.historicalTally(1), joe_votes);
+        assertEq(gogeDao.passed(1), true);
+        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+
+        assertEq(IERC20(BUSD).balanceOf(address(joe)), 1_000 ether);
+        assertEq(IERC20(BUSD).balanceOf(address(gogeDao)), 0);
+
+        // Verify quorum math.
+        uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();
+        assertTrue(num >= 50);        
+    }
 }

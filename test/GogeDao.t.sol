@@ -260,9 +260,9 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
         assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).fee1, 10);
-        assertEq(gogeDao.getMetadata(1).fee1, 3);
-        assertEq(gogeDao.getMetadata(1).fee1, 4);
-        assertEq(gogeDao.getMetadata(1).fee1, 5);
+        assertEq(gogeDao.getMetadata(1).fee2, 3);
+        assertEq(gogeDao.getMetadata(1).fee3, 4);
+        assertEq(gogeDao.getMetadata(1).fee4, 5);
         
     }
 }

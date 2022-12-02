@@ -3,12 +3,11 @@ pragma solidity ^0.8.6;
 
 import "../lib/forge-std/src/Test.sol";
 import "./Utility.sol";
-import { GogeDAO } from "../src/GogeDao.sol";
-import { DogeGaySon } from "../src/GogeToken.sol";
+import {GogeDAO} from "../src/GogeDao.sol";
+import {DogeGaySon} from "../src/GogeToken.sol";
 
-import { IUniswapV2Router02, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
-import { ERC20 } from "../src/extensions/ERC20.sol";
-
+import {IUniswapV2Router02, IUniswapV2Router01, IWETH, IERC20} from "../src/interfaces/Interfaces.sol";
+import {ERC20} from "../src/extensions/ERC20.sol";
 
 contract DaoTest is Utility, Test {
     GogeDAO gogeDao;
@@ -27,14 +26,15 @@ contract DaoTest is Utility, Test {
             address(0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe) // goge v1
         );
 
-        uint BNB_DEPOSIT = 200 ether;
-        uint TOKEN_DEPOSIT = 5000000000 ether;
+        uint256 BNB_DEPOSIT = 200 ether;
+        uint256 TOKEN_DEPOSIT = 5000000000 ether;
 
         IWETH(WBNB).deposit{value: BNB_DEPOSIT}();
 
         // Approve TaxToken for UniswapV2Router.
         IERC20(address(gogeToken)).approve(
-            address(UNIV2_ROUTER), TOKEN_DEPOSIT
+            address(UNIV2_ROUTER),
+            TOKEN_DEPOSIT
         );
 
         IUniswapV2Router01(UNIV2_ROUTER).addLiquidityETH{value: 100 ether}(
@@ -45,10 +45,8 @@ contract DaoTest is Utility, Test {
             address(this),
             block.timestamp + 300
         );
-        
-        gogeDao = new GogeDAO(
-            address(gogeToken)
-        );
+
+        gogeDao = new GogeDAO(address(gogeToken));
 
         gogeToken.enableTrading();
         gogeToken.setDAO(address(gogeDao));
@@ -60,7 +58,6 @@ contract DaoTest is Utility, Test {
     }
 
     function test_gogeDao_createPoll() public {
-
         // create poll metadata
         GogeDAO.Metadata memory metadata;
         metadata.description = "I want to add Joe to the naughty list";
@@ -75,7 +72,10 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.pollNum(), 1);
         assert(gogeDao.pollTypes(1) == GogeDAO.PollType.modifyBlacklist);
 
-        assertEq(gogeDao.getMetadata(1).description, "I want to add Joe to the naughty list");
+        assertEq(
+            gogeDao.getMetadata(1).description,
+            "I want to add Joe to the naughty list"
+        );
         assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
         assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).addr1, address(joe));
@@ -90,16 +90,21 @@ contract DaoTest is Utility, Test {
     }
 
     function test_gogeDao_addVote_state_change() public {
-
         test_gogeDao_createPoll();
         uint256 joe_votes = 10_000_000_000 ether;
-        
+
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), joe_votes);
         assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
 
         // Approve the transfer of tokens and add vote.
-        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
+        assert(
+            joe.try_approveToken(
+                address(gogeToken),
+                address(gogeDao),
+                joe_votes
+            )
+        );
         assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
 
         // Verify tokens were sent from Joe to Dao
@@ -112,20 +117,26 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.historicalTally(1), joe_votes);
 
         // Verify quorum
-        uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve(); // => 10%
+        uint256 num = (gogeDao.totalVotes(1) * 100) /
+            gogeToken.getCirculatingMinusReserve(); // => 10%
         assertEq(num, 10);
     }
 
     function test_gogeDao_addVote_restrictions() public {
-
         test_gogeDao_createPoll();
-        
+
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), 1_000_000_000 ether);
         assertEq(gogeToken.balanceOf(address(joe)), 1_000_000_000 ether);
 
         // Approve tokens for vote.
-        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), 1_000_000_000 ether));
+        assert(
+            joe.try_approveToken(
+                address(gogeToken),
+                address(gogeDao),
+                1_000_000_000 ether
+            )
+        );
 
         // Verify Joe cannot make more votes than the balance in his wallet.
         assert(!joe.try_addVote(address(gogeDao), 1, 1_000_000_000 ether + 1));
@@ -151,17 +162,22 @@ contract DaoTest is Utility, Test {
     }
 
     function test_gogeDao_addVote_fuzzing(uint256 joe_votes) public {
-
         test_gogeDao_createPoll();
-        
+
         joe_votes = bound(joe_votes, 1, 95_000_000_000 ether);
-        
+
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), joe_votes);
         assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
 
         // Approve the transfer of tokens and add vote.
-        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
+        assert(
+            joe.try_approveToken(
+                address(gogeToken),
+                address(gogeDao),
+                joe_votes
+            )
+        );
         assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
 
         // Verify tokens were sent from Joe to Dao
@@ -174,12 +190,12 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.historicalTally(1), joe_votes);
 
         // Verify quorum
-        uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve(); // => 10%
-        emit log_uint (num);
+        uint256 num = (gogeDao.totalVotes(1) * 100) /
+            gogeToken.getCirculatingMinusReserve(); // => 10%
+        emit log_uint(num);
     }
 
     function test_gogeDao_addVote_quorum() public {
-
         test_gogeDao_createPoll();
         uint256 joe_votes = 50_000_000_000 ether;
         gogeDao.updateVetoEnabled(false);
@@ -188,13 +204,19 @@ contract DaoTest is Utility, Test {
         assertEq(gogeToken.isBlacklisted(address(joe)), false);
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
-        
+
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), joe_votes);
         assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
 
         // Approve the transfer of tokens and add vote.
-        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
+        assert(
+            joe.try_approveToken(
+                address(gogeToken),
+                address(gogeDao),
+                joe_votes
+            )
+        );
         assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
 
         // Verify tokens were sent from Joe to Dao
@@ -209,10 +231,38 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
         // Verify quorum math.
-        uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve(); // => 10%
+        uint256 num = (gogeDao.totalVotes(1) * 100) /
+            gogeToken.getCirculatingMinusReserve(); // => 10%
         assertTrue(num >= 50);
 
         // Post-state check => gogeToken.
         assertEq(gogeToken.isBlacklisted(address(joe)), true);
+    }
+
+    function test_gogeDao_taxChange() public {
+        // create poll metadata
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "I want to propose a tax change";
+        metadata.time2 = block.timestamp + 2 days;
+        metadata.fee1 = 10; // cakeDividendRewardsFee
+        metadata.fee2 = 3;  // marketingFee
+        metadata.fee3 = 4;  // buyBackFee
+        metadata.fee4 = 5;  // teamFee
+
+        // create poll
+        gogeDao.createPoll(GogeDAO.PollType.taxChange, metadata);
+
+        // Verify state change
+        assertEq(gogeDao.pollNum(), 1);
+        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.taxChange);
+
+        assertEq(gogeDao.getMetadata(1).description, "I want to propose a tax change");
+        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
+        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).fee1, 10);
+        assertEq(gogeDao.getMetadata(1).fee1, 3);
+        assertEq(gogeDao.getMetadata(1).fee1, 4);
+        assertEq(gogeDao.getMetadata(1).fee1, 5);
+        
     }
 }

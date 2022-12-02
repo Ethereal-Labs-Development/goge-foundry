@@ -10,7 +10,7 @@ interface ERC20 {
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     function getCirculatingMinusReserve() external view returns (uint256);
     function getLastReceived(address voter) external view returns (uint256);
-    function updateFees(uint8 _rewardFee, uint8 _marketingFee, uint8 _buybackFee, uint8 _teamFee, uint8 _multiplier) external;
+    function updateFees(uint8 _rewardFee, uint8 _marketingFee, uint8 _buybackFee, uint8 _teamFee) external;
     function setDAO(address _dao) external;
     function whitelistPinkSale(address _presaleAddress) external;
     function prepareForPartnerOrExchangeListing(address _partnerOrExchangeAddress) external;

@@ -108,11 +108,10 @@ contract GogeDAO is Ownable {
         string description;
         uint256 startTime;
         uint256 endTime;
-        uint8 cakeDividendRewardsFee;
+        uint8 cakeDividendsFee;
         uint8 marketingFee;
-        uint8 buyBackAndLiquidityFee;
+        uint8 buyBackFee;
         uint8 teamFee;
-        uint8 transferMultiplier;
     }
 
     struct Funding {
@@ -396,7 +395,7 @@ contract GogeDAO is Ownable {
             if (pollTypes[_pollNum] == PollType.taxChange) {
                 TaxChange memory taxchange;
                 (,taxchange,) = getTaxChange(_pollNum);
-                ERC20(governanceTokenAddr).updateFees(taxchange.cakeDividendRewardsFee, taxchange.marketingFee, taxchange.buyBackAndLiquidityFee, taxchange.teamFee, taxchange.transferMultiplier);
+                ERC20(governanceTokenAddr).updateFees(taxchange.cakeDividendsFee, taxchange.marketingFee, taxchange.buyBackFee, taxchange.teamFee);
             }
             else if (pollTypes[_pollNum] == PollType.funding) {
                 Funding memory funding;
@@ -668,11 +667,10 @@ contract GogeDAO is Ownable {
         taxChange.description = poll.description;
         taxChange.startTime = poll.time1;
         taxChange.endTime = poll.time2;
-        taxChange.cakeDividendRewardsFee = poll.fee1;
+        taxChange.cakeDividendsFee = poll.fee1;
         taxChange.marketingFee = poll.fee2;
-        taxChange.buyBackAndLiquidityFee = poll.fee3;
+        taxChange.buyBackFee = poll.fee3;
         taxChange.teamFee = poll.fee4;
-        taxChange.transferMultiplier = poll.multiplier;
 
         return (historicalTally[_pollNum], taxChange, passed[_pollNum]);
     }

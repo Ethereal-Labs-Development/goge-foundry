@@ -4,17 +4,16 @@ pragma solidity ^0.8.6;
 import "../lib/forge-std/src/Test.sol";
 import "./Utility.sol";
 
-import { IUniswapV2Router02, IUniswapV2Pair, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
-import { ERC20 } from "../src/extensions/ERC20.sol";
+import {IUniswapV2Router02, IUniswapV2Pair, IUniswapV2Router01, IWETH, IERC20} from "../src/interfaces/Interfaces.sol";
+import {ERC20} from "../src/extensions/ERC20.sol";
 
-import { DogeGaySon } from "../src/GogeToken.sol";
-import { DogeGaySon1 } from "../src/TokenV1.sol";
-import { GogeDAO } from "../src/GogeDao.sol";
+import {DogeGaySon} from "../src/GogeToken.sol";
+import {DogeGaySon1} from "../src/TokenV1.sol";
+import {GogeDAO} from "../src/GogeDao.sol";
 
 contract MainDeploymentTesting is Utility, Test {
-
     DogeGaySon1 gogeToken_v1;
-    DogeGaySon  gogeToken_v2;
+    DogeGaySon gogeToken_v2;
 
     address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E; //bsc
 
@@ -25,14 +24,15 @@ contract MainDeploymentTesting is Utility, Test {
         // Deploy v1 token
         gogeToken_v1 = new DogeGaySon1();
 
-        uint BNB_DEPOSIT = 300 ether;
-        uint TOKEN_DEPOSIT = 22_310_409_737 ether;
+        uint256 BNB_DEPOSIT = 300 ether;
+        uint256 TOKEN_DEPOSIT = 22_310_409_737 ether;
 
         IWETH(WBNB).deposit{value: BNB_DEPOSIT}();
 
         // Approve TaxToken for UniswapV2Router.
         IERC20(address(gogeToken_v1)).approve(
-            address(UNIV2_ROUTER), TOKEN_DEPOSIT
+            address(UNIV2_ROUTER),
+            TOKEN_DEPOSIT
         );
 
         // Create liquidity pool.
@@ -82,22 +82,18 @@ contract MainDeploymentTesting is Utility, Test {
         emit log_named_uint("cost of 1 v2 token", price); // 0.000002119865796663
     }
 
-
     // ~~ Utility Functions ~~
 
     /// @notice Returns the price of 1 token in USD
     function getPrice(address token) internal returns (uint256) {
-
         address[] memory path = new address[](3);
 
         path[0] = token;
         path[1] = WBNB;
         path[2] = BUSD;
 
-        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut(
-            1 ether,
-            path
-        );
+        uint256[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER)
+            .getAmountsOut(1 ether, path);
 
         return amounts[2];
     }
@@ -131,13 +127,18 @@ contract MainDeploymentTesting is Utility, Test {
         uint256 bal = gogeToken_v1.balanceOf(address(actor));
 
         // Approve and migrate
-        assert(actor.try_approveToken(address(gogeToken_v1), address(gogeToken_v2), gogeToken_v1.balanceOf(address(actor))));
+        assert(
+            actor.try_approveToken(
+                address(gogeToken_v1),
+                address(gogeToken_v2),
+                gogeToken_v1.balanceOf(address(actor))
+            )
+        );
         assert(actor.try_migrate(address(gogeToken_v2)));
 
         assertEq(gogeToken_v1.balanceOf(address(actor)), 0);
         assertEq(gogeToken_v2.balanceOf(address(actor)), bal);
     }
-
 
     // ~~ Unit Tests ~~
 
@@ -145,5 +146,4 @@ contract MainDeploymentTesting is Utility, Test {
     function test_mainDeployment_init_state() public {
         assertTrue(true);
     }
-
 }

@@ -40,6 +40,7 @@ contract GogeDAO is Ownable {
     uint256 public pollNum;
     uint256 public minPeriod = 86400;
     mapping(uint256 => mapping(address => uint256)) public polls;
+    mapping(uint256 => address[]) public voterLibrary;
     mapping(uint256 => uint256) public totalVotes;
     mapping(uint256 => uint256) public historicalTally;
     mapping(uint256 => uint256) public pollStartTime;
@@ -88,7 +89,8 @@ contract GogeDAO is Ownable {
         other
     }
 
-    // -------- Data Structures -----------
+    // -------- Poll Structs -----------
+
     struct Metadata {
         string description;
         uint256 time1;
@@ -373,6 +375,7 @@ contract GogeDAO is Ownable {
         require(block.timestamp >= pollStartTime[_pollNum] && block.timestamp < pollEndTime[_pollNum], "Poll Closed");
         require(ERC20(governanceTokenAddr).transferFrom(_msgSender(), address(this), _numVotes));
 
+        voterLibrary[_pollNum].push(_msgSender());
         polls[_pollNum][_msgSender()] = _numVotes;
         totalVotes[_pollNum] += _numVotes;
         historicalTally[_pollNum] += _numVotes;
@@ -400,9 +403,9 @@ contract GogeDAO is Ownable {
             else if (pollTypes[_pollNum] == PollType.funding) {
                 Funding memory funding;
                 (,funding,) = getFunding(_pollNum);
-                require(funding.amount <= marketingBalance, "Insufficient Funds");
+                //require(funding.amount <= marketingBalance, "Insufficient Funds");
                 ERC20(funding.token).transfer(funding.recipient, funding.amount);
-                marketingBalance -= funding.amount;
+                //marketingBalance -= funding.amount;
             }
             else if (pollTypes[_pollNum] == PollType.setDao) {
                 SetDao memory setDao;
@@ -534,6 +537,20 @@ contract GogeDAO is Ownable {
                 (,updateGovernanceToken,) = getUpdateGovernanceToken(_pollNum);
                 changeGovernanceToken(updateGovernanceToken.addr);
             }
+
+            // refund voters
+            refundVotersPostChange(_pollNum);
+        }
+    }
+
+    /// TODO: NEEDS TESTING
+    /// @notice A method for all voters to be refunded after a poll that they've voted on has been passed.
+    /// @param  _pollNum The poll number.
+    function refundVotersPostChange(uint256 _pollNum) public {
+        for (uint256 i = 0; i < voterLibrary[_pollNum].length; i++) {
+            address voter = voterLibrary[_pollNum][i];
+            uint256 amnt  = polls[_pollNum][voter];
+            ERC20(governanceTokenAddr).transfer(voter, amnt);
         }
     }
 
@@ -588,6 +605,7 @@ contract GogeDAO is Ownable {
     }
 
     // ---------- Admin ----------
+
     function _transferOwnership(address newOwner) public onlyOwner() {
         require(newOwner != address(0));
         super.transferOwnership(newOwner);
@@ -699,7 +717,6 @@ contract GogeDAO is Ownable {
         setDao.addr = poll.addr1;
 
         return (historicalTally[_pollNum], setDao, passed[_pollNum]);
-
     }
 
     function getSetCex(uint256 _pollNum) public view returns(uint256, SetCex memory, bool) {

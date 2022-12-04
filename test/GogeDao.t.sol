@@ -239,6 +239,9 @@ contract DaoTest is Utility, Test {
         assertEq(gogeToken.isBlacklisted(address(joe)), true);
     }
 
+    // ~~ All poll type tests ~~
+
+    /// @notice initiates a taxChange poll and verifies correct state change when poll is passed.
     function test_gogeDao_taxChange() public {
 
         // ~~ create poll ~~
@@ -313,6 +316,7 @@ contract DaoTest is Utility, Test {
         assertEq(gogeToken.totalFees(), 20);        
     }
 
+    /// @notice initiates a funding poll and verifies correct state change when poll is passed.
     function test_gogeDao_funding() public {
 
         // ~~ create poll ~~

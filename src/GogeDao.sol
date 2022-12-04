@@ -546,7 +546,7 @@ contract GogeDAO is Ownable {
     /// TODO: NEEDS TESTING
     /// @notice A method for all voters to be refunded after a poll that they've voted on has been passed.
     /// @param  _pollNum The poll number.
-    function refundVotersPostChange(uint256 _pollNum) public {
+    function refundVotersPostChange(uint256 _pollNum) internal {
         for (uint256 i = 0; i < voterLibrary[_pollNum].length; i++) {
             address voter = voterLibrary[_pollNum][i];
             uint256 amnt  = polls[_pollNum][voter];

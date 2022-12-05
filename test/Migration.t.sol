@@ -196,8 +196,8 @@ contract MigrationTesting is Utility, Test {
         emit log_named_uint("v2 LP BNB balance",  v2_reserveBnb);
 
         // Verify reserves of v1 LP
-        assertEq(v1_reserveBnb, 22_345_616_917 ether);
-        assertEq(v1_reserveTokens,    220 ether);
+        assertEq(v1_reserveTokens, 22_345_616_917 ether);
+        assertEq(v1_reserveBnb,    220 ether);
 
         // Verify reserves of v2 LP
         assertEq(v2_reserveTokens, 0);
@@ -352,8 +352,8 @@ contract MigrationTesting is Utility, Test {
         assertEq(gogeToken_v2.balanceOf(address(joe)), 0);
 
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
-        (uint112 preReserveBnb_v1, uint112 preReserveTokens_v1,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
-        (uint112 preReserveBnb_v2, uint112 preReserveTokens_v2,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves(); // swapped for some reason
+        (uint112 preReserveTokens_v1, uint112 preReserveBnb_v1,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
+        (uint112 preReserveTokens_v2, uint112 preReserveBnb_v2,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves(); // swapped for some reason
 
         emit log_named_uint("v1 LP GOGE balance", preReserveTokens_v1);
         emit log_named_uint("v1 LP BNB balance",  preReserveBnb_v1);
@@ -404,8 +404,8 @@ contract MigrationTesting is Utility, Test {
         emit log_named_uint("cost of 1 v2 token", price); // 0.000002836947746805
 
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
-        (uint112 postReserveBnb_v1, uint112 postReserveTokens_v1,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
-        (uint112 postReserveBnb_v2, uint112 postReserveTokens_v2,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves(); // swapped for some reason
+        (uint112 postReserveTokens_v1, uint112 postReserveBnb_v1,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
+        (uint112 postReserveTokens_v2, uint112 postReserveBnb_v2,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves(); // swapped for some reason
 
         emit log_named_uint("v1 LP GOGE balance", preReserveTokens_v1);
         emit log_named_uint("v1 LP BNB balance",  preReserveBnb_v1);

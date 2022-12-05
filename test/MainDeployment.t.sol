@@ -30,10 +30,7 @@ contract MainDeploymentTesting is Utility, Test {
         IWETH(WBNB).deposit{value: BNB_DEPOSIT}();
 
         // Approve TaxToken for UniswapV2Router.
-        IERC20(address(gogeToken_v1)).approve(
-            address(UNIV2_ROUTER),
-            TOKEN_DEPOSIT
-        );
+        IERC20(address(gogeToken_v1)).approve(address(UNIV2_ROUTER), TOKEN_DEPOSIT);
 
         // Create liquidity pool.
         IUniswapV2Router01(UNIV2_ROUTER).addLiquidityETH{value: 220 ether}(
@@ -92,8 +89,7 @@ contract MainDeploymentTesting is Utility, Test {
         path[1] = WBNB;
         path[2] = BUSD;
 
-        uint256[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER)
-            .getAmountsOut(1 ether, path);
+        uint256[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut(1 ether, path);
 
         return amounts[2];
     }
@@ -127,13 +123,7 @@ contract MainDeploymentTesting is Utility, Test {
         uint256 bal = gogeToken_v1.balanceOf(address(actor));
 
         // Approve and migrate
-        assert(
-            actor.try_approveToken(
-                address(gogeToken_v1),
-                address(gogeToken_v2),
-                gogeToken_v1.balanceOf(address(actor))
-            )
-        );
+        assert(actor.try_approveToken(address(gogeToken_v1), address(gogeToken_v2), gogeToken_v1.balanceOf(address(actor))));
         assert(actor.try_migrate(address(gogeToken_v2)));
 
         assertEq(gogeToken_v1.balanceOf(address(actor)), 0);

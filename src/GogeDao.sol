@@ -132,19 +132,19 @@ contract GogeDAO is Ownable {
         address addr;
     }
 
+    struct SetCex {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address addr; 
+    }
+
     struct SetDex {
         string description;
         uint256 startTime;
         uint256 endTime;
         address addr;
         bool boolVar;
-    }
-
-    struct SetCex {
-        string description;
-        uint256 startTime;
-        uint256 endTime;
-        address addr; 
     }
 
     struct UpdateDividendToken {

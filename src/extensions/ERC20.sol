@@ -27,6 +27,7 @@ interface ERC20 {
     function excludeFromFees(address account, bool excluded) external;
     function excludeFromDividend(address account) external;
     function setAutomatedMarketMakerPair(address pair, bool value) external;
+    function excludeFromCirculatingSupply(address account, bool excluded) external;
     function updateGasForProcessing(uint256 newValue) external;
     function updateMinimumBalanceForDividends(uint256 newMinimumBalance) external;
     function processDividendTracker() external;

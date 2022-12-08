@@ -580,4 +580,122 @@ contract DaoTest is Utility, Test {
         uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();
         assertTrue(num >= gogeDao.quorum());        
     }
+
+    /// @notice initiates a setDex poll and verifies correct state change when poll is passed.
+    function test_gogeDao_setDex() public {
+
+        // NOTE create poll
+
+        // create poll metadata
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "I want to propose setDex";
+        metadata.time2 = block.timestamp + 2 days;
+        metadata.addr1 = address(222);
+        metadata.boolVar = true;
+
+        // create poll
+        gogeDao.createPoll(GogeDAO.PollType.setDex, metadata);
+
+        // Verify state change
+        assertEq(gogeDao.pollNum(), 1);
+        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.setDex);
+
+        // Verify poll metadata
+        assertEq(gogeDao.getMetadata(1).description, "I want to propose setDex");
+        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
+        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).addr1, address(222));
+        assertEq(gogeDao.getMetadata(1).boolVar, true);
+
+        // NOTE pass poll
+        
+        uint256 joe_votes = 50_000_000_000 ether;
+        gogeDao.updateVetoEnabled(false);
+
+        // Transfer Joe tokens so he can vote on a poll.
+        gogeToken.transfer(address(joe), joe_votes);
+        assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
+
+        // Pre-state check.
+        assertEq(gogeDao.passed(1), false);
+        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeToken.automatedMarketMakerPairs(address(222)), false);
+
+        // Approve the transfer of tokens and add vote.
+        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
+        assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
+
+        // Post-state check => gogeDao.
+        assertEq(gogeDao.polls(1, address(joe)), joe_votes);
+        assertEq(gogeDao.totalVotes(1), joe_votes);
+        assertEq(gogeDao.historicalTally(1), joe_votes);
+        assertEq(gogeDao.passed(1), true);
+        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+
+        assertEq(gogeToken.automatedMarketMakerPairs(address(222)), true);
+
+        // Verify quorum math.
+        uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();
+        assertTrue(num >= gogeDao.quorum());        
+    }
+
+    /// @notice initiates a excludeFromCirculatingSupply poll and verifies correct state change when poll is passed.
+    function test_gogeDao_excludeFromCirculatingSupply() public {
+
+        // NOTE create poll
+
+        // create poll metadata
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "I want to propose excludeFromCirculatingSupply";
+        metadata.time2 = block.timestamp + 2 days;
+        metadata.addr1 = address(222);
+        metadata.boolVar = true;
+
+        // create poll
+        gogeDao.createPoll(GogeDAO.PollType.excludeFromCirculatingSupply, metadata);
+
+        // Verify state change
+        assertEq(gogeDao.pollNum(), 1);
+        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.excludeFromCirculatingSupply);
+
+        // Verify poll metadata
+        assertEq(gogeDao.getMetadata(1).description, "I want to propose excludeFromCirculatingSupply");
+        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
+        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).addr1, address(222));
+        assertEq(gogeDao.getMetadata(1).boolVar, true);
+
+        // NOTE pass poll
+        
+        uint256 joe_votes = 50_000_000_000 ether;
+        gogeDao.updateVetoEnabled(false);
+
+        // Transfer Joe tokens so he can vote on a poll.
+        gogeToken.transfer(address(joe), joe_votes);
+        assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
+
+        // Pre-state check.
+        assertEq(gogeDao.passed(1), false);
+        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        (bool excludedPre,) = gogeToken.isExcludedFromCirculatingSupply(address(222));
+        assertEq(excludedPre, false);
+
+        // Approve the transfer of tokens and add vote.
+        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
+        assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
+
+        // Post-state check => gogeDao.
+        assertEq(gogeDao.polls(1, address(joe)), joe_votes);
+        assertEq(gogeDao.totalVotes(1), joe_votes);
+        assertEq(gogeDao.historicalTally(1), joe_votes);
+        assertEq(gogeDao.passed(1), true);
+        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+
+        (bool excludedPost,) = gogeToken.isExcludedFromCirculatingSupply(address(222));
+        assertEq(excludedPost, true);
+
+        // Verify quorum math.
+        uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();
+        assertTrue(num >= gogeDao.quorum());        
+    }
 }

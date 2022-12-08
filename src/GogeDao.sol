@@ -63,6 +63,7 @@ contract GogeDAO is Ownable {
         setDao,
         setCex,
         setDex,
+        excludeFromCirculatingSupply,
         updateDividendToken,
         updateMarketingWallet,
         updateTeamWallet,
@@ -140,6 +141,14 @@ contract GogeDAO is Ownable {
     }
 
     struct SetDex {
+        string description;
+        uint256 startTime;
+        uint256 endTime;
+        address addr;
+        bool boolVar;
+    }
+
+    struct ExcludeFromCirculatingSupply {
         string description;
         uint256 startTime;
         uint256 endTime;
@@ -333,6 +342,7 @@ contract GogeDAO is Ownable {
             "setDao",
             "setCex",
             "setDex",
+            "excludeFromCirculatingSupply",
             "updateDividendToken",
             "updateMarketingWallet",
             "updateTeamWallet",
@@ -421,6 +431,11 @@ contract GogeDAO is Ownable {
                 SetDex memory setDex;
                 (,setDex,) = getSetDex(_pollNum);
                 ERC20(governanceTokenAddr).setAutomatedMarketMakerPair(setDex.addr, setDex.boolVar);
+            }
+            else if (pollTypes[_pollNum] == PollType.excludeFromCirculatingSupply) {
+                ExcludeFromCirculatingSupply memory excludeFromCirculatingSupply;
+                (,excludeFromCirculatingSupply,) = getExcludeFromCirculatingSupply(_pollNum);
+                ERC20(governanceTokenAddr).excludeFromCirculatingSupply(excludeFromCirculatingSupply.addr, excludeFromCirculatingSupply.boolVar);
             }
             else if (pollTypes[_pollNum] == PollType.updateDividendToken) {
                 UpdateDividendToken memory updateDividendToken;
@@ -739,8 +754,22 @@ contract GogeDAO is Ownable {
         setDex.startTime = poll.time1;
         setDex.endTime = poll.time2;
         setDex.addr = poll.addr1;
+        setDex.boolVar = poll.boolVar;
 
         return (historicalTally[_pollNum], setDex, passed[_pollNum]);
+    }
+
+    function getExcludeFromCirculatingSupply(uint256 _pollNum) public view returns(uint256, ExcludeFromCirculatingSupply memory, bool) {
+        require(pollTypes[_pollNum] == PollType.excludeFromCirculatingSupply, "Not excludeFromCirculatingSupply");
+        Metadata memory poll = pollMap[_pollNum];
+        ExcludeFromCirculatingSupply memory excludeFromCirculatingSupply;
+        excludeFromCirculatingSupply.description = poll.description;
+        excludeFromCirculatingSupply.startTime = poll.time1;
+        excludeFromCirculatingSupply.endTime = poll.time2;
+        excludeFromCirculatingSupply.addr = poll.addr1;
+        excludeFromCirculatingSupply.boolVar = poll.boolVar;
+
+        return (historicalTally[_pollNum], excludeFromCirculatingSupply, passed[_pollNum]);
     }
 
     function getUpdateDividendToken(uint256 _pollNum) public view returns(uint256, UpdateDividendToken memory, bool) {

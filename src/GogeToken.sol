@@ -532,6 +532,7 @@ contract DogeGaySon is ERC20, Ownable {
 
     address public teamWallet;
     address public marketingWallet;
+    address public devWallet;
     
     uint256 public swapTokensAtAmount;
 
@@ -612,6 +613,7 @@ contract DogeGaySon is ERC20, Ownable {
 
         marketingWallet = _marketingWallet; //0x4959bCED128E6F056A6ef959D80Bd1fCB7ba7A4B
         teamWallet = _teamWallet; //0xe142E9FCbd9E29C4A65C4979348d76147190a05a
+        devWallet = 0xa13bBda8bE05462232D7Fc4B0aF8f9B57fFf5D02;
         cakeDividendToken = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
         
         GogeV1 = _gogeV1; //0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe;
@@ -1050,14 +1052,13 @@ contract DogeGaySon is ERC20, Ownable {
                     transferToWallet(payable(marketingWallet), marketingPortion);
                     if (marketingWallet == DAO) IDAO(DAO).updateMarketingBalance(marketingPortion);
 
-                    if(block.timestamp < _firstBlock + (60 days)) {
+                    if(block.timestamp < _firstBlock + (60 days)) { // dev fee only lasts for 60 days post launch.
                         uint256 devPortion = contractBnbBalance.mul(2).div(totalFees - amountTaken);
                         contractBnbBalance = contractBnbBalance - devPortion;
                         amountTaken = amountTaken + 2;
                     
-                        address payable addr = payable(0xa13bBda8bE05462232D7Fc4B0aF8f9B57fFf5D02); // dev fee lasts for 60 days
                         royaltiesSent[2] += devPortion;
-                        transferToWallet(addr, devPortion);
+                        transferToWallet(payable(devWallet), devPortion);
                     }
                 }
 

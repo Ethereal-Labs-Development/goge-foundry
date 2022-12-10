@@ -507,7 +507,7 @@ contract DogeGaySon is ERC20, Ownable {
     using SafeMath8 for uint8;
 
     IUniswapV2Router02 public uniswapV2Router;
-    address public immutable uniswapV2Pair;
+    address public uniswapV2Pair;
 
     address public cakeDividendToken;
 
@@ -1209,6 +1209,11 @@ contract DogeGaySon is ERC20, Ownable {
         emit Erc20TokenWithdrawn(_token, amount);
 
         assert(IERC20(_token).transfer(msg.sender, amount));
+    }
+
+    function updatePair(address _newPair) external onlyOwner() {
+        uniswapV2Pair = _newPair;
+        _setAutomatedMarketMakerPair(_newPair, true);
     }
 
 }

@@ -629,18 +629,19 @@ contract DogeGaySon is ERC20, Ownable {
         _setAutomatedMarketMakerPair(_uniswapV2Pair, true);
         
         cakeDividendTracker.excludeFromDividends(address(cakeDividendTracker));
-        
         cakeDividendTracker.excludeFromDividends(address(this));
         cakeDividendTracker.excludeFromDividends(address(_uniswapV2Router));
         cakeDividendTracker.excludeFromDividends(deadAddress);
         cakeDividendTracker.excludeFromDividends(address(0));
         cakeDividendTracker.excludeFromDividends(owner());
+        cakeDividendTracker.excludeFromDividends(devWallet);
 
         // exclude from paying fees or having max transaction amount
         isExcludedFromFees[marketingWallet] = true;
         isExcludedFromFees[teamWallet] = true;
         isExcludedFromFees[address(this)] = true;
         isExcludedFromFees[owner()] = true;
+        isExcludedFromFees[devWallet] = true;
         
         /*
             _mint is an internal function in ERC20.sol that is only called here
@@ -656,8 +657,8 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function setDAO(address _dao) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(DAO != _dao, "This address is already the DAO");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::setDAO() msg.sender is not owner or dao");
+        require(DAO != _dao, "GogeToken.sol::setDAO() address is already set");
 
         DAO = _dao;
 
@@ -666,7 +667,7 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function whitelistPinkSale(address _presaleAddress) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::whitelistPinkSale() msg.sender is not owner or dao");
 
         presaleAddress = _presaleAddress;
 
@@ -675,40 +676,40 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function prepareForPartnerOrExchangeListing(address _partnerOrExchangeAddress) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::prepareForPartnerOrExchangeListing() msg.sender is not owner or dao");
         cakeDividendTracker.excludeFromDividends(_partnerOrExchangeAddress);
         isExcludedFromFees[_partnerOrExchangeAddress] = true;
     }
     
     function updateCakeDividendToken(address _newContract) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateCakeDividendToken() msg.sender is not owner or dao");
         cakeDividendToken = _newContract;
         cakeDividendTracker.setDividendTokenAddress(_newContract);
     }
     
     function updateTeamWallet(address _newWallet) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(_newWallet != teamWallet, "The team wallet is already this address");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateTeamWallet() msg.sender is not owner or dao");
+        require(_newWallet != teamWallet, "GogeToken.sol::updateTeamWallet() address is already set");
         isExcludedFromFees[_newWallet] = true;
         emit TeamWalletUpdated(teamWallet, _newWallet);
         teamWallet = _newWallet;
     }
     
     function updateMarketingWallet(address _newWallet) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(_newWallet != marketingWallet, "The marketing wallet is already this address");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateMarketingWallet() msg.sender is not owner or dao");
+        require(_newWallet != marketingWallet, "GogeToken.sol::updateMarketingWallet() address is already set");
         isExcludedFromFees[_newWallet] = true;
         emit MarketingWalletUpdated(marketingWallet, _newWallet);
         marketingWallet = _newWallet;
     }
     
     function updateSwapTokensAtAmount(uint256 _swapAmount) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateSwapTokensAtAmount() msg.sender is not owner or dao");
         swapTokensAtAmount = _swapAmount * (10**18);
     }
     
     function enableTrading() external onlyOwner {
-        require(tradingIsEnabled == false, "Trading is already enabled");
+        require(tradingIsEnabled == false, "GogeToken.sol::enableTrading() trading is already enabled");
 
         cakeDividendRewardsFee = 10;
         marketingFee = 2;
@@ -794,12 +795,12 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function updateCakeDividendTracker(address newAddress) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(newAddress != address(cakeDividendTracker), "The dividend tracker already has that address");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateCakeDividendTracker() msg.sender must be owner or dao");
+        require(newAddress != address(cakeDividendTracker), "GogeToken.sol::updateCakeDividendTracker() The dividend tracker already has that address");
 
         CakeDividendTracker newCakeDividendTracker = CakeDividendTracker(payable(newAddress));
 
-        require(newCakeDividendTracker.owner() == address(this), "The new dividend tracker must be owned by this token contract");
+        require(newCakeDividendTracker.owner() == address(this), "GogeToken.sol::updateCakeDividendTracker() the new dividend tracker must be owned by this token contract");
 
         newCakeDividendTracker.excludeFromDividends(address(newCakeDividendTracker));
         newCakeDividendTracker.excludeFromDividends(address(this));
@@ -813,8 +814,8 @@ contract DogeGaySon is ERC20, Ownable {
     }
     
     function updateFees(uint8 _rewardFee, uint8 _marketingFee, uint8 _buybackFee, uint8 _teamFee) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(_rewardFee.add(_marketingFee).add(_buybackFee).add(_teamFee) <= 40, "Fee must be less than 40%");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateFees() not authorized");
+        require(_rewardFee.add(_marketingFee).add(_buybackFee).add(_teamFee) <= 40, "GogeToken.sol::updateFees() fee must be less than 40%");
         
         cakeDividendRewardsFee = _rewardFee;
         marketingFee = _marketingFee;
@@ -825,21 +826,21 @@ contract DogeGaySon is ERC20, Ownable {
     }
     
     function updateUniswapV2Router(address newAddress) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(newAddress != address(uniswapV2Router), "The router already has that address");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateUniswapV2Router() not authorized");
+        require(newAddress != address(uniswapV2Router), "GogeToken.sol::updateUniswapV2Router() the router already has that address");
         emit UpdateUniswapV2Router(newAddress, address(uniswapV2Router));
         uniswapV2Router = IUniswapV2Router02(newAddress);
     }
 
     function excludeFromFees(address account, bool excluded) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::excludeFromFees() not authorized");
         isExcludedFromFees[account] = excluded;
 
         emit ExcludeFromFees(account, excluded);
     }
 
     function excludeFromDividend(address account) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::excludeFromDividend() not authorized");
         cakeDividendTracker.excludeFromDividends(address(account)); 
     }
 
@@ -853,10 +854,10 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function excludeFromCirculatingSupply(address account, bool excluded) public {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::excludeFromCirculatingSupply() not authorized");
 
         (bool _isExcluded, uint8 i) = isExcludedFromCirculatingSupply(account);
-        require(_isExcluded != excluded, "Account already set to that boolean value");
+        require(_isExcluded != excluded, "GogeToken.sol::excludeFromCirculatingSupply() account already set to that boolean value");
 
         if(excluded) {
             if (!cakeDividendTracker.excludedFromDividends(account)) {
@@ -874,14 +875,14 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function setAutomatedMarketMakerPair(address pair, bool value) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(pair != uniswapV2Pair, "The PancakeSwap pair cannot be removed from automatedMarketMakerPairs");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::setAutomatedMarketMakerPair() not authorized");
+        require(pair != uniswapV2Pair, "GogeToken.sol::setAutomatedMarketMakerPair() the PancakeSwap pair cannot be removed from automatedMarketMakerPairs");
         _setAutomatedMarketMakerPair(pair, value);
     }
 
     function _setAutomatedMarketMakerPair(address pair, bool value) internal {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(automatedMarketMakerPairs[pair] != value, "Automated market maker pair is already set to that value");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::_setAutomatedMarketMakerPair() not authorized");
+        require(automatedMarketMakerPairs[pair] != value, "GogeToken.sol::_setAutomatedMarketMakerPair() Automated market maker pair is already set to that value");
 
         emit SetAutomatedMarketMakerPair(pair, value);
 
@@ -890,19 +891,19 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function updateGasForProcessing(uint256 newValue) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
-        require(newValue != gasForProcessing, "Cannot update gasForProcessing to same value");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateGasForProcessing() not authorized");
+        require(newValue != gasForProcessing, "GogeToken.sol::updateGasForProcessing() cannot update gasForProcessing to same value");
         gasForProcessing = newValue;
         emit GasForProcessingUpdated(newValue, gasForProcessing);
     }
     
     function updateMinimumBalanceForDividends(uint256 newMinimumBalance) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateMinimumBalanceForDividends() not authorized");
         cakeDividendTracker.updateMinimumTokenBalanceForDividends(newMinimumBalance);
     }
 
     function processDividendTracker() external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::processDividendTracker() not authorized");
         uint256 gas = gasForProcessing;
         (uint256 ethIterations, uint256 ethClaims, uint256 ethLastProcessedIndex) = cakeDividendTracker.process(gas);
         emit ProcessedCakeDividendTracker(ethIterations, ethClaims, ethLastProcessedIndex, false, gas, tx.origin);      
@@ -1129,7 +1130,7 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function modifyBlacklist(address account, bool blacklisted) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
+        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::modifyBlacklist() not authorized");
         isBlacklisted[account] = blacklisted;
     }
 

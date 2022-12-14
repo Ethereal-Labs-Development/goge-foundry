@@ -600,6 +600,8 @@ contract DogeGaySon is ERC20, Ownable {
     event Erc20TokenWithdrawn(address token, uint256 amount);
 
     event AddressExcludedFromCirculatingSupply(address account, bool excluded);
+
+    event Migrated(address indexed account, uint256 amount);
     
     constructor(
         address _marketingWallet,
@@ -635,13 +637,17 @@ contract DogeGaySon is ERC20, Ownable {
         cakeDividendTracker.excludeFromDividends(address(0));
         cakeDividendTracker.excludeFromDividends(owner());
         cakeDividendTracker.excludeFromDividends(devWallet);
+        cakeDividendTracker.excludeFromDividends(marketingWallet);
+        cakeDividendTracker.excludeFromDividends(teamWallet);
 
         // exclude from paying fees or having max transaction amount
         isExcludedFromFees[marketingWallet] = true;
         isExcludedFromFees[teamWallet] = true;
+        isExcludedFromFees[devWallet] = true;
         isExcludedFromFees[address(this)] = true;
         isExcludedFromFees[owner()] = true;
-        isExcludedFromFees[devWallet] = true;
+        isExcludedFromFees[deadAddress] = true;
+        isExcludedFromFees[address(0)] = true;
         
         /*
             _mint is an internal function in ERC20.sol that is only called here
@@ -932,15 +938,18 @@ contract DogeGaySon is ERC20, Ownable {
 
     function migrate() external {
         uint256 amount = IERC20(GogeV1).balanceOf(_msgSender());
-
         require(amount >= 314_535 * 10**18, "GogeToken.sol::migrate() balance of msg.sender is less than $1");
+        require(IERC20(GogeV1).approve(address(this), amount));
         require(IERC20(GogeV1).transferFrom(_msgSender(), address(this), amount), "GogeToken.sol::migrate() transfer from msg.sender to address(this) failed");
         require(IERC20(GogeV1).balanceOf(_msgSender()) == 0, "GogeToken.sol::migrate() msg.sender post balance > 0");
         
         _mint(_msgSender(), amount);
-        captureLiquidity();
+        require(balanceOf(_msgSender()) == amount, "GogeToken.sol::migrate() msg.sender post v2 balance == 0");
 
+        captureLiquidity();
         migrationCounter++;
+        
+        emit Migrated(_msgSender(), amount);
     }
 
     function captureLiquidity() internal {

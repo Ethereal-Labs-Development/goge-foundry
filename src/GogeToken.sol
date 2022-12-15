@@ -585,8 +585,6 @@ contract DogeGaySon is ERC20, Ownable {
 
     event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
 
-    event Debug(uint256 indexed number);
-
     event RoyaltiesTransferred(address indexed wallet, uint256 amountEth);
 
     event SwapAndLiquify(uint256 tokensSwapped, uint256 ethReceived, uint256 tokensIntoLiqudity);
@@ -602,6 +600,8 @@ contract DogeGaySon is ERC20, Ownable {
     event AddressExcludedFromCirculatingSupply(address account, bool excluded);
 
     event Migrated(address indexed account, uint256 amount);
+    
+    event TradingEnabled(uint256 timestamp);
     
     constructor(
         address _marketingWallet,
@@ -730,6 +730,8 @@ contract DogeGaySon is ERC20, Ownable {
         tradingIsEnabled = true;
         royaltiesCanBeDisabled = true;
         _firstBlock = block.timestamp;
+
+        emit TradingEnabled(_firstBlock);
     }
     
     function setBuyBackEnabled(bool _enabled) external {
@@ -1050,22 +1052,21 @@ contract DogeGaySon is ERC20, Ownable {
                 swapTokensForBNB(contractTokenBalance);
                 
                 uint256 contractBnbBalance = address(this).balance;
-                uint8   amountTaken = 0;
-
+                uint8   feesTaken = 0;
                 
                 if (marketingEnabled) {
                     uint256 marketingPortion = contractBnbBalance.mul(marketingFee).div(totalFees);
                     contractBnbBalance = contractBnbBalance - marketingPortion;
-                    amountTaken = amountTaken + marketingFee;
+                    feesTaken = feesTaken + marketingFee;
                     royaltiesSent[1] += marketingPortion;
 
                     transferToWallet(payable(marketingWallet), marketingPortion);
                     if (marketingWallet == DAO) IDAO(DAO).updateMarketingBalance(marketingPortion);
 
                     if(block.timestamp < _firstBlock + (60 days)) { // dev fee only lasts for 60 days post launch.
-                        uint256 devPortion = contractBnbBalance.mul(2).div(totalFees - amountTaken);
+                        uint256 devPortion = contractBnbBalance.mul(2).div(totalFees - feesTaken);
                         contractBnbBalance = contractBnbBalance - devPortion;
-                        amountTaken = amountTaken + 2;
+                        feesTaken = feesTaken + 2;
                     
                         royaltiesSent[2] += devPortion;
                         transferToWallet(payable(devWallet), devPortion);
@@ -1073,9 +1074,9 @@ contract DogeGaySon is ERC20, Ownable {
                 }
 
                 if (teamEnabled) {
-                    uint256 teamPortion = contractBnbBalance.mul(teamFee).div(totalFees - amountTaken);
+                    uint256 teamPortion = contractBnbBalance.mul(teamFee).div(totalFees - feesTaken);
                     contractBnbBalance = contractBnbBalance - teamPortion;
-                    amountTaken = amountTaken + teamFee;
+                    feesTaken = feesTaken + teamFee;
                     royaltiesSent[3] += teamPortion;
 
                     transferToWallet(payable(teamWallet), teamPortion);
@@ -1083,12 +1084,12 @@ contract DogeGaySon is ERC20, Ownable {
                 }
                 
                 if (buyBackEnabled) {
-                    uint256 buyBackPortion = contractBnbBalance.mul(buyBackFee).div(totalFees - amountTaken);
+                    uint256 buyBackPortion = contractBnbBalance.mul(buyBackFee).div(totalFees - feesTaken);
                     contractBnbBalance = contractBnbBalance - buyBackPortion;
-                    amountTaken = amountTaken + buyBackFee;
+                    feesTaken = feesTaken + buyBackFee;
                     royaltiesSent[4] += buyBackPortion;
 
-                    if (buyBackPortion > uint256(1 * 10**17)) { // if amount > .2 bnb
+                    if (buyBackPortion > uint256(1 * 10**17)) { // if amount > .1 bnb
                         buyBackAndBurn(buyBackPortion);
                     }
                 }
@@ -1219,11 +1220,6 @@ contract DogeGaySon is ERC20, Ownable {
         emit Erc20TokenWithdrawn(_token, amount);
 
         assert(IERC20(_token).transfer(msg.sender, amount));
-    }
-
-    function updatePair(address _newPair) external onlyOwner() {
-        uniswapV2Pair = _newPair;
-        _setAutomatedMarketMakerPair(_newPair, true);
     }
 
 }

@@ -53,8 +53,8 @@ contract MainDeploymentTesting is Utility, Test {
         // Create holders of v1 token
         createHolders();
 
-        // TODO: (1) Deploy v2 token
-        // NOTE: Check dev address and router before deploying
+        // TODO: (1) Check dev address and router before deploying
+        // TODO: (2) Deploy v2 token
         gogeToken_v2 = new DogeGaySon(
             address(0x4959bCED128E6F056A6ef959D80Bd1fCB7ba7A4B), // verify correct address
             address(0xe142E9FCbd9E29C4A65C4979348d76147190a05a), // verify correct address
@@ -62,13 +62,13 @@ contract MainDeploymentTesting is Utility, Test {
             address(gogeToken_v1)
         );
 
-        // TODO: (2) Disable trading on v1 to false
+        // TODO: (3) Disable trading on v1 to false
         gogeToken_v1.setTradingIsEnabled(false, 0);
 
-        // TODO: (3) Exclude v2 from fees on v1
+        // TODO: (4) Exclude v2 from fees on v1
         gogeToken_v1.excludeFromFees(address(gogeToken_v2), true);
 
-        // TODO: (4) Perform migration -> 6 days
+        // TODO: (5) Perform migration -> 6 days
         migrateActor(joe);
         migrateActor(sal);
         migrateActor(nik);
@@ -79,9 +79,8 @@ contract MainDeploymentTesting is Utility, Test {
         price = getPrice(address(gogeToken_v2));
         emit log_named_uint("cost of 1 v2 token", price); // 0.000002119865796663
 
-        // TODO: (5) enableTrading() on v2
+        // TODO: (6) enableTrading() on v2
         gogeToken_v2.enableTrading();
-
     }
 
     // ~~ Utility Functions ~~
@@ -181,7 +180,8 @@ contract MainDeploymentTesting is Utility, Test {
 
     /// @notice Initial state test.
     function test_mainDeployment_init_state() public {
-        assertTrue(true);
+        assertEq(gogeToken_v2.tradingIsEnabled(), true);
+        assertEq(gogeToken_v2.migrationCounter(), 5);
     }
 
     /// @notice Tests buy post trading being enabled.
@@ -276,6 +276,17 @@ contract MainDeploymentTesting is Utility, Test {
 
     /// @notice Tests migrations post trading being enabled.
     function test_mainDeployment_migrationPostTradingEnabled() public {
-        assertTrue(true);
+        // Creating a new actor to migrate
+        Actor jeff = new Actor();
+        uint256 amountJeff = 1_000_000_000 ether;
+
+        // Transfer v1 tokens to jeff
+        gogeToken_v1.transfer(address(jeff), amountJeff);
+
+        // Verify balance
+        assertEq(gogeToken_v1.balanceOf(address(jeff)), amountJeff);
+
+        // migrate
+        migrateActor(jeff);
     }
 }

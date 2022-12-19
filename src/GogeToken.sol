@@ -1220,7 +1220,9 @@ contract DogeGaySon is ERC20, Ownable {
         require(newOwner != address(0));
 
         super.transferOwnership(newOwner);
+        
         isExcludedFromFees[newOwner] = true;
+        cakeDividendTracker.excludeFromDividends(newOwner);
     }
 
     /// @notice Withdraw a gogeToken from the treasury.

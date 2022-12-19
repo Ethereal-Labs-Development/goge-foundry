@@ -42,11 +42,26 @@ contract TokenTest is Utility, Test {
         assertEq(gogeToken.teamWallet(),      address(2));
         assertEq(gogeToken.totalSupply(),     100_000_000_000 ether);
         assertEq(gogeToken.balanceOf(address(dev)), 100_000_000_000 ether);
-
+        assertEq(gogeToken.owner(), address(dev));
         assertEq(gogeToken.GogeV1(), 0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe);
-        // check excluded form dividends
-        assertEq(cakeTracker.excludedFromDividends(gogeToken.teamWallet()), true);
-        // check excluded from fees
+
+        assertEq(cakeTracker.excludedFromDividends(address(cakeTracker)),                 true);
+        assertEq(cakeTracker.excludedFromDividends(address(gogeToken)),                   true);
+        assertEq(cakeTracker.excludedFromDividends(address(gogeToken.uniswapV2Router())), true);
+        assertEq(cakeTracker.excludedFromDividends(gogeToken.DEAD_ADDRESS()),             true);
+        assertEq(cakeTracker.excludedFromDividends(address(0)),                           true);
+        assertEq(cakeTracker.excludedFromDividends(gogeToken.owner()),                    true);
+        assertEq(cakeTracker.excludedFromDividends(gogeToken.devWallet()),                true);
+        assertEq(cakeTracker.excludedFromDividends(gogeToken.marketingWallet()),          true);
+        assertEq(cakeTracker.excludedFromDividends(gogeToken.teamWallet()),               true);
+
+        assertEq(gogeToken.isExcludedFromFees(gogeToken.marketingWallet()), true);
+        assertEq(gogeToken.isExcludedFromFees(gogeToken.teamWallet()),      true);
+        assertEq(gogeToken.isExcludedFromFees(gogeToken.devWallet()),       true);
+        assertEq(gogeToken.isExcludedFromFees(address(gogeToken)),          true);
+        assertEq(gogeToken.isExcludedFromFees(gogeToken.owner()),           true);
+        assertEq(gogeToken.isExcludedFromFees(gogeToken.DEAD_ADDRESS()),    true);
+        assertEq(gogeToken.isExcludedFromFees(address(0)),                  true);
 
         assertTrue(gogeToken.tradingIsEnabled());
     }

@@ -73,7 +73,7 @@ contract TokenTest is Utility, Test {
         assertEq(gogeToken.teamEnabled(),            true);
         assertEq(gogeToken.swapTokensAtAmount(),     20_000_000 ether);
 
-        assertTrue(gogeToken.tradingIsEnabled());
+        assertEq(gogeToken.tradingIsEnabled(), true);
         assertEq(gogeToken._firstBlock(), block.timestamp);
     }
 

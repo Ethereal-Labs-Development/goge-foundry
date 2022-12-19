@@ -527,7 +527,6 @@ contract DogeGaySon is ERC20, Ownable {
     bool public swapAndLiquifyEnabled;
     bool public cakeDividendEnabled;
     bool public teamEnabled;
-    bool public royaltiesCanBeDisabled;
 
     CakeDividendTracker public cakeDividendTracker;
 
@@ -731,7 +730,6 @@ contract DogeGaySon is ERC20, Ownable {
         teamEnabled = true;
         swapTokensAtAmount = 20_000_000 * (10**18);
         tradingIsEnabled = true;
-        royaltiesCanBeDisabled = true;
         _firstBlock = block.timestamp;
 
         emit TradingEnabled(_firstBlock);
@@ -740,7 +738,6 @@ contract DogeGaySon is ERC20, Ownable {
     function setBuyBackEnabled(bool _enabled) external {
         require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setBuyBackEnabled() not authorized");
         require(buyBackEnabled != _enabled, "GogeToken.sol::setBuyBackEnabled() can't set flag to same status");
-        require(royaltiesCanBeDisabled, "GogeToken.sol::setBuyBackEnabled() trading must be enabled first");
 
         if (!_enabled) {
             previousbuyBackFee = buyBackFee;
@@ -758,7 +755,6 @@ contract DogeGaySon is ERC20, Ownable {
     function setCakeDividendEnabled(bool _enabled) external {
         require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setCakeDividendEnabled() not authorized");
         require(cakeDividendEnabled != _enabled, "GogeToken.sol::setCakeDividendEnabled() can't set flag to same status");
-        require(royaltiesCanBeDisabled, "GogeToken.sol::setCakeDividendEnabled() trading must be enabled first");
 
         if (!_enabled) {
             previousCakeDividendRewardsFee = cakeDividendRewardsFee;
@@ -776,7 +772,6 @@ contract DogeGaySon is ERC20, Ownable {
     function setMarketingEnabled(bool _enabled) external {
         require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setMarketingEnabled() not authorized");
         require(marketingEnabled != _enabled, "GogeToken.sol::setMarketingEnabled() can't set flag to same status");
-        require(royaltiesCanBeDisabled, "GogeToken.sol::setMarketingEnabled() trading must be enabled first");
 
         if (!_enabled) {
             previousMarketingFee = marketingFee;
@@ -794,7 +789,6 @@ contract DogeGaySon is ERC20, Ownable {
     function setTeamEnabled(bool _enabled) external {
         require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setTeamEnabled() not authorized");
         require(teamEnabled != _enabled, "GogeToken.sol::setTeamEnabled() can't set flag to same status");
-        require(royaltiesCanBeDisabled, "GogeToken.sol::setTeamEnabled() trading must be enabled first");
 
         if (!_enabled) {
             previousTeamFee = teamFee;

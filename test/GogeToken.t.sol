@@ -63,7 +63,18 @@ contract TokenTest is Utility, Test {
         assertEq(gogeToken.isExcludedFromFees(gogeToken.DEAD_ADDRESS()),    true);
         assertEq(gogeToken.isExcludedFromFees(address(0)),                  true);
 
+        assertEq(gogeToken.cakeDividendRewardsFee(), 10);
+        assertEq(gogeToken.marketingFee(),           2);
+        assertEq(gogeToken.buyBackFee(),             2);
+        assertEq(gogeToken.teamFee(),                2);
+        assertEq(gogeToken.marketingEnabled(),       true);
+        assertEq(gogeToken.buyBackEnabled(),         true);
+        assertEq(gogeToken.cakeDividendEnabled(),    true);
+        assertEq(gogeToken.teamEnabled(),            true);
+        assertEq(gogeToken.swapTokensAtAmount(),     20_000_000 ether);
+
         assertTrue(gogeToken.tradingIsEnabled());
+        assertEq(gogeToken._firstBlock(), block.timestamp);
     }
 
     // ~ Transfer Testing ~

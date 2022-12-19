@@ -397,6 +397,7 @@ contract DividendPayingToken is ERC20, Ownable, IDividendPayingToken, IDividendP
     }
     
     function setDividendTokenAddress(address newToken) external virtual onlyOwner {
+        require(newToken != address(0), "Zero address yort");
         dividendToken = newToken;
     }
 
@@ -405,16 +406,16 @@ contract DividendPayingToken is ERC20, Ownable, IDividendPayingToken, IDividendP
     function _withdrawDividendOfUser(address payable user) internal returns (uint256) {
         uint256 _withdrawableDividend = withdrawableDividendOf(user);
         if (_withdrawableDividend > 0) {
-        withdrawnDividends[user] = withdrawnDividends[user].add(_withdrawableDividend);
-        emit DividendWithdrawn(user, _withdrawableDividend);
-        bool success = IERC20(dividendToken).transfer(user, _withdrawableDividend);
+            withdrawnDividends[user] = withdrawnDividends[user].add(_withdrawableDividend);
+            emit DividendWithdrawn(user, _withdrawableDividend);
+            bool success = IERC20(dividendToken).transfer(user, _withdrawableDividend);
 
-        if(!success) {
-            withdrawnDividends[user] = withdrawnDividends[user].sub(_withdrawableDividend);
-            return 0;
-        }
+            if(!success) {
+                withdrawnDividends[user] = withdrawnDividends[user].sub(_withdrawableDividend);
+                return 0;
+            }
 
-        return _withdrawableDividend;
+            return _withdrawableDividend;
         }
 
         return 0;
@@ -511,22 +512,22 @@ contract DogeGaySon is ERC20, Ownable {
 
     address public cakeDividendToken;
 
-    address public DAO;
+    address public gogeDao;
     address public GogeV1;
 
-    address public deadAddress = 0x000000000000000000000000000000000000dEaD;
+    address constant public DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
 
     address[] public excludedFromCirculatingSupply;
 
     bool private swapping;
-    bool public tradingIsEnabled = false;
-    bool public marketingEnabled = false;
-    bool public buyBackEnabled = false;
-    bool public devEnabled = false;
-    bool public swapAndLiquifyEnabled = false;
-    bool public cakeDividendEnabled = false;
-    bool public teamEnabled = false;
-    bool public royaltiesCanBeDisabled = false;
+    bool public tradingIsEnabled;
+    bool public marketingEnabled;
+    bool public buyBackEnabled;
+    bool public devEnabled;
+    bool public swapAndLiquifyEnabled;
+    bool public cakeDividendEnabled;
+    bool public teamEnabled;
+    bool public royaltiesCanBeDisabled;
 
     CakeDividendTracker public cakeDividendTracker;
 
@@ -566,15 +567,17 @@ contract DogeGaySon is ERC20, Ownable {
 
     uint256 public _firstBlock;
 
-    event UpdateCakeDividendTracker(address indexed newAddress, address indexed oldAddress);
+    event CakeDividendTrackerUpdated(address indexed newAddress, address indexed oldAddress);
 
     event UpdateUniswapV2Router(address indexed newAddress, address indexed oldAddress);
     
     event SwapAndLiquifyEnabledUpdated(bool enabled);
     event MarketingEnabledUpdated(bool enabled);
-    event buyBackEnabledUpdated(bool enabled);
+    event BuyBackEnabledUpdated(bool enabled);
     event TeamEnabledUpdated(bool enabled);
     event CakeDividendEnabledUpdated(bool enabled);
+
+    event FeesUpdated(uint8 totalFee, uint8 rewardFee, uint8 marketingFee, uint8 buybackFee, uint8 teamFee);
    
     event ExcludeFromFees(address indexed account, bool isExcluded);
 
@@ -606,7 +609,7 @@ contract DogeGaySon is ERC20, Ownable {
     constructor(
         address _marketingWallet,
         address _teamWallet,
-        uint    _totalSupply,
+        uint256 _totalSupply,
         address _gogeV1
 
     ) ERC20("DogeGaySon", "GOGE") {
@@ -620,20 +623,20 @@ contract DogeGaySon is ERC20, Ownable {
         
         GogeV1 = _gogeV1; //0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe;
         
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E); // bsc pancakeswap router
+        uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
 
         // Create a uniswap pair for this new token
-        address _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory()).createPair(address(this), _uniswapV2Router.WETH());
+        address _uniswapV2Pair = IUniswapV2Factory(uniswapV2Router.factory()).createPair(address(this), uniswapV2Router.WETH());
 
-        uniswapV2Router = _uniswapV2Router;
         uniswapV2Pair = _uniswapV2Pair;
 
         _setAutomatedMarketMakerPair(_uniswapV2Pair, true);
         
+        // exclude from paying dividends to the team wallets and dead addresses
         cakeDividendTracker.excludeFromDividends(address(cakeDividendTracker));
         cakeDividendTracker.excludeFromDividends(address(this));
-        cakeDividendTracker.excludeFromDividends(address(_uniswapV2Router));
-        cakeDividendTracker.excludeFromDividends(deadAddress);
+        cakeDividendTracker.excludeFromDividends(address(uniswapV2Router));
+        cakeDividendTracker.excludeFromDividends(DEAD_ADDRESS);
         cakeDividendTracker.excludeFromDividends(address(0));
         cakeDividendTracker.excludeFromDividends(owner());
         cakeDividendTracker.excludeFromDividends(devWallet);
@@ -646,34 +649,28 @@ contract DogeGaySon is ERC20, Ownable {
         isExcludedFromFees[devWallet] = true;
         isExcludedFromFees[address(this)] = true;
         isExcludedFromFees[owner()] = true;
-        isExcludedFromFees[deadAddress] = true;
+        isExcludedFromFees[DEAD_ADDRESS] = true;
         isExcludedFromFees[address(0)] = true;
         
-        /*
-            _mint is an internal function in ERC20.sol that is only called here
-            and for migration, and it CANNOT be called for any other reason. The 
-            external capability does NOT exist.
-        */
         _mint(owner(), _totalSupply * (10**18));
-        //_mint(owner(), 100000000000 * (10**18));
     }
 
     receive() external payable {
 
     }
 
-    function setDAO(address _dao) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::setDAO() msg.sender is not owner or dao");
-        require(DAO != _dao, "GogeToken.sol::setDAO() address is already set");
+    function setGogeDao(address _gogeDao) external {
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setgogeDao() msg.sender is not owner or gogeDao");
+        require(gogeDao != _gogeDao, "GogeToken.sol::setgogeDao() address is already set");
 
-        DAO = _dao;
+        gogeDao = _gogeDao;
 
-        isExcludedFromFees[DAO] = true;
-        cakeDividendTracker.excludeFromDividends(DAO);
+        isExcludedFromFees[gogeDao] = true;
+        cakeDividendTracker.excludeFromDividends(gogeDao);
     }
 
     function whitelistPinkSale(address _presaleAddress) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::whitelistPinkSale() msg.sender is not owner or dao");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::whitelistPinkSale() msg.sender is not owner or gogeDao");
 
         presaleAddress = _presaleAddress;
 
@@ -681,36 +678,42 @@ contract DogeGaySon is ERC20, Ownable {
         isExcludedFromFees[_presaleAddress] = true;
     }
 
-    function prepareForPartnerOrExchangeListing(address _partnerOrExchangeAddress) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::prepareForPartnerOrExchangeListing() msg.sender is not owner or dao");
+    function addPartnerOrExchange(address _partnerOrExchangeAddress) external {
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::addPartnerOrExchange() msg.sender is not owner or gogeDao");
         cakeDividendTracker.excludeFromDividends(_partnerOrExchangeAddress);
         isExcludedFromFees[_partnerOrExchangeAddress] = true;
     }
     
     function updateCakeDividendToken(address _newContract) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateCakeDividendToken() msg.sender is not owner or dao");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateCakeDividendToken() msg.sender is not owner or gogeDao");
+        require(_newContract != address(0), "GogeToken.sol::updateCakeDividendToken() Zero address yort");
+
         cakeDividendToken = _newContract;
         cakeDividendTracker.setDividendTokenAddress(_newContract);
     }
     
     function updateTeamWallet(address _newWallet) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateTeamWallet() msg.sender is not owner or dao");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateTeamWallet() msg.sender is not owner or gogeDao");
         require(_newWallet != teamWallet, "GogeToken.sol::updateTeamWallet() address is already set");
+
         isExcludedFromFees[_newWallet] = true;
-        emit TeamWalletUpdated(teamWallet, _newWallet);
         teamWallet = _newWallet;
+
+        emit TeamWalletUpdated(teamWallet, _newWallet);
     }
     
     function updateMarketingWallet(address _newWallet) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateMarketingWallet() msg.sender is not owner or dao");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateMarketingWallet() msg.sender is not owner or gogeDao");
         require(_newWallet != marketingWallet, "GogeToken.sol::updateMarketingWallet() address is already set");
+
         isExcludedFromFees[_newWallet] = true;
-        emit MarketingWalletUpdated(marketingWallet, _newWallet);
         marketingWallet = _newWallet;
+
+        emit MarketingWalletUpdated(marketingWallet, _newWallet);
     }
     
     function updateSwapTokensAtAmount(uint256 _swapAmount) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateSwapTokensAtAmount() msg.sender is not owner or dao");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateSwapTokensAtAmount() msg.sender is not owner or gogeDao");
         swapTokensAtAmount = _swapAmount * (10**18);
     }
     
@@ -735,10 +738,11 @@ contract DogeGaySon is ERC20, Ownable {
     }
     
     function setBuyBackEnabled(bool _enabled) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::setBuyBackEnabled() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setBuyBackEnabled() not authorized");
         require(buyBackEnabled != _enabled, "GogeToken.sol::setBuyBackEnabled() can't set flag to same status");
         require(royaltiesCanBeDisabled, "GogeToken.sol::setBuyBackEnabled() trading must be enabled first");
-        if (_enabled == false) {
+
+        if (!_enabled) {
             previousbuyBackFee = buyBackFee;
             buyBackFee = 0;
             buyBackEnabled = _enabled;
@@ -748,14 +752,15 @@ contract DogeGaySon is ERC20, Ownable {
         }
         totalFees = buyBackFee.add(marketingFee).add(cakeDividendRewardsFee).add(teamFee);
         
-        emit buyBackEnabledUpdated(_enabled);
+        emit BuyBackEnabledUpdated(_enabled);
     }
     
     function setCakeDividendEnabled(bool _enabled) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::setCakeDividendEnabled() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setCakeDividendEnabled() not authorized");
         require(cakeDividendEnabled != _enabled, "GogeToken.sol::setCakeDividendEnabled() can't set flag to same status");
         require(royaltiesCanBeDisabled, "GogeToken.sol::setCakeDividendEnabled() trading must be enabled first");
-        if (_enabled == false) {
+
+        if (!_enabled) {
             previousCakeDividendRewardsFee = cakeDividendRewardsFee;
             cakeDividendRewardsFee = 0;
             cakeDividendEnabled = _enabled;
@@ -769,10 +774,11 @@ contract DogeGaySon is ERC20, Ownable {
     }
     
     function setMarketingEnabled(bool _enabled) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::setMarketingEnabled() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setMarketingEnabled() not authorized");
         require(marketingEnabled != _enabled, "GogeToken.sol::setMarketingEnabled() can't set flag to same status");
         require(royaltiesCanBeDisabled, "GogeToken.sol::setMarketingEnabled() trading must be enabled first");
-        if (_enabled == false) {
+
+        if (!_enabled) {
             previousMarketingFee = marketingFee;
             marketingFee = 0;
             marketingEnabled = _enabled;
@@ -786,10 +792,11 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function setTeamEnabled(bool _enabled) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::setTeamEnabled() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setTeamEnabled() not authorized");
         require(teamEnabled != _enabled, "GogeToken.sol::setTeamEnabled() can't set flag to same status");
         require(royaltiesCanBeDisabled, "GogeToken.sol::setTeamEnabled() trading must be enabled first");
-        if (_enabled == false) {
+
+        if (!_enabled) {
             previousTeamFee = teamFee;
             teamFee = 0;
             teamEnabled = _enabled;
@@ -803,7 +810,7 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function updateCakeDividendTracker(address newAddress) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateCakeDividendTracker() msg.sender must be owner or dao");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateCakeDividendTracker() msg.sender must be owner or gogeDao");
         require(newAddress != address(cakeDividendTracker), "GogeToken.sol::updateCakeDividendTracker() The dividend tracker already has that address");
 
         CakeDividendTracker newCakeDividendTracker = CakeDividendTracker(payable(newAddress));
@@ -813,42 +820,47 @@ contract DogeGaySon is ERC20, Ownable {
         newCakeDividendTracker.excludeFromDividends(address(newCakeDividendTracker));
         newCakeDividendTracker.excludeFromDividends(address(this));
         newCakeDividendTracker.excludeFromDividends(address(uniswapV2Router));
-        newCakeDividendTracker.excludeFromDividends(address(deadAddress));
+        newCakeDividendTracker.excludeFromDividends(address(DEAD_ADDRESS));
         newCakeDividendTracker.excludeFromDividends(address(0));
 
-        emit UpdateCakeDividendTracker(newAddress, address(cakeDividendTracker));
-
         cakeDividendTracker = newCakeDividendTracker;
+
+        emit CakeDividendTrackerUpdated(newAddress, address(cakeDividendTracker));
     }
     
     function updateFees(uint8 _rewardFee, uint8 _marketingFee, uint8 _buybackFee, uint8 _teamFee) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateFees() not authorized");
-        require(_rewardFee.add(_marketingFee).add(_buybackFee).add(_teamFee) <= 40, "GogeToken.sol::updateFees() fee must be less than 40%");
+        totalFees = _rewardFee + _marketingFee + _buybackFee + _teamFee;
+
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateFees() not authorized");
+        require(totalFees <= 40, "GogeToken.sol::updateFees() sum of fees cannot exceed 40%");
         
         cakeDividendRewardsFee = _rewardFee;
         marketingFee = _marketingFee;
         buyBackFee = _buybackFee;
         teamFee = _teamFee;
 
-        totalFees = cakeDividendRewardsFee.add(marketingFee).add(buyBackFee).add(teamFee);
+        emit FeesUpdated(totalFees, _rewardFee, _marketingFee, _buybackFee, _teamFee);
     }
     
     function updateUniswapV2Router(address newAddress) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateUniswapV2Router() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateUniswapV2Router() not authorized");
         require(newAddress != address(uniswapV2Router), "GogeToken.sol::updateUniswapV2Router() the router already has that address");
-        emit UpdateUniswapV2Router(newAddress, address(uniswapV2Router));
+
         uniswapV2Router = IUniswapV2Router02(newAddress);
+
+        emit UpdateUniswapV2Router(newAddress, address(uniswapV2Router));
     }
 
     function excludeFromFees(address account, bool excluded) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::excludeFromFees() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::excludeFromFees() not authorized");
+
         isExcludedFromFees[account] = excluded;
 
         emit ExcludeFromFees(account, excluded);
     }
 
     function excludeFromDividend(address account) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::excludeFromDividend() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::excludeFromDividend() not authorized");
         cakeDividendTracker.excludeFromDividends(address(account)); 
     }
 
@@ -862,7 +874,7 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function excludeFromCirculatingSupply(address account, bool excluded) public {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::excludeFromCirculatingSupply() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::excludeFromCirculatingSupply() not authorized");
 
         (bool _isExcluded, uint8 i) = isExcludedFromCirculatingSupply(account);
         require(_isExcluded != excluded, "GogeToken.sol::excludeFromCirculatingSupply() account already set to that boolean value");
@@ -883,37 +895,40 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function setAutomatedMarketMakerPair(address pair, bool value) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::setAutomatedMarketMakerPair() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setAutomatedMarketMakerPair() not authorized");
         require(pair != uniswapV2Pair, "GogeToken.sol::setAutomatedMarketMakerPair() the PancakeSwap pair cannot be removed from automatedMarketMakerPairs");
         _setAutomatedMarketMakerPair(pair, value);
     }
 
     function _setAutomatedMarketMakerPair(address pair, bool value) internal {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::_setAutomatedMarketMakerPair() not authorized");
         require(automatedMarketMakerPairs[pair] != value, "GogeToken.sol::_setAutomatedMarketMakerPair() Automated market maker pair is already set to that value");
-
-        emit SetAutomatedMarketMakerPair(pair, value);
 
         automatedMarketMakerPairs[pair] = value;
         excludeFromCirculatingSupply(pair, value);
+
+        emit SetAutomatedMarketMakerPair(pair, value);
     }
 
     function updateGasForProcessing(uint256 newValue) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateGasForProcessing() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateGasForProcessing() not authorized");
         require(newValue != gasForProcessing, "GogeToken.sol::updateGasForProcessing() cannot update gasForProcessing to same value");
+
         gasForProcessing = newValue;
+
         emit GasForProcessingUpdated(newValue, gasForProcessing);
     }
     
     function updateMinimumBalanceForDividends(uint256 newMinimumBalance) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::updateMinimumBalanceForDividends() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateMinimumBalanceForDividends() not authorized");
         cakeDividendTracker.updateMinimumTokenBalanceForDividends(newMinimumBalance);
     }
 
     function processDividendTracker() external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::processDividendTracker() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::processDividendTracker() not authorized");
+
         uint256 gas = gasForProcessing;
         (uint256 ethIterations, uint256 ethClaims, uint256 ethLastProcessedIndex) = cakeDividendTracker.process(gas);
+
         emit ProcessedCakeDividendTracker(ethIterations, ethClaims, ethLastProcessedIndex, false, gas, tx.origin);      
     }
 
@@ -931,7 +946,7 @@ contract DogeGaySon is ERC20, Ownable {
         uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: amount}(
             0, // accept any amount of Tokens
             path,
-            deadAddress, // Burn address
+            DEAD_ADDRESS, // Burn address
             block.timestamp.add(300)
         );
 
@@ -940,8 +955,7 @@ contract DogeGaySon is ERC20, Ownable {
 
     function migrate() external {
         uint256 amount = IERC20(GogeV1).balanceOf(_msgSender());
-        require(amount >= 314_535 * 10**18, "GogeToken.sol::migrate() balance of msg.sender is less than $1");
-        require(IERC20(GogeV1).approve(address(this), amount));
+        require(amount >= 314_535 * 10**18, "GogeToken.sol::migrate() balance of msg.sender is less than $1"); // TODO: Use oracle price feed for this
         require(IERC20(GogeV1).transferFrom(_msgSender(), address(this), amount), "GogeToken.sol::migrate() transfer from msg.sender to address(this) failed");
         require(IERC20(GogeV1).balanceOf(_msgSender()) == 0, "GogeToken.sol::migrate() msg.sender post balance > 0");
         
@@ -999,7 +1013,7 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function getCirculatingMinusReserve() external view returns(uint256) {
-        uint256 circulating = totalSupply() - (balanceOf(deadAddress) + balanceOf(address(0)));
+        uint256 circulating = totalSupply() - (balanceOf(DEAD_ADDRESS) + balanceOf(address(0)));
         for (uint8 i = 0; i < excludedFromCirculatingSupply.length; i++) {
             circulating = circulating - balanceOf(excludedFromCirculatingSupply[i]);
         }
@@ -1061,7 +1075,7 @@ contract DogeGaySon is ERC20, Ownable {
                     royaltiesSent[1] += marketingPortion;
 
                     transferToWallet(payable(marketingWallet), marketingPortion);
-                    if (marketingWallet == DAO) IDAO(DAO).updateMarketingBalance(marketingPortion);
+                    if (marketingWallet == gogeDao) IDAO(gogeDao).updateMarketingBalance(marketingPortion);
 
                     if(block.timestamp < _firstBlock + (60 days)) { // dev fee only lasts for 60 days post launch.
                         uint256 devPortion = contractBnbBalance.mul(2).div(totalFees - feesTaken);
@@ -1080,7 +1094,7 @@ contract DogeGaySon is ERC20, Ownable {
                     royaltiesSent[3] += teamPortion;
 
                     transferToWallet(payable(teamWallet), teamPortion);
-                    if (teamWallet == DAO) IDAO(DAO).updateTeamBalance(teamPortion);
+                    if (teamWallet == gogeDao) IDAO(gogeDao).updateTeamBalance(teamPortion);
                 }
                 
                 if (buyBackEnabled) {
@@ -1121,7 +1135,7 @@ contract DogeGaySon is ERC20, Ownable {
 
         super._transfer(from, to, amount);
 
-        if(from != DAO && to != DAO) {
+        if(from != gogeDao && to != gogeDao) {
             try cakeDividendTracker.setBalance(payable(from), balanceOf(from)) {} catch {}
             
             try cakeDividendTracker.setBalance(payable(to), balanceOf(to)) {} catch {}
@@ -1140,7 +1154,7 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function modifyBlacklist(address account, bool blacklisted) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "GogeToken.sol::modifyBlacklist() not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::modifyBlacklist() not authorized");
         isBlacklisted[account] = blacklisted;
     }
 
@@ -1202,7 +1216,7 @@ contract DogeGaySon is ERC20, Ownable {
     }
     
     function _transferOwnership(address newOwner) external {
-        require(_msgSender() == DAO || _msgSender() == owner(), "Not authorized");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "Not authorized");
         require(newOwner != address(0));
 
         super.transferOwnership(newOwner);
@@ -1250,15 +1264,16 @@ contract CakeDividendTracker is DividendPayingToken {
     }
 
     function _transfer(address, address, uint256) pure internal override {
-        require(false, "DogeGaySon_Ethereum_Dividend_Tracker: No transfers allowed");
+        revert("DogeGaySon_Ethereum_Dividend_Tracker: No transfers allowed");
     }
 
     function withdrawDividend() pure public override {
-        require(false, "DogeGaySon_Ethereum_Dividend_Tracker: withdrawDividend disabled. Use the 'claim' function on the main DogeGaySon contract.");
+        revert("DogeGaySon_Ethereum_Dividend_Tracker: withdrawDividend disabled. Use the 'claim' function on the main DogeGaySon contract.");
     }
     
     function setDividendTokenAddress(address newToken) external override onlyOwner {
-      dividendToken = newToken;
+        require(newToken != address(0), "Zero address yort");
+        dividendToken = newToken;
     }
     
     function updateMinimumTokenBalanceForDividends(uint256 _newMinimumBalance) external onlyOwner {

@@ -61,8 +61,8 @@ contract Actor {
         (ok,) = address(token).call(abi.encodeWithSignature(sig, account, whitelisted));
     }
 
-    function try_setDao(address token, address dao) external returns (bool ok) {
-        string memory sig = "setDAO(address)";
+    function try_setGogeDao(address token, address dao) external returns (bool ok) {
+        string memory sig = "setGogeDao(address)";
         (ok,) = address(token).call(abi.encodeWithSignature(sig, dao));
     }
 

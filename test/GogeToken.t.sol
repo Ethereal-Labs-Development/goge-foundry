@@ -3,13 +3,14 @@ pragma solidity ^0.8.6;
 
 import "../lib/forge-std/src/Test.sol";
 import "./Utility.sol";
-import { DogeGaySon } from "../src/GogeToken.sol";
+import { DogeGaySon, CakeDividendTracker } from "../src/GogeToken.sol";
 
 import { IUniswapV2Router02, IUniswapV2Pair, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
 import { ERC20 } from "../src/extensions/ERC20.sol";
 
 contract TokenTest is Utility, Test {
     DogeGaySon gogeToken;
+    CakeDividendTracker cakeTracker;
 
     address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
 
@@ -25,6 +26,8 @@ contract TokenTest is Utility, Test {
             address(0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe) // govev1
         );
 
+        cakeTracker = gogeToken.cakeDividendTracker();
+
         // Give tokens and ownership to dev.
         gogeToken.transfer(address(dev), 100_000_000_000 ether);
         gogeToken._transferOwnership(address(dev));
@@ -39,6 +42,11 @@ contract TokenTest is Utility, Test {
         assertEq(gogeToken.teamWallet(),      address(2));
         assertEq(gogeToken.totalSupply(),     100_000_000_000 ether);
         assertEq(gogeToken.balanceOf(address(dev)), 100_000_000_000 ether);
+
+        assertEq(gogeToken.GogeV1(), 0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe);
+        // check excluded form dividends
+        assertEq(cakeTracker.excludedFromDividends(gogeToken.teamWallet()), true);
+        // check excluded from fees
 
         assertTrue(gogeToken.tradingIsEnabled());
     }
@@ -133,15 +141,15 @@ contract TokenTest is Utility, Test {
     // ~ setters ~
 
     // This tests the proper state change when calling setDAO().
-    function test_gogeToken_setDAO() public {
+    function test_gogeToken_setGogeDao() public {
         // Pre-state check. DAO is currently set to address(0) (hasnt been set yet).
-        assertEq(gogeToken.DAO(), address(0));
+        assertEq(gogeToken.gogeDao(), address(0));
 
         // Set DAO to address(32).
-        assert(dev.try_setDao(address(gogeToken), address(32)));
+        assert(dev.try_setGogeDao(address(gogeToken), address(32)));
 
-        // Post-state check. Verify that DAO is set to address(32).
-        assertEq(gogeToken.DAO(), address(32));
+        // Post-state check. Verify that gogeDao is set to address(32).
+        assertEq(gogeToken.gogeDao(), address(32));
     }
 
     // This tests the proper state changes when calling updateSwapTokensAtAmount().

@@ -715,7 +715,7 @@ contract Royalties is Utility, Test {
         assertEq(ERC20(address(gogeToken)).getCirculatingMinusReserve(), 95_000_000_000 ether);
 
         // send 5B tokens to 0 address.
-        gogeToken.transfer(address(gogeToken.deadAddress()), 5_000_000_000 ether);
+        gogeToken.transfer(address(gogeToken.DEAD_ADDRESS()), 5_000_000_000 ether);
 
         // Verify circulating supply is 90B tokens.
         assertEq(ERC20(address(gogeToken)).getCirculatingMinusReserve(), 90_000_000_000 ether);
@@ -737,7 +737,7 @@ contract Royalties is Utility, Test {
         emit log_named_uint("total supply", ERC20(address(gogeToken)).totalSupply());
         emit log_named_uint("uniswap balance", ERC20(address(gogeToken)).balanceOf(gogeToken.uniswapV2Pair()));
         emit log_named_uint("dead balance", ERC20(address(gogeToken)).balanceOf(address(0)));
-        emit log_named_uint("dead balance", ERC20(address(gogeToken)).balanceOf(gogeToken.deadAddress()));
+        emit log_named_uint("dead balance", ERC20(address(gogeToken)).balanceOf(gogeToken.DEAD_ADDRESS()));
 
         // Add address(69) to the excluded list.
         gogeToken.excludeFromCirculatingSupply(address(69), true);

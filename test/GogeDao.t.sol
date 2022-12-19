@@ -49,7 +49,7 @@ contract DaoTest is Utility, Test {
         gogeDao = new GogeDAO(address(gogeToken));
 
         gogeToken.enableTrading();
-        gogeToken.setDAO(address(gogeDao));
+        gogeToken.setGogeDao(address(gogeDao));
     }
 
     function test_gogeDao_init_state() public {
@@ -469,26 +469,26 @@ contract DaoTest is Utility, Test {
         assertTrue(num >= gogeDao.quorum());        
     }
 
-    /// @notice initiates a setDao poll and verifies correct state change when poll is passed.
-    function test_gogeDao_setDao() public {
+    /// @notice initiates a setGogeDao poll and verifies correct state change when poll is passed.
+    function test_gogeDao_setGogeDao() public {
 
         // NOTE create poll
 
         // create poll metadata
         GogeDAO.Metadata memory metadata;
-        metadata.description = "I want to propose setDao";
+        metadata.description = "I want to propose setGogeDao";
         metadata.time2 = block.timestamp + 2 days;
         metadata.addr1 = address(222);
 
         // create poll
-        gogeDao.createPoll(GogeDAO.PollType.setDao, metadata);
+        gogeDao.createPoll(GogeDAO.PollType.setGogeDao, metadata);
 
         // Verify state change
         assertEq(gogeDao.pollNum(), 1);
-        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.setDao);
+        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.setGogeDao);
 
         // Verify poll metadata
-        assertEq(gogeDao.getMetadata(1).description, "I want to propose setDao");
+        assertEq(gogeDao.getMetadata(1).description, "I want to propose setGogeDao");
         assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
         assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).addr1, address(222));
@@ -505,7 +505,7 @@ contract DaoTest is Utility, Test {
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
-        assertEq(gogeToken.DAO(), address(gogeDao));
+        assertEq(gogeToken.gogeDao(), address(gogeDao));
 
         // Approve the transfer of tokens and add vote.
         assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
@@ -518,7 +518,7 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
-        assertEq(gogeToken.DAO(), address(222));
+        assertEq(gogeToken.gogeDao(), address(222));
 
         // Verify quorum math.
         uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();

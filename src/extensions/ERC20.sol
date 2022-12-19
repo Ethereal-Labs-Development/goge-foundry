@@ -11,9 +11,9 @@ interface ERC20 {
     function getCirculatingMinusReserve() external view returns (uint256);
     function getLastReceived(address voter) external view returns (uint256);
     function updateFees(uint8 _rewardFee, uint8 _marketingFee, uint8 _buybackFee, uint8 _teamFee) external;
-    function setDAO(address _dao) external;
+    function setGogeDao(address _dao) external;
     function whitelistPinkSale(address _presaleAddress) external;
-    function prepareForPartnerOrExchangeListing(address _partnerOrExchangeAddress) external;
+    function addPartnerOrExchange(address _partnerOrExchangeAddress) external;
     function updateCakeDividendToken(address _newContract) external;
     function updateTeamWallet(address _newWallet) external;
     function updateMarketingWallet(address _newWallet) external;

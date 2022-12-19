@@ -333,7 +333,7 @@ contract MigrationTesting is Utility, Test {
         emit log_named_uint("total supply", ERC20(address(gogeToken_v2)).totalSupply());
         emit log_named_uint("uniswap balance", ERC20(address(gogeToken_v2)).balanceOf(gogeToken_v2.uniswapV2Pair()));
         emit log_named_uint("dead balance", ERC20(address(gogeToken_v2)).balanceOf(address(0)));
-        emit log_named_uint("dead balance", ERC20(address(gogeToken_v2)).balanceOf(gogeToken_v2.deadAddress()));
+        emit log_named_uint("dead balance", ERC20(address(gogeToken_v2)).balanceOf(gogeToken_v2.DEAD_ADDRESS()));
     }
 
     function test_migration_fuzzing(uint256 amountTokens) public {

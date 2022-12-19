@@ -60,7 +60,7 @@ contract GogeDAO is Ownable {
     enum PollType {
         taxChange,
         funding,
-        setDao,
+        setGogeDao,
         setCex,
         setDex,
         excludeFromCirculatingSupply,
@@ -126,7 +126,7 @@ contract GogeDAO is Ownable {
         uint256 amount;
     }
 
-    struct SetDao {
+    struct SetGogeDao {
         string description;
         uint256 startTime;
         uint256 endTime;
@@ -339,7 +339,7 @@ contract GogeDAO is Ownable {
         actions = [
             "taxChange",
             "funding",
-            "setDao",
+            "setGogeDao",
             "setCex",
             "setDex",
             "excludeFromCirculatingSupply",
@@ -417,15 +417,15 @@ contract GogeDAO is Ownable {
                 ERC20(funding.token).transfer(funding.recipient, funding.amount);
                 //marketingBalance -= funding.amount;
             }
-            else if (pollTypes[_pollNum] == PollType.setDao) {
-                SetDao memory setDao;
-                (,setDao,) = getSetDao(_pollNum);
-                ERC20(governanceTokenAddr).setDAO(setDao.addr);
+            else if (pollTypes[_pollNum] == PollType.setGogeDao) {
+                SetGogeDao memory setGogeDao;
+                (,setGogeDao,) = getSetGogeDao(_pollNum);
+                ERC20(governanceTokenAddr).setGogeDao(setGogeDao.addr);
             }
             else if (pollTypes[_pollNum] == PollType.setCex) {
                 SetCex memory setCex;
                 (,setCex,) = getSetCex(_pollNum);
-                ERC20(governanceTokenAddr).prepareForPartnerOrExchangeListing(setCex.addr);
+                ERC20(governanceTokenAddr).addPartnerOrExchange(setCex.addr);
             }
             else if (pollTypes[_pollNum] == PollType.setDex) {
                 SetDex memory setDex;
@@ -722,16 +722,16 @@ contract GogeDAO is Ownable {
         return (historicalTally[_pollNum], funding, passed[_pollNum]);
     }
 
-    function getSetDao(uint256 _pollNum) public view returns(uint256, SetDao memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setDao, "Not setDao");
+    function getSetGogeDao(uint256 _pollNum) public view returns(uint256, SetGogeDao memory, bool) {
+        require(pollTypes[_pollNum] == PollType.setGogeDao, "Not SetGogeDao");
         Metadata memory poll = pollMap[_pollNum];
-        SetDao memory setDao;
-        setDao.description = poll.description;
-        setDao.startTime = poll.time1;
-        setDao.endTime = poll.time2;
-        setDao.addr = poll.addr1;
+        SetGogeDao memory setGogeDao;
+        setGogeDao.description = poll.description;
+        setGogeDao.startTime = poll.time1;
+        setGogeDao.endTime = poll.time2;
+        setGogeDao.addr = poll.addr1;
 
-        return (historicalTally[_pollNum], setDao, passed[_pollNum]);
+        return (historicalTally[_pollNum], setGogeDao, passed[_pollNum]);
     }
 
     function getSetCex(uint256 _pollNum) public view returns(uint256, SetCex memory, bool) {

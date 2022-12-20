@@ -5,10 +5,6 @@ import "./extensions/Ownable.sol";
 import "./interfaces/Interfaces.sol";
 import "./libraries/Libraries.sol";
 
-abstract contract IERC20Extended is IERC20 {
-    function decimals() external view virtual returns (uint8);
-}
-
 /**
  * @dev Implementation of the {IERC20} interface.
  *

@@ -245,11 +245,11 @@ contract Royalties is Utility, Test {
         // Grab post balanace and calc amount goge tokens received.
         uint256 postBal        = IERC20(WBNB).balanceOf(address(this));
         uint256 amountReceived = (postBal - preBal);
-        uint256 afterTaxAmount = amounts[1] * 84/100;
+        uint256 afterTaxAmount = amounts[1] * (100-gogeToken.totalFees())/100;
 
         // Verify the quoted amount is the amount received and no royalties were generated.
         withinDiff(afterTaxAmount, amountReceived, 10**12);
-        assertEq(IERC20(address(gogeToken)).balanceOf(address(gogeToken)), amounts[0] * 16/100);
+        assertEq(IERC20(address(gogeToken)).balanceOf(address(gogeToken)), amounts[0] * gogeToken.totalFees()/100);
 
         // Log
         emit log_named_uint("amount bnb quoted", amounts[1]);
@@ -580,7 +580,7 @@ contract Royalties is Utility, Test {
         gogeToken.excludeFromFees(address(this), false);
         gogeToken.transfer(address(joe), amountToSend);
 
-        assertEq(gogeToken.balanceOf(address(joe)), amountToSend - (amountToSend * 16/100)); // Tx is taxed 16%
+        assertEq(gogeToken.balanceOf(address(joe)), amountToSend - (amountToSend * gogeToken.totalFees()/100)); // Tx is taxed 16%
     }
 
     function test_royaltyTesting_feeDistributions() public {
@@ -730,7 +730,7 @@ contract Royalties is Utility, Test {
         // Remove address(69) from excluded list.
         gogeToken.excludeFromCirculatingSupply(address(69), false);
 
-        // Verify circulating supply is 88B tokens.
+        // Verify circulating supply is 90B tokens.
         assertEq(ERC20(address(gogeToken)).getCirculatingMinusReserve(), 90_000_000_000 ether);
 
         emit log_named_uint("circulating supply minus reserve", ERC20(address(gogeToken)).getCirculatingMinusReserve());

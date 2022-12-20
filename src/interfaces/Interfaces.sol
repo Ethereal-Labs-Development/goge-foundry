@@ -77,6 +77,10 @@ interface IERC20 {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
+abstract contract IERC20Extended is IERC20 {
+    function decimals() external view virtual returns (uint8);
+}
+
 interface IWETH {
     function deposit() external payable;
     function withdraw(uint) external;

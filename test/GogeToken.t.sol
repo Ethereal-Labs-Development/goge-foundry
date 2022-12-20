@@ -123,7 +123,7 @@ contract TokenTest is Utility, Test {
         assert(joe.try_transferToken(address(gogeToken), address(32), 10 ether));
     }
 
-    // This tests that a blacklisted sender can send tokens to a whitelisted receiver.
+    // This tests that a whitelisted sender can send tokens to a blacklisted receiver.
     function test_gogeToken_whitelist_to_blacklist() public {
         // This contract can successfully send assets to address(joe).
         assert(dev.try_transferToken(address(gogeToken), address(joe), 100 ether));
@@ -215,15 +215,10 @@ contract TokenTest is Utility, Test {
         assert(!dev.try_updateFees(address(gogeToken), 20, 10, 5, 6)); // 41
     }
 
-    // TODO: create tests for setBuyBackAndLiquifyEnabled, setMarketingEnabled, setTeamEnabled, setCakeDividendEnabled
-    //       create LP test
-    //       test distribution of royalties when marketingEnabled is true and other fees are false
-    //          - fix royalty distribution
-
     // setBuyBackEnabled test
     function test_gogeToken_setBuyBackEnabled() public {
         // Pre-state check.
-        assertTrue(gogeToken.buyBackEnabled());
+        assertEq(gogeToken.buyBackEnabled(), true);
         assertEq(gogeToken.buyBackFee(), 2);
         assertEq(gogeToken.previousbuyBackFee(), 0);
 
@@ -231,7 +226,7 @@ contract TokenTest is Utility, Test {
         assert(dev.try_setBuyBackEnabled(address(gogeToken), false));
 
         //Post-state check.
-        assertTrue(!gogeToken.buyBackEnabled());
+        assertEq(gogeToken.buyBackEnabled(), false);
         assertEq(gogeToken.buyBackFee(), 0);
         assertEq(gogeToken.previousbuyBackFee(), 2);
     }
@@ -239,7 +234,7 @@ contract TokenTest is Utility, Test {
     // setMarketingEnabled test
     function test_gogeToken_setMarketingEnabled() public {
         // Pre-state check.
-        assertTrue(gogeToken.marketingEnabled());
+        assertEq(gogeToken.marketingEnabled(), true);
         assertEq(gogeToken.marketingFee(), 2);
         assertEq(gogeToken.previousMarketingFee(), 0);
 
@@ -247,7 +242,7 @@ contract TokenTest is Utility, Test {
         assert(dev.try_setMarketingEnabled(address(gogeToken), false));
 
         //Post-state check.
-        assertTrue(!gogeToken.marketingEnabled());
+        assertEq(gogeToken.marketingEnabled(), false);
         assertEq(gogeToken.marketingFee(), 0);
         assertEq(gogeToken.previousMarketingFee(), 2);
     }
@@ -255,7 +250,7 @@ contract TokenTest is Utility, Test {
     // setCakeDividendEnabled test
     function test_gogeToken_setCakeDividendEnabled() public {
         // Pre-state check.
-        assertTrue(gogeToken.cakeDividendEnabled());
+        assertEq(gogeToken.cakeDividendEnabled(), true);
         assertEq(gogeToken.cakeDividendRewardsFee(), 10);
         assertEq(gogeToken.previousCakeDividendRewardsFee(), 0);
 
@@ -263,7 +258,7 @@ contract TokenTest is Utility, Test {
         assert(dev.try_setCakeDividendEnabled(address(gogeToken), false));
 
         //Post-state check.
-        assertTrue(!gogeToken.cakeDividendEnabled());
+        assertEq(gogeToken.cakeDividendEnabled(), false);
         assertEq(gogeToken.cakeDividendRewardsFee(), 0);
         assertEq(gogeToken.previousCakeDividendRewardsFee(), 10);
     }
@@ -271,7 +266,7 @@ contract TokenTest is Utility, Test {
     // setTeamEnabled test
     function test_gogeToken_setTeamEnabled() public {
         // Pre-state check.
-        assertTrue(gogeToken.teamEnabled());
+        assertEq(gogeToken.teamEnabled(), true);
         assertEq(gogeToken.teamFee(), 2);
         assertEq(gogeToken.previousTeamFee(), 0);
 
@@ -279,7 +274,7 @@ contract TokenTest is Utility, Test {
         assert(dev.try_setTeamEnabled(address(gogeToken), false));
 
         //Post-state check.
-        assertTrue(!gogeToken.teamEnabled());
+        assertEq(gogeToken.teamEnabled(), false);
         assertEq(gogeToken.teamFee(), 0);
         assertEq(gogeToken.previousTeamFee(), 2);
     }

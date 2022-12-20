@@ -257,7 +257,7 @@ contract Royalties is Utility, Test {
         emit log_named_uint("amount royalties", IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
     }
 
-    // verify whitelisted buy
+    // verify whitelisted sell
     function test_royaltyTesting_sell_noTax() public {
         // Verify address(this) is NOT excluded from fees and grab pre balance.
         assert(gogeToken.isExcludedFromFees(address(this)));

@@ -512,6 +512,7 @@ contract DogeGaySon is ERC20, Ownable {
     address public GogeV1;
 
     address constant public DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    address constant public BnbPriceOracle = 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE;
 
     address[] public excludedFromCirculatingSupply;
 
@@ -945,7 +946,10 @@ contract DogeGaySon is ERC20, Ownable {
 
     function migrate() external {
         uint256 amount = IERC20(GogeV1).balanceOf(_msgSender());
-        require(amount >= 314_535 * 10**18, "GogeToken.sol::migrate() balance of msg.sender is less than $1"); // TODO: Use oracle price feed for this
+        (uint112 v1_reserveBnb, uint112 v1_reserveTokens,) = IUniswapV2Pair(IGetPair(GogeV1).uniswapV2Pair()).getReserves();
+        uint256 balanceValue = ((uint256(v1_reserveBnb) * uint256(AggregatorInterface(BnbPriceOracle).latestAnswer())) / v1_reserveTokens) * amount / 10**8;
+
+        require(balanceValue >= 1 ether, "GogeToken.sol::migrate() USD value of v1 balance must exceed $1");
         require(IERC20(GogeV1).transferFrom(_msgSender(), address(this), amount), "GogeToken.sol::migrate() transfer from msg.sender to address(this) failed");
         require(IERC20(GogeV1).balanceOf(_msgSender()) == 0, "GogeToken.sol::migrate() msg.sender post balance > 0");
         

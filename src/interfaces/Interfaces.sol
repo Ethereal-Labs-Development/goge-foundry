@@ -6,6 +6,21 @@ interface IDAO {
     function updateMarketingBalance(uint256 amount) external;
 }
 
+interface IGetPair {
+    function uniswapV2Pair() external view returns (address);
+}
+
+interface AggregatorInterface {
+  function latestAnswer() external view returns (int256);
+  function latestTimestamp() external view returns (uint256);
+  function latestRound() external view returns (uint256);
+  function getAnswer(uint256 roundId) external view returns (int256);
+  function getTimestamp(uint256 roundId) external view returns (uint256);
+
+  event AnswerUpdated(int256 indexed current, uint256 indexed roundId, uint256 updatedAt);
+  event NewRound(uint256 indexed roundId, address indexed startedBy, uint256 startedAt);
+}
+
 interface IERC20 {
     /**
      * @dev Returns the amount of tokens in existence.

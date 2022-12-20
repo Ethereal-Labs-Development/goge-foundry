@@ -4,7 +4,7 @@ pragma solidity ^0.8.6;
 import "../lib/forge-std/src/Test.sol";
 import "./Utility.sol";
 
-import { IUniswapV2Router02, IUniswapV2Pair, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
+import "../src/interfaces/Interfaces.sol";
 import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
 
 import { DogeGaySon } from "../src/GogeToken.sol";
@@ -16,6 +16,8 @@ contract MigrationTesting is Utility, Test {
     DogeGaySon1 gogeToken_v1;
 
     address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E; //bsc
+
+    address BnbPriceFeedOracle = 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE;
 
     function setUp() public {
         createActors();
@@ -422,6 +424,79 @@ contract MigrationTesting is Utility, Test {
         assertGt(postReserveTokens_v1, preReserveTokens_v1);  // verify post migration, v1 LP has more tokens than pre migration
 
         //assertEq(gogeToken_v2.amountBnbExcess(), 0);
+    }
+
+    function test_migration_oracleTesting() public {
+        uint256 amountTokens = 600_000 ether;
+        address theRealGogeV1 = 0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe;
+
+        // Get reserves of on-chain v1 (deployed v1)
+        (uint112 v1_reserveTokens, uint112 v1_reserveBnb,) = IUniswapV2Pair(IGetPair(theRealGogeV1).uniswapV2Pair()).getReserves();
+
+        // Emit reserves
+        emit log_named_uint("v1 bnb balance", v1_reserveBnb);
+        emit log_named_uint("v1 token balance", v1_reserveTokens);
+
+        // Calculate price with oracle feed
+        //uint256 pricePerToken = (uint256(v1_reserveBnb) * uint256(AggregatorInterface(BnbPriceFeedOracle).latestAnswer())) / v1_reserveTokens;
+        //uint256 balanceValue = (pricePerToken * amountTokens) / 10**8;
+
+        uint256 balanceValue = ((uint256(v1_reserveBnb) * uint256(AggregatorInterface(BnbPriceFeedOracle).latestAnswer())) / v1_reserveTokens) * amountTokens / 10**8;
+
+        // Log
+        //emit log_named_uint("price per token", pricePerToken); // -> $230 ^8 -> bal: 500_000 tokens
+        emit log_named_uint("balance value", balanceValue);  // -> $1.15 ^18 -> bal: 500_000 tokens
+        emit log_named_bool("is greater than $1", balanceValue >= 1 ether);
+    }
+
+    function test_migration_oracleTesting_fuzzing(uint256 amountTokens) public {
+        amountTokens = bound(amountTokens, 100_000 ether, 10_000_000_000 ether);
+
+        // Transfer tokens to Joe so he can migrate.
+        gogeToken_v1.transfer(address(joe), amountTokens);
+        
+        // Verify amount v1 and 0 v2 tokens.
+        assertEq(gogeToken_v1.balanceOf(address(joe)), amountTokens);
+        assertEq(gogeToken_v2.balanceOf(address(joe)), 0);
+
+        // Disable trading on v1
+        gogeToken_v1.setTradingIsEnabled(false, 0);
+        assert(!joe.try_transferToken(address(gogeToken_v1), address(69), 10 ether));
+
+        // Whitelist v2 token.
+        gogeToken_v1.excludeFromFees(address(gogeToken_v2), true);
+
+        // Get reserves of on-chain v1 (deployed v1)
+        (uint112 v1_reserveBnb, uint112 v1_reserveTokens,) = IUniswapV2Pair(IGetPair(address(gogeToken_v1)).uniswapV2Pair()).getReserves();
+
+        // Emit reserves
+        emit log_named_uint("v1 bnb balance", v1_reserveBnb);
+        emit log_named_uint("v1 token balance", v1_reserveTokens);
+
+        // calculate balance USD value
+        uint256 balanceValue = ((uint256(v1_reserveBnb) * uint256(AggregatorInterface(BnbPriceFeedOracle).latestAnswer())) / v1_reserveTokens) * amountTokens / 10**8;
+    
+        emit log_named_uint("balance value", balanceValue);  // -> $1.15 ^18 -> bal: 500_000 tokens
+
+        if (balanceValue >= 1 ether) {
+
+            // Approve and migrate
+            assert(joe.try_approveToken(address(gogeToken_v1), address(gogeToken_v2), amountTokens));
+            assert(joe.try_migrate(address(gogeToken_v2)));
+
+            // Verify 0 v1 and amount v2 tokens.
+            assertEq(gogeToken_v1.balanceOf(address(joe)), 0);
+            assertEq(gogeToken_v2.balanceOf(address(joe)), amountTokens);
+        }
+        else {
+            // Approve and migrate
+            assert(joe.try_approveToken(address(gogeToken_v1), address(gogeToken_v2), amountTokens));
+            assert(!joe.try_migrate(address(gogeToken_v2)));
+
+            // Verify 0 v1 and amount v2 tokens.
+            assertEq(gogeToken_v1.balanceOf(address(joe)), amountTokens);
+            assertEq(gogeToken_v2.balanceOf(address(joe)), 0);
+        }
     }
 
 }

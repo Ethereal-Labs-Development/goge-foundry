@@ -30,7 +30,7 @@ pragma solidity ^0.8.6;
 
 import "./libraries/Libraries.sol";
 import "./extensions/Ownable.sol";
-import "./extensions/ERC20.sol";
+import "./extensions/IGogeERC20.sol";
 
 
 contract GogeDAO is Ownable {
@@ -379,18 +379,18 @@ contract GogeDAO is Ownable {
     /// @param  _numVotes The size of the vote to be created.
     function addVote(uint256 _pollNum, uint256 _numVotes) public {
 
-        require(block.timestamp - ERC20(governanceTokenAddr).getLastReceived(_msgSender()) >= (5 minutes), "Must wait 5 minutes after purchasing tokens to place any votes.");
+        require(block.timestamp - IGogeERC20(governanceTokenAddr).getLastReceived(_msgSender()) >= (5 minutes), "Must wait 5 minutes after purchasing tokens to place any votes.");
         require(_pollNum <= pollNum, "Poll doesn't Exist");
-        require(ERC20(governanceTokenAddr).balanceOf(_msgSender()) >= _numVotes, "Exceeds Balance");
+        require(IGogeERC20(governanceTokenAddr).balanceOf(_msgSender()) >= _numVotes, "Exceeds Balance");
         require(block.timestamp >= pollStartTime[_pollNum] && block.timestamp < pollEndTime[_pollNum], "Poll Closed");
-        require(ERC20(governanceTokenAddr).transferFrom(_msgSender(), address(this), _numVotes));
+        require(IGogeERC20(governanceTokenAddr).transferFrom(_msgSender(), address(this), _numVotes));
 
         voterLibrary[_pollNum].push(_msgSender());
         polls[_pollNum][_msgSender()] = _numVotes;
         totalVotes[_pollNum] += _numVotes;
         historicalTally[_pollNum] += _numVotes;
 
-        bool quorumMet = ( totalVotes[_pollNum] * 100 / ERC20(governanceTokenAddr).getCirculatingMinusReserve() ) >= quorum;
+        bool quorumMet = ( totalVotes[_pollNum] * 100 / IGogeERC20(governanceTokenAddr).getCirculatingMinusReserve() ) >= quorum;
         bool enactChange = false;
 
         if (!veto && quorumMet) {
@@ -408,49 +408,49 @@ contract GogeDAO is Ownable {
             if (pollTypes[_pollNum] == PollType.taxChange) {
                 TaxChange memory taxchange;
                 (,taxchange,) = getTaxChange(_pollNum);
-                ERC20(governanceTokenAddr).updateFees(taxchange.cakeDividendsFee, taxchange.marketingFee, taxchange.buyBackFee, taxchange.teamFee);
+                IGogeERC20(governanceTokenAddr).updateFees(taxchange.cakeDividendsFee, taxchange.marketingFee, taxchange.buyBackFee, taxchange.teamFee);
             }
             else if (pollTypes[_pollNum] == PollType.funding) {
                 Funding memory funding;
                 (,funding,) = getFunding(_pollNum);
                 //require(funding.amount <= marketingBalance, "Insufficient Funds");
-                ERC20(funding.token).transfer(funding.recipient, funding.amount);
+                IGogeERC20(funding.token).transfer(funding.recipient, funding.amount);
                 //marketingBalance -= funding.amount;
             }
             else if (pollTypes[_pollNum] == PollType.setGogeDao) {
                 SetGogeDao memory setGogeDao;
                 (,setGogeDao,) = getSetGogeDao(_pollNum);
-                ERC20(governanceTokenAddr).setGogeDao(setGogeDao.addr);
+                IGogeERC20(governanceTokenAddr).setGogeDao(setGogeDao.addr);
             }
             else if (pollTypes[_pollNum] == PollType.setCex) {
                 SetCex memory setCex;
                 (,setCex,) = getSetCex(_pollNum);
-                ERC20(governanceTokenAddr).addPartnerOrExchange(setCex.addr);
+                IGogeERC20(governanceTokenAddr).addPartnerOrExchange(setCex.addr);
             }
             else if (pollTypes[_pollNum] == PollType.setDex) {
                 SetDex memory setDex;
                 (,setDex,) = getSetDex(_pollNum);
-                ERC20(governanceTokenAddr).setAutomatedMarketMakerPair(setDex.addr, setDex.boolVar);
+                IGogeERC20(governanceTokenAddr).setAutomatedMarketMakerPair(setDex.addr, setDex.boolVar);
             }
             else if (pollTypes[_pollNum] == PollType.excludeFromCirculatingSupply) {
                 ExcludeFromCirculatingSupply memory excludeFromCirculatingSupply;
                 (,excludeFromCirculatingSupply,) = getExcludeFromCirculatingSupply(_pollNum);
-                ERC20(governanceTokenAddr).excludeFromCirculatingSupply(excludeFromCirculatingSupply.addr, excludeFromCirculatingSupply.boolVar);
+                IGogeERC20(governanceTokenAddr).excludeFromCirculatingSupply(excludeFromCirculatingSupply.addr, excludeFromCirculatingSupply.boolVar);
             }
             else if (pollTypes[_pollNum] == PollType.updateDividendToken) {
                 UpdateDividendToken memory updateDividendToken;
                 (,updateDividendToken,) = getUpdateDividendToken(_pollNum);
-                ERC20(governanceTokenAddr).updateCakeDividendToken(updateDividendToken.addr);
+                IGogeERC20(governanceTokenAddr).updateCakeDividendToken(updateDividendToken.addr);
             }
             else if (pollTypes[_pollNum] == PollType.updateMarketingWallet) {
                 UpdateMarketingWallet memory updateMarketingWallet;
                 (,updateMarketingWallet,) = getUpdateMarketingWallet(_pollNum);
-                ERC20(governanceTokenAddr).updateMarketingWallet(updateMarketingWallet.addr);
+                IGogeERC20(governanceTokenAddr).updateMarketingWallet(updateMarketingWallet.addr);
             }
             else if (pollTypes[_pollNum] == PollType.updateTeamWallet) {
                 UpdateTeamWallet memory updateTeamWallet;
                 (,updateTeamWallet,) = getUpdateTeamWallet(_pollNum);
-                ERC20(governanceTokenAddr).updateTeamWallet(updateTeamWallet.addr);
+                IGogeERC20(governanceTokenAddr).updateTeamWallet(updateTeamWallet.addr);
             }
             else if (pollTypes[_pollNum] == PollType.updateTeamMember) {
                 UpdateTeamMember memory updateTeamMember;
@@ -470,72 +470,72 @@ contract GogeDAO is Ownable {
             else if (pollTypes[_pollNum] == PollType.setSwapTokensAtAmount) {
                 SetSwapTokensAtAmount memory setSwapTokensAtAmount;
                 (,setSwapTokensAtAmount,) = getSetSwapTokensAtAmount(_pollNum);
-                ERC20(governanceTokenAddr).setSwapTokensAtAmount(setSwapTokensAtAmount.amount);
+                IGogeERC20(governanceTokenAddr).setSwapTokensAtAmount(setSwapTokensAtAmount.amount);
             }
             else if (pollTypes[_pollNum] == PollType.setBuyBackEnabled) {
                 SetBuyBackEnabled memory setBuyBackEnabled;
                 (,setBuyBackEnabled,) = getSetBuyBackEnabled(_pollNum);
-                ERC20(governanceTokenAddr).setBuyBackEnabled(setBuyBackEnabled.boolVar);
+                IGogeERC20(governanceTokenAddr).setBuyBackEnabled(setBuyBackEnabled.boolVar);
             }
             else if (pollTypes[_pollNum] == PollType.setCakeDividendEnabled) {
                 SetCakeDividendEnabled memory setCakeDividendEnabled;
                 (,setCakeDividendEnabled,) = getSetCakeDividendEnabled(_pollNum);
-                ERC20(governanceTokenAddr).setCakeDividendEnabled(setCakeDividendEnabled.boolVar);
+                IGogeERC20(governanceTokenAddr).setCakeDividendEnabled(setCakeDividendEnabled.boolVar);
             }
             else if (pollTypes[_pollNum] == PollType.setMarketingEnabled) {
                 SetMarketingEnabled memory setMarketingEnabled;
                 (,setMarketingEnabled,) = getSetMarketingEnabled(_pollNum);
-                ERC20(governanceTokenAddr).setMarketingEnabled(setMarketingEnabled.boolVar);
+                IGogeERC20(governanceTokenAddr).setMarketingEnabled(setMarketingEnabled.boolVar);
             }
             else if (pollTypes[_pollNum] == PollType.setTeamEnabled) {
                 SetTeamEnabled memory setTeamEnabled;
                 (,setTeamEnabled,) = getSetTeamEnabled(_pollNum);
-                ERC20(governanceTokenAddr).setTeamEnabled(setTeamEnabled.boolVar);
+                IGogeERC20(governanceTokenAddr).setTeamEnabled(setTeamEnabled.boolVar);
             }
             else if (pollTypes[_pollNum] == PollType.updateCakeDividendTracker) {
                 UpdateCakeDividendTracker memory updateCakeDividendTracker;
                 (,updateCakeDividendTracker,) = getUpdateCakeDividendTracker(_pollNum);
-                ERC20(governanceTokenAddr).updateCakeDividendTracker(updateCakeDividendTracker.addr);
+                IGogeERC20(governanceTokenAddr).updateCakeDividendTracker(updateCakeDividendTracker.addr);
             }
             else if (pollTypes[_pollNum] == PollType.updateUniswapV2Router) {
                 UpdateUniswapV2Router memory updateUniswapV2Router;
                 (,updateUniswapV2Router,) = getUpdateUniswapV2Router(_pollNum);
-                ERC20(governanceTokenAddr).updateUniswapV2Router(updateUniswapV2Router.addr);
+                IGogeERC20(governanceTokenAddr).updateUniswapV2Router(updateUniswapV2Router.addr);
             }
             else if (pollTypes[_pollNum] == PollType.excludeFromFees) {
                 ExcludeFromFees memory excludeFromFees;
                 (,excludeFromFees,) = getExcludeFromFees(_pollNum);
-                ERC20(governanceTokenAddr).excludeFromFees(excludeFromFees.addr, excludeFromFees.boolVar);
+                IGogeERC20(governanceTokenAddr).excludeFromFees(excludeFromFees.addr, excludeFromFees.boolVar);
             }
             else if (pollTypes[_pollNum] == PollType.excludeFromDividends) {
                 ExcludeFromDividends memory excludeFromDividends;
                 (,excludeFromDividends,) = getExcludeFromDividends(_pollNum);
-                ERC20(governanceTokenAddr).excludeFromDividend(excludeFromDividends.addr);
+                IGogeERC20(governanceTokenAddr).excludeFromDividend(excludeFromDividends.addr);
             }
             else if (pollTypes[_pollNum] == PollType.updateGasForProcessing) {
                 UpdateGasForProcessing memory updateGasForProcessing;
                 (,updateGasForProcessing,) = getUpdateGasForProcessing(_pollNum);
-                ERC20(governanceTokenAddr).updateGasForProcessing(updateGasForProcessing.amount);
+                IGogeERC20(governanceTokenAddr).updateGasForProcessing(updateGasForProcessing.amount);
             }
             else if (pollTypes[_pollNum] == PollType.updateMinimumBalanceForDividends) {
                 UpdateMinimumBalanceForDividends memory updateMinimumBalanceForDividends;
                 (,updateMinimumBalanceForDividends,) = getUpdateMinimumBalanceForDividends(_pollNum);
-                ERC20(governanceTokenAddr).updateMinimumBalanceForDividends(updateMinimumBalanceForDividends.amount);
+                IGogeERC20(governanceTokenAddr).updateMinimumBalanceForDividends(updateMinimumBalanceForDividends.amount);
             }
             else if (pollTypes[_pollNum] == PollType.modifyBlacklist) {
                 ModifyBlacklist memory modifyBlacklist;
                 (,modifyBlacklist,) = getModifyBlacklist(_pollNum);
-                ERC20(governanceTokenAddr).modifyBlacklist(modifyBlacklist.addr, modifyBlacklist.blacklisted);
+                IGogeERC20(governanceTokenAddr).modifyBlacklist(modifyBlacklist.addr, modifyBlacklist.blacklisted);
             }
             else if (pollTypes[_pollNum] == PollType.transferOwnership) {
                 TransferOwnership memory transferOwnership;
                 (,transferOwnership,) = getTransferOwnership(_pollNum);
-                ERC20(governanceTokenAddr)._transferOwnership(transferOwnership.addr);
+                IGogeERC20(governanceTokenAddr)._transferOwnership(transferOwnership.addr);
             }
             else if (pollTypes[_pollNum] == PollType.migrateTreasury) {
                 MigrateTreasury memory migrateTreasury;
                 (,migrateTreasury,) = getMigrateTreasury(_pollNum);
-                ERC20(migrateTreasury.token).transfer(migrateTreasury.addr, ERC20(migrateTreasury.token).balanceOf(address(this)));
+                IGogeERC20(migrateTreasury.token).transfer(migrateTreasury.addr, IGogeERC20(migrateTreasury.token).balanceOf(address(this)));
             }
             else if (pollTypes[_pollNum] == PollType.setQuorum) {
                 SetQuorum memory setQuorum;
@@ -565,7 +565,7 @@ contract GogeDAO is Ownable {
         for (uint256 i = 0; i < voterLibrary[_pollNum].length; i++) {
             address voter = voterLibrary[_pollNum][i];
             uint256 amnt  = polls[_pollNum][voter];
-            ERC20(governanceTokenAddr).transfer(voter, amnt);
+            IGogeERC20(governanceTokenAddr).transfer(voter, amnt);
         }
     }
 
@@ -579,7 +579,7 @@ contract GogeDAO is Ownable {
             if (block.timestamp <= pollEndTime[_pollNum]) {
                 historicalTally[_pollNum] -= _numVotes;
             }
-            require(ERC20(governanceTokenAddr).transfer(_msgSender(), _numVotes));
+            require(IGogeERC20(governanceTokenAddr).transfer(_msgSender(), _numVotes));
         }
     }
 

@@ -3,11 +3,11 @@ pragma solidity ^0.8.6;
 
 import "../lib/forge-std/src/Test.sol";
 import "./Utility.sol";
-import {GogeDAO} from "../src/GogeDao.sol";
-import {DogeGaySon} from "../src/GogeToken.sol";
+import { GogeDAO } from "../src/GogeDao.sol";
+import { DogeGaySon } from "../src/GogeToken.sol";
 
-import {IUniswapV2Router02, IUniswapV2Router01, IWETH, IERC20} from "../src/interfaces/Interfaces.sol";
-import {ERC20} from "../src/extensions/ERC20.sol";
+import { IUniswapV2Router02, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
+import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
 
 contract DaoTest is Utility, Test {
     GogeDAO gogeDao;

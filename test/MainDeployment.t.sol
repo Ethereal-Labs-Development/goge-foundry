@@ -69,17 +69,21 @@ contract MainDeploymentTesting is Utility, Test {
         gogeToken_v1.excludeFromFees(address(gogeToken_v2), true);
 
         // TODO: (5) Perform migration -> 6 days
+        migrateActor(tim);
         migrateActor(joe);
         migrateActor(sal);
         migrateActor(nik);
         migrateActor(jon);
-        migrateActor(tim);
 
         // Show price of v2
         price = getPrice(address(gogeToken_v2));
         emit log_named_uint("cost of 1 v2 token", price); // 0.000002119865796663
 
-        // TODO: (6) enableTrading() on v2
+        // TODO: (6) Perform mass airdrop to private sale contributors
+        // NOTE: IF USING BULKSENDER -> MAKE SURE TO WHITELIST BULKSENDER CONTRACT
+        gogeToken_v2.transfer(address(567), 20_000_000_000 ether);
+
+        // TODO: (7) enableTrading() on v2
         gogeToken_v2.enableTrading();
     }
 
@@ -105,7 +109,7 @@ contract MainDeploymentTesting is Utility, Test {
         uint256 amountSal = 8_610_217_752 ether;
         uint256 amountNik = 900_261_463 ether;
         uint256 amountJon = 200_984_357 ether;
-        uint256 amountTim = 320_535 ether;
+        uint256 amountTim = 600_000 ether;
 
         // Transfer tokens to Joe so he can migrate.
         gogeToken_v1.transfer(address(joe), amountJoe);

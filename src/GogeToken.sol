@@ -946,9 +946,12 @@ contract DogeGaySon is ERC20, Ownable {
 
     function migrate() external {
         uint256 amount = IERC20(GogeV1).balanceOf(_msgSender());
-        (uint112 v1_reserveBnb, uint112 v1_reserveTokens,) = IUniswapV2Pair(IGetPair(GogeV1).uniswapV2Pair()).getReserves();
-        uint256 balanceValue = ((uint256(v1_reserveBnb) * uint256(AggregatorInterface(BnbPriceOracle).latestAnswer())) / v1_reserveTokens) * amount / 10**8;
-
+        address[] memory path = new address[](2);
+        path[0] = GogeV1;
+        path[1] = uniswapV2Router.WETH();
+        uint[] memory amounts = IUniswapV2Router01(uniswapV2Router).getAmountsOut(1 ether, path);
+        uint256 balanceValue = (amounts[1] * uint256(AggregatorInterface(BnbPriceOracle).latestAnswer())) * amount / 10**26;
+        
         require(balanceValue >= 1 ether, "GogeToken.sol::migrate() USD value of v1 balance must exceed $1");
         require(IERC20(GogeV1).transferFrom(_msgSender(), address(this), amount), "GogeToken.sol::migrate() transfer from msg.sender to address(this) failed");
         require(IERC20(GogeV1).balanceOf(_msgSender()) == 0, "GogeToken.sol::migrate() msg.sender post balance > 0");

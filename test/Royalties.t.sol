@@ -160,7 +160,7 @@ contract Royalties is Utility, Test {
         uint256 amountReceived = (postBal - preBal);
         uint256 taxedAmount    = amounts[1] * gogeToken.totalFees()/100;
 
-        // Verify the quoted amount is the amount received and no royalties were generated.
+        // Verify the quoted amount (minus taxed amount) is the amount received.
         assertEq(amounts[1] - taxedAmount, amountReceived);
         assertEq(IERC20(address(gogeToken)).balanceOf(address(gogeToken)), taxedAmount);
 

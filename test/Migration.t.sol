@@ -10,6 +10,8 @@ import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
 import { DogeGaySon } from "../src/GogeToken.sol";
 import { DogeGaySon1 } from "../src/TokenV1.sol";
 
+// TODO: See where we can implement vm.expectEmit
+
 contract MigrationTesting is Utility, Test {
 
     DogeGaySon  gogeToken_v2;
@@ -307,11 +309,11 @@ contract MigrationTesting is Utility, Test {
 
         // Approve and migrate
         assert(tim.try_approveToken(address(gogeToken_v1), address(gogeToken_v2), amountTim));
-        assert(!tim.try_migrate(address(gogeToken_v2)));
+        assert(tim.try_migrate(address(gogeToken_v2)));
 
         // Verify 0 v1 and amount v2 tokens.
-        assertEq(gogeToken_v1.balanceOf(address(tim)), amountTim);
-        assertEq(gogeToken_v2.balanceOf(address(tim)), 0);
+        assertEq(gogeToken_v1.balanceOf(address(tim)), 0);
+        assertEq(gogeToken_v2.balanceOf(address(tim)), amountTim);
 
         // Emit price of v2 LP
         price = getPrice(address(gogeToken_v2));
@@ -424,13 +426,14 @@ contract MigrationTesting is Utility, Test {
     function test_migration_oracleTesting() public {
         uint256 amountTokens = 600_000 ether;
         address theRealGogeV1 = 0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe;
+        address factory = 0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73;
 
         // Get reserves of on-chain v1 (deployed v1)
-        (uint112 v1_reserveTokens, uint112 v1_reserveBnb,) = IUniswapV2Pair(IGetPair(theRealGogeV1).uniswapV2Pair()).getReserves();
+        address v1Pair = IUniswapV2Factory(factory).getPair(theRealGogeV1, WBNB);
+        (uint112 v1_reserveTokens, uint112 v1_reserveBnb,) = IUniswapV2Pair(v1Pair).getReserves();
 
-        // Emit reserves
-        emit log_named_uint("v1 bnb balance", v1_reserveBnb);
         emit log_named_uint("v1 token balance", v1_reserveTokens);
+        emit log_named_uint("v1 bnb balance", v1_reserveBnb);
 
         // Calculate price with oracle feed
         //uint256 pricePerToken = (uint256(v1_reserveBnb) * uint256(AggregatorInterface(BnbPriceFeedOracle).latestAnswer())) / v1_reserveTokens;
@@ -440,12 +443,12 @@ contract MigrationTesting is Utility, Test {
         // NOTE: 3 ways to grab the price of token balance:
 
         // 1. Grab token reserves of LP and multiply by BNB price using chainlink oracle.
-        (v1_reserveTokens, v1_reserveBnb,) = IUniswapV2Pair(IGetPair(theRealGogeV1).uniswapV2Pair()).getReserves();
+        (v1_reserveTokens, v1_reserveBnb,) = IUniswapV2Pair(v1Pair).getReserves();
         uint256 tokenPrice1 = (uint256(v1_reserveBnb) * uint256(AggregatorInterface(BnbPriceFeedOracle).latestAnswer())) / v1_reserveTokens;
         emit log_named_uint("price method 1", tokenPrice1);
         emit log_named_uint("balance USD value", tokenPrice1 * amountTokens / 10**8); // 1.380000000000000000 -> $1.38
 
-        // 2. Grab bnb quote using getAmountsOut and multiply by BNB price from oracle\
+        // 2. Grab bnb quote using getAmountsOut and multiply by BNB price from oracle
         address[] memory path = new address[](2);
         path[0] = theRealGogeV1;
         path[1] = WBNB;
@@ -463,55 +466,6 @@ contract MigrationTesting is Utility, Test {
         uint256 tokenPrice3 = amounts[2];
         emit log_named_uint("price method 3", tokenPrice3);
         emit log_named_uint("balance USD value", tokenPrice3 * amountTokens / 10**18); // 1.384053790212000000 -> $1.38
-    }
-
-    function test_migration_oracleTesting_fuzzing(uint256 amountTokens) public {
-        amountTokens = bound(amountTokens, 100_000 ether, 10_000_000_000 ether);
-
-        // Transfer tokens to Joe so he can migrate.
-        gogeToken_v1.transfer(address(joe), amountTokens);
-        
-        // Verify amount v1 and 0 v2 tokens.
-        assertEq(gogeToken_v1.balanceOf(address(joe)), amountTokens);
-        assertEq(gogeToken_v2.balanceOf(address(joe)), 0);
-
-        // Disable trading on v1
-        gogeToken_v1.setTradingIsEnabled(false, 0);
-        assert(!joe.try_transferToken(address(gogeToken_v1), address(69), 10 ether));
-
-        // Whitelist v2 token.
-        gogeToken_v1.excludeFromFees(address(gogeToken_v2), true);
-
-        // Get balance value in USD
-        address[] memory path = new address[](2);
-        path[0] = address(gogeToken_v1);
-        path[1] = WBNB;
-        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut(1 ether, path);
-        uint256 tokenPrice = amounts[1] * uint256(AggregatorInterface(BnbPriceFeedOracle).latestAnswer());
-        uint256 balanceValue = tokenPrice * amountTokens / 10**26;
-
-        emit log_named_uint("price method 2", tokenPrice);
-        emit log_named_uint("balance USD value", balanceValue);
-
-        if (balanceValue >= 1 ether) {
-
-            // Approve and migrate
-            assert(joe.try_approveToken(address(gogeToken_v1), address(gogeToken_v2), amountTokens));
-            assert(joe.try_migrate(address(gogeToken_v2)));
-
-            // Verify 0 v1 and amount v2 tokens.
-            assertEq(gogeToken_v1.balanceOf(address(joe)), 0);
-            assertEq(gogeToken_v2.balanceOf(address(joe)), amountTokens);
-        }
-        else {
-            // Approve and migrate
-            assert(joe.try_approveToken(address(gogeToken_v1), address(gogeToken_v2), amountTokens));
-            assert(!joe.try_migrate(address(gogeToken_v2)));
-
-            // Verify 0 v1 and amount v2 tokens.
-            assertEq(gogeToken_v1.balanceOf(address(joe)), amountTokens);
-            assertEq(gogeToken_v2.balanceOf(address(joe)), 0);
-        }
     }
 
 }

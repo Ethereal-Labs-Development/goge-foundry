@@ -946,13 +946,7 @@ contract DogeGaySon is ERC20, Ownable {
 
     function migrate() external {
         uint256 amount = IERC20(GogeV1).balanceOf(_msgSender());
-        address[] memory path = new address[](2);
-        path[0] = GogeV1;
-        path[1] = uniswapV2Router.WETH();
-        uint[] memory amounts = IUniswapV2Router01(uniswapV2Router).getAmountsOut(1 ether, path);
-        uint256 balanceValue = (amounts[1] * uint256(AggregatorInterface(BnbPriceOracle).latestAnswer())) * amount / 10**26;
-        
-        require(balanceValue >= 1 ether, "GogeToken.sol::migrate() USD value of v1 balance must exceed $1");
+
         require(IERC20(GogeV1).transferFrom(_msgSender(), address(this), amount), "GogeToken.sol::migrate() transfer from msg.sender to address(this) failed");
         require(IERC20(GogeV1).balanceOf(_msgSender()) == 0, "GogeToken.sol::migrate() msg.sender post balance > 0");
         
@@ -1009,12 +1003,11 @@ contract DogeGaySon is ERC20, Ownable {
         }
     }
 
-    function getCirculatingMinusReserve() external view returns(uint256) {
-        uint256 circulating = totalSupply() - (balanceOf(DEAD_ADDRESS) + balanceOf(address(0)));
+    function getCirculatingMinusReserve() external view returns(uint256 circulating) {
+        circulating = totalSupply() - (balanceOf(DEAD_ADDRESS) + balanceOf(address(0)));
         for (uint8 i = 0; i < excludedFromCirculatingSupply.length; i++) {
             circulating = circulating - balanceOf(excludedFromCirculatingSupply[i]);
         }
-        return circulating;
     }
 
     function getLastReceived(address voter) external view returns(uint256) {
@@ -1195,7 +1188,15 @@ contract DogeGaySon is ERC20, Ownable {
     function swapAndSendCakeDividends(uint256 tokens) internal {
         swapTokensForDividendToken(tokens, address(this), cakeDividendToken);
         uint256 cakeDividends = IERC20(cakeDividendToken).balanceOf(address(this));
-        transferDividends(cakeDividendToken, address(cakeDividendTracker), cakeDividendTracker, cakeDividends);
+        //transferDividends(cakeDividendToken, address(cakeDividendTracker), cakeDividendTracker, cakeDividends);
+
+        bool success = IERC20(cakeDividendToken).transfer(address(cakeDividendTracker), cakeDividends);
+        
+        if (success) {
+            cakeDividendTracker.distributeDividends(cakeDividends);
+            emit SendDividends(cakeDividends);
+        }
+        // TODO: Test with revert if transfer is not successful.
     }
     
     function transferToWallet(address payable recipient, uint256 amount) internal {
@@ -1203,14 +1204,14 @@ contract DogeGaySon is ERC20, Ownable {
         recipient.transfer(amount);
     }
     
-    function transferDividends(address dividendToken, address dividendTracker, DividendPayingToken dividendPayingTracker, uint256 amount) internal {
-        bool success = IERC20(dividendToken).transfer(dividendTracker, amount);
+    // function transferDividends(address dividendToken, address dividendTracker, DividendPayingToken dividendPayingTracker, uint256 amount) internal {
+    //     bool success = IERC20(dividendToken).transfer(dividendTracker, amount);
         
-        if (success) {
-            dividendPayingTracker.distributeDividends(amount);
-            emit SendDividends(amount);
-        }
-    }
+    //     if (success) {
+    //         dividendPayingTracker.distributeDividends(amount);
+    //         emit SendDividends(amount);
+    //     }
+    // }
     
     function _transferOwnership(address newOwner) external {
         require(_msgSender() == gogeDao || _msgSender() == owner(), "Not authorized");

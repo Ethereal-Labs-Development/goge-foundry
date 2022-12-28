@@ -10,8 +10,6 @@ import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
 import { DogeGaySon } from "../src/GogeToken.sol";
 import { DogeGaySon1 } from "../src/TokenV1.sol";
 
-// TODO: See where we can implement vm.expectEmit
-
 contract MigrationTesting is Utility, Test {
 
     DogeGaySon  gogeToken_v2;
@@ -97,6 +95,7 @@ contract MigrationTesting is Utility, Test {
 
     // ~~ Unit Tests ~~
 
+    /// @notice verifies the migration of v1 tokens to v2 tokens through single migrate() call.
     function test_migration_tryMigrate() public {
         // Warp in time
         vm.warp(block.timestamp + 30 days);
@@ -148,6 +147,7 @@ contract MigrationTesting is Utility, Test {
         assertTrue(!gogeToken_v2.tradingIsEnabled());
     }
 
+    /// @notice verifies the ratio of v2 tokens received and liquidity added via migrate() with different amounts.
     function test_migration_ratio() public {
 
         // -------------------- PRE STATE -------------------
@@ -335,6 +335,7 @@ contract MigrationTesting is Utility, Test {
         emit log_named_uint("dead balance", IGogeERC20(address(gogeToken_v2)).balanceOf(gogeToken_v2.DEAD_ADDRESS()));
     }
 
+    /// @notice verifies with fuzzing random token amounts when calling migrate().
     function test_migration_fuzzing(uint256 amountTokens) public {
         amountTokens = bound(amountTokens, 500_000 ether, 18_000_000 ether);
 
@@ -423,6 +424,7 @@ contract MigrationTesting is Utility, Test {
         //assertEq(gogeToken_v2.amountBnbExcess(), 0);
     }
 
+    /// @notice test case used to compare different methods of getting $goge token price.
     function test_migration_oracleTesting() public {
         uint256 amountTokens = 600_000 ether;
         address theRealGogeV1 = 0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe;

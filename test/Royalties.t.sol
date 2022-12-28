@@ -125,7 +125,7 @@ contract Royalties is Utility, Test {
 
 
     // verify taxed buy
-    function test_royaltyTesting_buy() public {
+    function test_royaltyTesting_buy_tax() public {
         gogeToken.excludeFromFees(address(this), false);
 
         // Verify address(this) is NOT excluded from fees and grab pre balance.
@@ -214,7 +214,7 @@ contract Royalties is Utility, Test {
     }
 
     // verify taxed sell
-    function test_royaltyTesting_sell() public {
+    function test_royaltyTesting_sell_tax() public {
         gogeToken.excludeFromFees(address(this), false);
 
         // Verify address(this) is NOT excluded from fees and grab pre balance.
@@ -376,6 +376,7 @@ contract Royalties is Utility, Test {
     // NOTE: Error in this test.
     // FAILED CASES: [8492018911496110081, 88308617632452571546217600], [8227232056021843363, 1000000000000000000]
     // NOTE: passing when setting params.buyBackOrLiquidity < 50.
+    // resulted in removal of addLiquidity. Buyback only buys back tokens instead of adding to liquidity.
     function test_royaltyTesting_generateFees_specify() public {
         uint256 _amountToBuy  = 8492018911496110081;
         uint256 _amountToSell = 88308617632452571546217600;
@@ -393,12 +394,13 @@ contract Royalties is Utility, Test {
         buy_generateFees(_amountToBuy * 2);
         emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
 
-        //gogeToken.setBuyBackEnabled(false); <-- ERROR HAPPENING HERE
+        //gogeToken.setBuyBackEnabled(false);
 
         sell_generateFees(_amountToSell);
         emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
     }
 
+    // Test buys and sells of all sizes with fuzzing.
     function test_royaltyTesting_generateFees_fuzzing(uint256 amountBuy, uint256 amountSell) public {
         amountBuy = bound(amountBuy, 1, 40 ether);                            // range of ( .000000000000000001 -> 80 BNB buys )
         amountSell = bound(amountSell, 1 * (10**17), 500_000_000 ether);      // range of ( .1 -> 500,000,000 tokens )
@@ -423,6 +425,7 @@ contract Royalties is Utility, Test {
         emit log_uint(IERC20(address(gogeToken)).balanceOf(address(gogeToken)));
     }
 
+    // Verify cake dividend payouts.
     function test_royaltyTesting_generateFees_cake() public {
         // Verify Joe owns 0 tokens and 0 CAKE.
         assertEq(gogeToken.balanceOf(address(joe)), 0);
@@ -461,6 +464,7 @@ contract Royalties is Utility, Test {
         emit log_named_uint("Map length",           cakeTracker.getMapLength());                 // <-- should return 2 (only 2 holders atm)
     }
 
+    // Verify updateCakeDividendToken
     function test_royaltyTesting_updateCakeDividendToken() public {
 
         // Verify Joe owns 0 tokens and 0 CAKE.
@@ -502,6 +506,7 @@ contract Royalties is Utility, Test {
         emit log_named_uint("Map length",           cakeTracker.getMapLength());                 // <-- should return 2 (only 2 holders atm)
     }
 
+    // Verify cake dividend payout then call updateCakeDividendToken and verify payouts.
     function test_royaltyTesting_updateCakeDividendToken_afterCake() public {
 
         // Verify Joe owns 0 tokens and 0 CAKE.
@@ -583,6 +588,7 @@ contract Royalties is Utility, Test {
         assertEq(gogeToken.balanceOf(address(joe)), amountToSend - (amountToSend * gogeToken.totalFees()/100)); // Tx is taxed 16%
     }
 
+    // Verify royalties are being distributed to all royalty wallets.
     function test_royaltyTesting_feeDistributions() public {
         // Royalty Recipients
         address marketingAddy = 0x4959bCED128E6F056A6ef959D80Bd1fCB7ba7A4B;
@@ -644,6 +650,7 @@ contract Royalties is Utility, Test {
 
     }
 
+    // Verify correct royalties post dev fee (60 days).
     function test_royaltyTesting_feeDistributions_noDev() public {
         // Royalty Recipients
         address marketingAddy = 0x4959bCED128E6F056A6ef959D80Bd1fCB7ba7A4B;
@@ -706,6 +713,7 @@ contract Royalties is Utility, Test {
         emit log_named_uint("cake",      gogeToken.royaltiesSent(5));
     }
 
+    // Verify getCirculatingMinusReserves
     function test_royaltyTesting_getCirculatingMinusReserve() public {
 
         // 100_000_000_000 ether -> total supply
@@ -766,27 +774,6 @@ contract Royalties is Utility, Test {
         (bool _isExcluded79, uint pos5) = gogeToken.isExcludedFromCirculatingSupply(address(79));
         assertEq(_isExcluded79, true);
         assertEq(pos5, 2);
-
-        // NOTE: Cant run below code if we cant remove pair from dexList.
-
-        // // Remove uniswapPair from dexList
-        // gogeToken.setAutomatedMarketMakerPair(gogeToken.uniswapV2Pair(), false);
-
-        // // Verify circulating supply is 93B tokens -> 100B - 5B(dead) - 2B(address69)
-        // assertEq(IGogeERC20)(address(gogeToken)).getCirculatingMinusReserve(), 93_000_000_000 ether);
-
-        // // Verify excludedFromCirculatingSupply is updating accordingly.
-        // (_isExcludedPair, pos1) = gogeToken.isExcludedFromCirculatingSupply(gogeToken.uniswapV2Pair());
-        // assertEq(_isExcludedPair, false);
-        // assertEq(pos1, 0);
-
-        // (_isExcluded69, pos2) = gogeToken.isExcludedFromCirculatingSupply(address(69));
-        // assertEq(_isExcluded69, true);
-        // assertEq(pos2, 1);
-
-        // (_isExcluded79, pos5) = gogeToken.isExcludedFromCirculatingSupply(address(79));
-        // assertEq(_isExcluded79, true);
-        // assertEq(pos5, 0);
     }
 
 }

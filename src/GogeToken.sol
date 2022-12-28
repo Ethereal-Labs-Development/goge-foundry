@@ -1188,30 +1188,17 @@ contract DogeGaySon is ERC20, Ownable {
     function swapAndSendCakeDividends(uint256 tokens) internal {
         swapTokensForDividendToken(tokens, address(this), cakeDividendToken);
         uint256 cakeDividends = IERC20(cakeDividendToken).balanceOf(address(this));
-        //transferDividends(cakeDividendToken, address(cakeDividendTracker), cakeDividendTracker, cakeDividends);
 
-        bool success = IERC20(cakeDividendToken).transfer(address(cakeDividendTracker), cakeDividends);
-        
-        if (success) {
-            cakeDividendTracker.distributeDividends(cakeDividends);
-            emit SendDividends(cakeDividends);
-        }
-        // TODO: Test with revert if transfer is not successful.
+        assert(IERC20(cakeDividendToken).transfer(address(cakeDividendTracker), cakeDividends));
+
+        cakeDividendTracker.distributeDividends(cakeDividends);
+        emit SendDividends(cakeDividends);
     }
     
     function transferToWallet(address payable recipient, uint256 amount) internal {
-        emit RoyaltiesTransferred(recipient, amount);
         recipient.transfer(amount);
+        emit RoyaltiesTransferred(recipient, amount);
     }
-    
-    // function transferDividends(address dividendToken, address dividendTracker, DividendPayingToken dividendPayingTracker, uint256 amount) internal {
-    //     bool success = IERC20(dividendToken).transfer(dividendTracker, amount);
-        
-    //     if (success) {
-    //         dividendPayingTracker.distributeDividends(amount);
-    //         emit SendDividends(amount);
-    //     }
-    // }
     
     function _transferOwnership(address newOwner) external {
         require(_msgSender() == gogeDao || _msgSender() == owner(), "Not authorized");
@@ -1231,9 +1218,9 @@ contract DogeGaySon is ERC20, Ownable {
         require(amount > 0, "GogeToken.sol::safeWithdraw() IERC20(_token).balanceOf(address(this)) == 0");
         require(_token != address(this), "GogeToken.sol::safeWithdraw() cannot remove $GOGE from this contract");
 
-        emit Erc20TokenWithdrawn(_token, amount);
-
         assert(IERC20(_token).transfer(msg.sender, amount));
+
+        emit Erc20TokenWithdrawn(_token, amount);
     }
 
 }

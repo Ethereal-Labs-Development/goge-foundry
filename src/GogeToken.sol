@@ -734,12 +734,12 @@ contract DogeGaySon is ERC20, Ownable {
         require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setBuyBackEnabled() not authorized");
         require(buyBackEnabled != _enabled, "GogeToken.sol::setBuyBackEnabled() can't set flag to same status");
 
-        if (!_enabled) {
-            previousBuyBackFee = buyBackFee;
-            buyBackFee = 0;
+        if (_enabled) {
+            buyBackFee = previousBuyBackFee;
             buyBackEnabled = _enabled;
         } else {
-            buyBackFee = previousBuyBackFee;
+            previousBuyBackFee = buyBackFee;
+            buyBackFee = 0;
             buyBackEnabled = _enabled;
         }
         totalFees = buyBackFee.add(marketingFee).add(cakeDividendRewardsFee).add(teamFee);
@@ -751,12 +751,12 @@ contract DogeGaySon is ERC20, Ownable {
         require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setCakeDividendEnabled() not authorized");
         require(cakeDividendEnabled != _enabled, "GogeToken.sol::setCakeDividendEnabled() can't set flag to same status");
 
-        if (!_enabled) {
-            previousCakeDividendRewardsFee = cakeDividendRewardsFee;
-            cakeDividendRewardsFee = 0;
+        if (_enabled) {
+            cakeDividendRewardsFee = previousCakeDividendRewardsFee;
             cakeDividendEnabled = _enabled;
         } else {
-            cakeDividendRewardsFee = previousCakeDividendRewardsFee;
+            previousCakeDividendRewardsFee = cakeDividendRewardsFee;
+            cakeDividendRewardsFee = 0;
             cakeDividendEnabled = _enabled;
         }
         totalFees = cakeDividendRewardsFee.add(marketingFee).add(buyBackFee).add(teamFee);
@@ -768,12 +768,12 @@ contract DogeGaySon is ERC20, Ownable {
         require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setMarketingEnabled() not authorized");
         require(marketingEnabled != _enabled, "GogeToken.sol::setMarketingEnabled() can't set flag to same status");
 
-        if (!_enabled) {
-            previousMarketingFee = marketingFee;
-            marketingFee = 0;
+        if (_enabled) {
+            marketingFee = previousMarketingFee;
             marketingEnabled = _enabled;
         } else {
-            marketingFee = previousMarketingFee;
+            previousMarketingFee = marketingFee;
+            marketingFee = 0;
             marketingEnabled = _enabled;
         }
         totalFees = marketingFee.add(cakeDividendRewardsFee).add(buyBackFee).add(teamFee);
@@ -785,12 +785,12 @@ contract DogeGaySon is ERC20, Ownable {
         require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setTeamEnabled() not authorized");
         require(teamEnabled != _enabled, "GogeToken.sol::setTeamEnabled() can't set flag to same status");
 
-        if (!_enabled) {
-            previousTeamFee = teamFee;
-            teamFee = 0;
+        if (_enabled) {
+            teamFee = previousTeamFee;
             teamEnabled = _enabled;
         } else {
-            teamFee = previousTeamFee;
+            previousTeamFee = teamFee;
+            teamFee = 0;
             teamEnabled = _enabled;
         }
         totalFees = teamFee.add(cakeDividendRewardsFee).add(buyBackFee).add(marketingFee);

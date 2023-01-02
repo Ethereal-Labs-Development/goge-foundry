@@ -220,7 +220,7 @@ contract TokenTest is Utility, Test {
         // Pre-state check.
         assertEq(gogeToken.buyBackEnabled(), true);
         assertEq(gogeToken.buyBackFee(), 2);
-        assertEq(gogeToken.previousbuyBackFee(), 0);
+        assertEq(gogeToken.previousBuyBackFee(), 0);
 
         // Disable buyBack
         assert(dev.try_setBuyBackEnabled(address(gogeToken), false));
@@ -228,7 +228,7 @@ contract TokenTest is Utility, Test {
         //Post-state check.
         assertEq(gogeToken.buyBackEnabled(), false);
         assertEq(gogeToken.buyBackFee(), 0);
-        assertEq(gogeToken.previousbuyBackFee(), 2);
+        assertEq(gogeToken.previousBuyBackFee(), 2);
     }
 
     // setMarketingEnabled test

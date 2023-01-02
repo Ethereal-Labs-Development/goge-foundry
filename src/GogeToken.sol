@@ -509,7 +509,7 @@ contract DogeGaySon is ERC20, Ownable {
     address public cakeDividendToken;
 
     address public gogeDao;
-    address public GogeV1;
+    address public immutable GogeV1;
 
     address constant public DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     address constant public BnbPriceOracle = 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE;
@@ -529,7 +529,7 @@ contract DogeGaySon is ERC20, Ownable {
 
     address public teamWallet;
     address public marketingWallet;
-    address public devWallet;
+    address public immutable devWallet;
     
     uint256 public swapTokensAtAmount;
 
@@ -540,7 +540,7 @@ contract DogeGaySon is ERC20, Ownable {
     uint8 public previousMarketingFee;
 
     uint8 public buyBackFee;
-    uint8 public previousbuyBackFee;
+    uint8 public previousBuyBackFee;
 
     uint8 public teamFee;
     uint8 public previousTeamFee;
@@ -565,7 +565,7 @@ contract DogeGaySon is ERC20, Ownable {
 
     event CakeDividendTrackerUpdated(address indexed newAddress, address indexed oldAddress);
 
-    event UpdateUniswapV2Router(address indexed newAddress, address indexed oldAddress);
+    event UpdatedUniswapV2Router(address indexed newAddress, address indexed oldAddress);
     
     event SwapAndLiquifyEnabledUpdated(bool enabled);
     event MarketingEnabledUpdated(bool enabled);
@@ -622,11 +622,9 @@ contract DogeGaySon is ERC20, Ownable {
         uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
 
         // Create a uniswap pair for this new token
-        address _uniswapV2Pair = IUniswapV2Factory(uniswapV2Router.factory()).createPair(address(this), uniswapV2Router.WETH());
+        uniswapV2Pair = IUniswapV2Factory(uniswapV2Router.factory()).createPair(address(this), uniswapV2Router.WETH());
 
-        uniswapV2Pair = _uniswapV2Pair;
-
-        _setAutomatedMarketMakerPair(_uniswapV2Pair, true);
+        _setAutomatedMarketMakerPair(uniswapV2Pair, true);
         
         // exclude from paying dividends to the team wallets and dead addresses
         cakeDividendTracker.excludeFromDividends(address(cakeDividendTracker));
@@ -670,7 +668,7 @@ contract DogeGaySon is ERC20, Ownable {
 
         presaleAddress = _presaleAddress;
 
-        cakeDividendTracker.excludeFromDividends(address(_presaleAddress));
+        cakeDividendTracker.excludeFromDividends(_presaleAddress);
         isExcludedFromFees[_presaleAddress] = true;
     }
 
@@ -737,11 +735,11 @@ contract DogeGaySon is ERC20, Ownable {
         require(buyBackEnabled != _enabled, "GogeToken.sol::setBuyBackEnabled() can't set flag to same status");
 
         if (!_enabled) {
-            previousbuyBackFee = buyBackFee;
+            previousBuyBackFee = buyBackFee;
             buyBackFee = 0;
             buyBackEnabled = _enabled;
         } else {
-            buyBackFee = previousbuyBackFee;
+            buyBackFee = previousBuyBackFee;
             buyBackEnabled = _enabled;
         }
         totalFees = buyBackFee.add(marketingFee).add(cakeDividendRewardsFee).add(teamFee);
@@ -834,12 +832,12 @@ contract DogeGaySon is ERC20, Ownable {
     }
     
     function updateUniswapV2Router(address newAddress) external {
-        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateUniswapV2Router() not authorized");
-        require(newAddress != address(uniswapV2Router), "GogeToken.sol::updateUniswapV2Router() the router already has that address");
+        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::UpdatedUniswapV2Router() not authorized");
+        require(newAddress != address(uniswapV2Router), "GogeToken.sol::UpdatedUniswapV2Router() the router already has that address");
 
         uniswapV2Router = IUniswapV2Router02(newAddress);
 
-        emit UpdateUniswapV2Router(newAddress, address(uniswapV2Router));
+        emit UpdatedUniswapV2Router(newAddress, address(uniswapV2Router));
     }
 
     function excludeFromFees(address account, bool excluded) external {
@@ -1215,7 +1213,7 @@ contract DogeGaySon is ERC20, Ownable {
     /// @param  _token The token to withdraw from the treasury.
     function safeWithdraw(address _token) external onlyOwner {
         uint256 amount = IERC20(_token).balanceOf(address(this));
-        require(amount > 0, "GogeToken.sol::safeWithdraw() IERC20(_token).balanceOf(address(this)) == 0");
+        require(amount > 0, "GogeToken.sol::safeWithdraw() Insufficient token balance");
         require(_token != address(this), "GogeToken.sol::safeWithdraw() cannot remove $GOGE from this contract");
 
         assert(IERC20(_token).transfer(msg.sender, amount));
@@ -1433,11 +1431,11 @@ contract CakeDividendTracker is DividendPayingToken {
     	return false;
     }
 
-    function getMapValue(address key) public view returns (uint) {
+    function getMapValue(address key) external view returns (uint) {
         return tokenHoldersMap.values[key];
     }
 
-    function getMapLength() public view returns (uint) {
+    function getMapLength() external view returns (uint) {
         return tokenHoldersMap.keys.length;
     }
 }

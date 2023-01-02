@@ -396,7 +396,7 @@ contract MainDeploymentTesting is Utility, Test {
         gogeToken_v2.excludeFromFees(address(this), false);
 
         // warp in time 60 days -> outside dev tax timeframe.
-        vm.warp(block.timestamp + 61 days);
+        vm.warp(block.timestamp + 60 days);
 
         // Check balance of address(gogeToken_v2) to see how many tokens have been taxed. Should be 0
         assertEq(IERC20(address(gogeToken_v2)).balanceOf(address(gogeToken_v2)), 0);

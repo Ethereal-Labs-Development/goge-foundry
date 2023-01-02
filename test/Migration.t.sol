@@ -68,8 +68,8 @@ contract MigrationTesting is Utility, Test {
         assertEq(gogeToken_v1.totalSupply(),     100_000_000_000 ether);
         assertEq(gogeToken_v1.balanceOf(address(this)), gogeToken_v1.totalSupply() - gogeToken_v1.balanceOf(gogeToken_v1.uniswapV2Pair()));
 
-        assertTrue(gogeToken_v1.tradingIsEnabled());
-        assertTrue(!gogeToken_v2.tradingIsEnabled());
+        assertEq(gogeToken_v1.tradingIsEnabled(), true);
+        assertEq(gogeToken_v2.tradingIsEnabled(), false);
     }
 
 
@@ -144,7 +144,7 @@ contract MigrationTesting is Utility, Test {
         emit log_named_uint("v2 LP GOGE balance", v2_reserveTokens);
         emit log_named_uint("v2 LP BNB balance",  v2_reserveBnb);
 
-        assertTrue(!gogeToken_v2.tradingIsEnabled());
+        assertEq(gogeToken_v2.tradingIsEnabled(), false);
     }
 
     /// @notice verifies the ratio of v2 tokens received and liquidity added via migrate() with different amounts.

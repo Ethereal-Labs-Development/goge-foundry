@@ -25,8 +25,6 @@ library IterableMapping {
         return map.keys[index];
     }
 
-
-
     function size(Map storage map) public view returns (uint) {
         return map.keys.length;
     }

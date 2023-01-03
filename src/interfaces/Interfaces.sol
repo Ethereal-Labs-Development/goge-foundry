@@ -6,6 +6,17 @@ interface IDAO {
     function updateMarketingBalance(uint256 amount) external;
 }
 
+interface AggregatorInterface {
+    function latestAnswer() external view returns (int256);
+    function latestTimestamp() external view returns (uint256);
+    function latestRound() external view returns (uint256);
+    function getAnswer(uint256 roundId) external view returns (int256);
+    function getTimestamp(uint256 roundId) external view returns (uint256);
+
+    event AnswerUpdated(int256 indexed current, uint256 indexed roundId, uint256 updatedAt);
+    event NewRound(uint256 indexed roundId, address indexed startedBy, uint256 startedAt);
+}
+
 interface IERC20 {
     /**
      * @dev Returns the amount of tokens in existence.
@@ -75,6 +86,17 @@ interface IERC20 {
      * a call to {approve}. `value` is the new allowance.
      */
     event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+abstract contract IERC20Extended is IERC20 {
+    function decimals() external view virtual returns (uint8);
+}
+
+interface IWETH {
+    function deposit() external payable;
+    function withdraw(uint) external;
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address to, uint value) external returns (bool);
 }
 
 interface IUniswapV2Factory {

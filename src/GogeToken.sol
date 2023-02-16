@@ -649,9 +649,7 @@ contract DogeGaySon is ERC20, Ownable {
         _mint(owner(), _totalSupply * (10**18));
     }
 
-    receive() external payable {
-
-    }
+    receive() external payable {}
 
     function setGogeDao(address _gogeDao) external {
         require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::setgogeDao() msg.sender is not owner or gogeDao");
@@ -664,7 +662,7 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function whitelistPinkSale(address _presaleAddress) external {
-        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::whitelistPinkSale() msg.sender is not owner or gogeDao");
+        require(_msgSender() == owner(), "GogeToken.sol::whitelistPinkSale() msg.sender is not owner or gogeDao");
 
         presaleAddress = _presaleAddress;
 
@@ -899,7 +897,7 @@ contract DogeGaySon is ERC20, Ownable {
     }
 
     function updateGasForProcessing(uint256 newValue) external {
-        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateGasForProcessing() not authorized");
+        require(_msgSender() == owner(), "GogeToken.sol::updateGasForProcessing() not authorized");
         require(newValue != gasForProcessing, "GogeToken.sol::updateGasForProcessing() cannot update gasForProcessing to same value");
 
         gasForProcessing = newValue;
@@ -908,7 +906,7 @@ contract DogeGaySon is ERC20, Ownable {
     }
     
     function updateMinimumBalanceForDividends(uint256 newMinimumBalance) external {
-        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateMinimumBalanceForDividends() not authorized");
+        require(_msgSender() == owner(), "GogeToken.sol::updateMinimumBalanceForDividends() not authorized");
         cakeDividendTracker.updateMinimumTokenBalanceForDividends(newMinimumBalance);
     }
 

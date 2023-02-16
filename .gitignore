@@ -1,8 +1,12 @@
 # Compiler files
 cache/
 out/
+.env
 
 # Ignores development broadcast logs
 !/broadcast
 /broadcast/*
 /broadcast/*/31337/
+
+# Notes
+Notes.txt

@@ -2,6 +2,9 @@
 cache/
 out/
 
+.env
+Notes.txt
+
 # Ignores development broadcast logs
 !/broadcast
 /broadcast/*

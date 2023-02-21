@@ -1,37 +1,14 @@
-/*
-$GOGE DAO
-
-Name to be determined: 
-GogeDAO / $GOGE 
-DogeGaySon/ $GOGE
-
-Automatic $CAKE rewards. 
-
-Ability to stake tokens during vote (Perhaps  the ability to leave tokens staked and still get cake rewards as a collective pool) 
-
-Contract owned by DAO.
-Marketing wallet owned by DAO.
-Team wallet owned by DAO.
-
-Votes must reach a threshold amount (whatever is recommended, quorum, and will have perhaps 10-14 days period of proposal. (We can even have upcoming votes scheduled ect) 
-
-Manual / External proposals that can be made by the community and executed by the GOGE Core team / community / DAO. (For example having people vote on a flag for the micronation) 
-
-Automatic payments to the full team per month approved by the DAO
-
-The More tokens you have the more vote power you have type of DAO. 
-
-All current issues fixed in contract so we pass an audit with 100% :D (also show we show up on token scanners without any warnings) (I believe these were the 90% scanners / ability to make taxes a very high amount, perhaps we should have a way we can never change the taxes to something over our starting tax, or the rainbow hours max %) (also the anti bot I think had something that could be changed/ the blacklisting issue) (I can’t think of anything else as of right now) 
-
-* if possible * A charity wallet that the ĐAO could control if possible (for direct action charity and also for charity donations)
-*/
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.6;
 
 import "./libraries/Libraries.sol";
 import "./extensions/Ownable.sol";
 import "./extensions/IGogeERC20.sol";
 
+/*
+ TODO: Add description
+*/
 
 contract GogeDAO is Ownable {
     using SafeMath for uint256;
@@ -59,7 +36,8 @@ contract GogeDAO is Ownable {
 
     uint256 public quorum = 50;
 
-    //PollTypes.PollType public PollType;
+    mapping(uint256 => PollType) public pollTypes;
+    mapping(uint256 => Metadata) public pollMap;
 
     enum PollType {
         taxChange,
@@ -307,9 +285,6 @@ contract GogeDAO is Ownable {
         uint256 startTime;
         uint256 endTime;
     }
-
-    mapping(uint256 => PollType) public pollTypes;
-    mapping(uint256 => Metadata) public pollMap;
 
     event ProposalCreated(uint256 pollNum, PollType pollType, uint256 startTime, uint256 endTime);
     event GateKeepingModified(bool enabled);
@@ -564,6 +539,14 @@ contract GogeDAO is Ownable {
     /// @notice A method for a voter to remove their votes from a single poll.
     function removeVotesSpecified(uint256 _pollNum) public {
         removeVote(_pollNum);
+    }
+
+    function getVotes(address addr, uint256 _pollNum) public view returns (uint256) {
+        return polls[_pollNum][addr];
+    }
+
+    function getMetadata(uint256 _pollNum) public view returns (Metadata memory) {
+        return pollMap[_pollNum];
     }
     
     // ---------- Polls ----------
@@ -1041,14 +1024,5 @@ contract GogeDAO is Ownable {
 
         return (historicalTally[_pollNum], poll.description, poll.time1, poll.time2, passed[_pollNum]);
     }
-
-    // READ
-
-    function getVotes(address addr, uint256 _pollNum) public view returns (uint256) {
-        return polls[_pollNum][addr];
-    }
-
-    function getMetadata(uint256 _pollNum) public view returns (Metadata memory) {
-        return pollMap[_pollNum];
-    }
+    
 }

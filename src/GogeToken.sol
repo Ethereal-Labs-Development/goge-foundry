@@ -512,7 +512,6 @@ contract DogeGaySon is ERC20, Ownable {
     address public immutable GogeV1;
 
     address constant public DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
-    address constant public BnbPriceOracle = 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE;
 
     address[] public excludedFromCirculatingSupply;
 

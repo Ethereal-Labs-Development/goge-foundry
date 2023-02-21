@@ -10,7 +10,10 @@ TODO:
     - transferOwnership
     - setGateKeeping
     - queryEndTime
-
+- Add proportion mapping
+- Add revokeALlVotes
+- Add list of votes to ongoing polls for each user
+- Add Dao Description
 
 Changes:
 - an OWNER can hard stop or hard pass an active poll

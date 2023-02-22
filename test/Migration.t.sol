@@ -10,6 +10,17 @@ import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
 import { DogeGaySon } from "../src/GogeToken.sol";
 import { DogeGaySon1 } from "../src/TokenV1.sol";
 
+interface AggregatorInterface {
+    function latestAnswer() external view returns (int256);
+    function latestTimestamp() external view returns (uint256);
+    function latestRound() external view returns (uint256);
+    function getAnswer(uint256 roundId) external view returns (int256);
+    function getTimestamp(uint256 roundId) external view returns (uint256);
+
+    event AnswerUpdated(int256 indexed current, uint256 indexed roundId, uint256 updatedAt);
+    event NewRound(uint256 indexed roundId, address indexed startedBy, uint256 startedAt);
+}
+
 contract MigrationTesting is Utility, Test {
 
     DogeGaySon  gogeToken_v2;

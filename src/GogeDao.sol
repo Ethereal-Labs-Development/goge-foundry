@@ -2,9 +2,9 @@
 
 pragma solidity ^0.8.6;
 
-import "./libraries/Libraries.sol";
 import "./extensions/Ownable.sol";
 import "./extensions/IGogeERC20.sol";
+import "./libraries/SafeMath.sol";
 
 /*
  TODO: Add description

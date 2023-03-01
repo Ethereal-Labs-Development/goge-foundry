@@ -1432,12 +1432,14 @@ contract DogeGaySonFlat is ERC20, Ownable {
 
         marketingWallet = 0xFecf1D51E984856F11B7D0872D40fC2F05377738;
         teamWallet = 0xC1Aa023A8fA820F4ed077f4dF4eBeD0a3351a324;
-        devWallet = 0xa13bBda8bE05462232D7Fc4B0aF8f9B57fFf5D02;
+        devWallet = 0x5f058D82Fc62f019Dd5F4b892571455F49651338;
         cakeDividendToken = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
         
         GogeV1 = _gogeV1; // is really 0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe;
         
         uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+
+        address airdropWallet = 0x0dC5085dEbA25B55db3A13d1c320c08af1740549;
 
         // Create a uniswap pair for this new token
         uniswapV2Pair = IUniswapV2Factory(uniswapV2Router.factory()).createPair(address(this), uniswapV2Router.WETH());
@@ -1454,6 +1456,7 @@ contract DogeGaySonFlat is ERC20, Ownable {
         cakeDividendTracker.excludeFromDividends(devWallet);
         cakeDividendTracker.excludeFromDividends(marketingWallet);
         cakeDividendTracker.excludeFromDividends(teamWallet);
+        cakeDividendTracker.excludeFromDividends(airdropWallet);
 
         // exclude from paying fees or having max transaction amount
         isExcludedFromFees[address(this)] = true;
@@ -1463,6 +1466,7 @@ contract DogeGaySonFlat is ERC20, Ownable {
         isExcludedFromFees[devWallet] = true;
         isExcludedFromFees[address(0)] = true;
         isExcludedFromFees[owner()] = true;
+        isExcludedFromFees[airdropWallet] = true;
         
         _mint(owner(), 100_000_000_000 * (10**18));
     }
@@ -1735,8 +1739,10 @@ contract DogeGaySonFlat is ERC20, Ownable {
         require(IERC20(GogeV1).transferFrom(_msgSender(), address(this), amount), "GogeToken.sol::migrate() transfer from msg.sender to address(this) failed");
         require(IERC20(GogeV1).balanceOf(_msgSender()) == 0, "GogeToken.sol::migrate() msg.sender post balance > 0");
         
+        uint256 preBal = balanceOf(_msgSender());
+        
         _mint(_msgSender(), amount);
-        require(balanceOf(_msgSender()) == amount, "GogeToken.sol::migrate() msg.sender post v2 balance == 0");
+        require(balanceOf(_msgSender()) == preBal + amount, "GogeToken.sol::migrate() insufficient v2 balance");
 
         captureLiquidity();
         migrationCounter++;

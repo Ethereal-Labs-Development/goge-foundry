@@ -4,14 +4,14 @@ pragma solidity ^0.8.6;
 import "../lib/forge-std/src/Test.sol";
 import "./Utility.sol";
 import { GogeDAO } from "../src/GogeDao.sol";
-import { DogeGaySon } from "../src/GogeToken.sol";
+import { DogeGaySonFlat } from "../src/DeployedV2Token.sol";
 
 import { IUniswapV2Router02, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
 import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
 
-contract DaoTest is Utility, Test {
+contract DaoTestPostTokenDeplpoyment is Utility, Test {
     GogeDAO gogeDao;
-    DogeGaySon gogeToken;
+    DogeGaySonFlat gogeToken;
 
     address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
 
@@ -20,10 +20,7 @@ contract DaoTest is Utility, Test {
         setUpTokens();
 
         
-        gogeToken = new DogeGaySon(
-            address(0x4959bCED128E6F056A6ef959D80Bd1fCB7ba7A4B),
-            address(0xe142E9FCbd9E29C4A65C4979348d76147190a05a),
-            100_000_000_000,
+        gogeToken = new DogeGaySonFlat(
             address(0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe) // goge v1
         );
 
@@ -53,12 +50,12 @@ contract DaoTest is Utility, Test {
         gogeToken.setGogeDao(address(gogeDao));
     }
 
-    function test_gogeDao_init_state() public {
+    function test_gogeDaoPostToken_init_state() public {
         assertEq(address(gogeToken), gogeDao.governanceTokenAddr());
         assertEq(gogeDao.pollNum(), 0);
     }
 
-    function test_gogeDao_createPoll() public {
+    function test_gogeDaoPostToken_createPoll() public {
         // create poll metadata
         GogeDAO.Metadata memory metadata;
         metadata.description = "I want to add Joe to the naughty list";
@@ -90,8 +87,8 @@ contract DaoTest is Utility, Test {
         // emit log_bool    (gogeDao.getMetadata(1).boolVar);
     }
 
-    function test_gogeDao_addVote_state_change() public {
-        test_gogeDao_createPoll();
+    function test_gogeDaoPostToken_addVote_state_change() public {
+        test_gogeDaoPostToken_createPoll();
         uint256 joe_votes = 10_000_000_000 ether;
 
         // Transfer Joe tokens so he can vote on a poll.
@@ -123,8 +120,8 @@ contract DaoTest is Utility, Test {
         assertEq(num, 10);
     }
 
-    function test_gogeDao_addVote_restrictions() public {
-        test_gogeDao_createPoll();
+    function test_gogeDaoPostToken_addVote_restrictions() public {
+        test_gogeDaoPostToken_createPoll();
 
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), 1_000_000_000 ether);
@@ -162,8 +159,8 @@ contract DaoTest is Utility, Test {
         assert(!joe.try_addVote(address(gogeDao), 1, 500_000_000 ether));
     }
 
-    function test_gogeDao_addVote_fuzzing(uint256 joe_votes) public {
-        test_gogeDao_createPoll();
+    function test_gogeDaoPostToken_addVote_fuzzing(uint256 joe_votes) public {
+        test_gogeDaoPostToken_createPoll();
 
         joe_votes = bound(joe_votes, 1, 95_000_000_000 ether);
 
@@ -190,8 +187,8 @@ contract DaoTest is Utility, Test {
         emit log_uint(num);
     }
 
-    function test_gogeDao_addVote_quorum() public {
-        test_gogeDao_createPoll();
+    function test_gogeDaoPostToken_addVote_quorum() public {
+        test_gogeDaoPostToken_createPoll();
         uint256 joe_votes = 50_000_000_000 ether;
         gogeDao.setGateKeeping(false);
 
@@ -228,7 +225,7 @@ contract DaoTest is Utility, Test {
     }
 
     /// @notice passes a funding poll but ensures the tokens are refunded to all voters.
-    function test_gogeDao_refundVotersPostChange() public {
+    function test_gogeDaoPostToken_refundVotersPostChange() public {
 
         // create poll metadata
         GogeDAO.Metadata memory metadata;
@@ -328,6 +325,10 @@ contract DaoTest is Utility, Test {
         assertEq(IERC20(BUSD).balanceOf(address(joe)), 1_000 ether);
         assertEq(IERC20(BUSD).balanceOf(address(gogeDao)), 0);
 
+        assertEq(gogeToken.balanceOf(address(tim)), tim_votes);
+        assertEq(gogeToken.balanceOf(address(jon)), jon_votes);
+        assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
+
         // Verify quorum math.
         uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();
         assertTrue(num >= gogeDao.quorum());        
@@ -336,7 +337,7 @@ contract DaoTest is Utility, Test {
     // ~~ All poll type tests ~~
 
     /// @notice initiates a taxChange poll and verifies correct state change when poll is passed.
-    function test_gogeDao_taxChange() public {
+    function test_gogeDaoPostToken_taxChange() public {
 
         /// NOTE create poll
 
@@ -407,7 +408,7 @@ contract DaoTest is Utility, Test {
     }
 
     /// @notice initiates a funding poll and verifies correct state change when poll is passed.
-    function test_gogeDao_funding() public {
+    function test_gogeDaoPostToken_funding() public {
 
         // NOTE create poll
 
@@ -471,7 +472,7 @@ contract DaoTest is Utility, Test {
     }
 
     /// @notice initiates a setGogeDao poll and verifies correct state change when poll is passed.
-    function test_gogeDao_setGogeDao() public {
+    function test_gogeDaoPostToken_setGogeDao() public {
 
         // NOTE create poll
 
@@ -527,7 +528,7 @@ contract DaoTest is Utility, Test {
     }
 
     /// @notice initiates a setCex poll and verifies correct state change when poll is passed.
-    function test_gogeDao_setCex() public {
+    function test_gogeDaoPostToken_setCex() public {
 
         // NOTE create poll
 
@@ -583,7 +584,7 @@ contract DaoTest is Utility, Test {
     }
 
     /// @notice initiates a setDex poll and verifies correct state change when poll is passed.
-    function test_gogeDao_setDex() public {
+    function test_gogeDaoPostToken_setDex() public {
 
         // NOTE create poll
 
@@ -641,7 +642,7 @@ contract DaoTest is Utility, Test {
     }
 
     /// @notice initiates a excludeFromCirculatingSupply poll and verifies correct state change when poll is passed.
-    function test_gogeDao_excludeFromCirculatingSupply() public {
+    function test_gogeDaoPostToken_excludeFromCirculatingSupply() public {
 
         // NOTE create poll
 
@@ -698,5 +699,22 @@ contract DaoTest is Utility, Test {
         // Verify quorum math.
         uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();
         assertTrue(num >= gogeDao.quorum());        
+    }
+
+    /// @notice verifies advocateFor for proper usage, state changes, and pop/push implementation.
+    /// NOTE: A user must only be added to advocateFor if they addVotes to a poll
+    ///       A user must only be REMOVED from advocateFor if:
+    ///         - Poll is passed via addVote -> addVote()
+    ///         - Poll is passed via admin/owner -> endPoll()
+    ///         - User removes their votes manually -> removeVotesFromPoll() && removeAllVotes()
+    function test_gogeDaoPostToken_advocateFor() public {
+
+    }
+
+    /// @notice verifies correctness of queryEndTime()
+    /// NOTE: This function should be called on a regular interval by an external script.
+    ///       Could use Chainlink Automation -> https://automation.chain.link/
+    function test_gogeDaoPostToken_queryEndTime() public {
+
     }
 }

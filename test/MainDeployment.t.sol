@@ -82,7 +82,7 @@ contract MainDeploymentTesting is Utility, Test {
         // TODO: (4) Exclude v2 from fees on v1
         gogeToken_v1.excludeFromFees(address(gogeToken_v2), true);
 
-        // TODO: (5) Perform migration -> 6 days
+        // TODO: (5) Perform migration -> 6 days <<<<<<<<<<<<<<<<<<<<<<<<
         migrateActor(tim);
         migrateActor(joe);
         migrateActor(sal);
@@ -143,6 +143,7 @@ contract MainDeploymentTesting is Utility, Test {
     /// @notice migrate tokens from v1 to v2
     function migrateActor(Actor actor) internal {
         uint256 bal = gogeToken_v1.balanceOf(address(actor));
+        uint256 bal2 = gogeToken_v2.balanceOf(address(actor));
         uint256 LiquidityPreBal = IERC20(gogeToken_v2.uniswapV2Pair()).balanceOf(address(this));
 
         // Approve and migrate
@@ -154,7 +155,7 @@ contract MainDeploymentTesting is Utility, Test {
         assertGt(LiquidityPostBal - LiquidityPreBal, 0);
 
         assertEq(gogeToken_v1.balanceOf(address(actor)), 0);
-        assertEq(gogeToken_v2.balanceOf(address(actor)), bal);
+        assertEq(gogeToken_v2.balanceOf(address(actor)), bal2 + bal);
     }
 
     /// @notice Perform a buy
@@ -312,7 +313,7 @@ contract MainDeploymentTesting is Utility, Test {
         // Royalty Recipients
         address marketingAddy = 0xFecf1D51E984856F11B7D0872D40fC2F05377738;
         address teamAddy      = 0xC1Aa023A8fA820F4ed077f4dF4eBeD0a3351a324;
-        address devAddy       = 0xa13bBda8bE05462232D7Fc4B0aF8f9B57fFf5D02;
+        address devAddy       = 0x5f058D82Fc62f019Dd5F4b892571455F49651338;
         address deadAddy      = 0x000000000000000000000000000000000000dEaD;
 
         // Get pre balances of royalty recipients
@@ -373,7 +374,7 @@ contract MainDeploymentTesting is Utility, Test {
         // Royalty Recipients
         address marketingAddy = 0xFecf1D51E984856F11B7D0872D40fC2F05377738;
         address teamAddy      = 0xC1Aa023A8fA820F4ed077f4dF4eBeD0a3351a324;
-        address devAddy       = 0xa13bBda8bE05462232D7Fc4B0aF8f9B57fFf5D02;
+        address devAddy       = 0x5f058D82Fc62f019Dd5F4b892571455F49651338;
         address deadAddy      = 0x000000000000000000000000000000000000dEaD;
 
         // Get pre balances of royalty recipients
@@ -429,5 +430,21 @@ contract MainDeploymentTesting is Utility, Test {
         emit log_named_uint("team",      gogeToken_v2.royaltiesSent(3));
         emit log_named_uint("buyback",   gogeToken_v2.royaltiesSent(4));
         emit log_named_uint("cake",      gogeToken_v2.royaltiesSent(5));
+    }
+
+    function test_mainDeployment_migratePostBuy() public {
+        // create new temporary actor
+        Actor simone = new Actor();
+
+        // give actor v1 tokens and v2 tokens
+        gogeToken_v1.transfer(address(simone), 10_000_000 ether);
+        gogeToken_v2.transfer(address(simone), 1_000_000 ether);
+
+        // assert balances
+        assertEq(gogeToken_v1.balanceOf(address(simone)), 10_000_000 ether);
+        assertEq(gogeToken_v2.balanceOf(address(simone)), 1_000_000 ether);
+
+        // attempt migrate
+        migrateActor(simone);
     }
 }

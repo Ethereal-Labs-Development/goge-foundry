@@ -910,8 +910,10 @@ contract DogeGaySon is ERC20, Ownable {
         require(IERC20(GogeV1).transferFrom(_msgSender(), address(this), amount), "GogeToken.sol::migrate() transfer from msg.sender to address(this) failed");
         require(IERC20(GogeV1).balanceOf(_msgSender()) == 0, "GogeToken.sol::migrate() msg.sender post balance > 0");
         
+        uint256 preBal = balanceOf(_msgSender());
+        
         _mint(_msgSender(), amount);
-        require(balanceOf(_msgSender()) == amount, "GogeToken.sol::migrate() msg.sender post v2 balance == 0");
+        require(balanceOf(_msgSender()) == preBal + amount, "GogeToken.sol::migrate() msg.sender post v2 balance == 0");
 
         captureLiquidity();
         migrationCounter++;

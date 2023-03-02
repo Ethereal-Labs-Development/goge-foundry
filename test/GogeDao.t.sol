@@ -4,14 +4,14 @@ pragma solidity ^0.8.6;
 import "../lib/forge-std/src/Test.sol";
 import "./Utility.sol";
 import { GogeDAO } from "../src/GogeDao.sol";
-import { DogeGaySon } from "../src/GogeToken.sol";
+import { DogeGaySonFlat } from "../src/DeployedV2Token.sol";
 
 import { IUniswapV2Router02, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
 import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
 
 contract DaoTest is Utility, Test {
     GogeDAO gogeDao;
-    DogeGaySon gogeToken;
+    DogeGaySonFlat gogeToken;
 
     address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
 
@@ -20,10 +20,7 @@ contract DaoTest is Utility, Test {
         setUpTokens();
 
         
-        gogeToken = new DogeGaySon(
-            address(0x4959bCED128E6F056A6ef959D80Bd1fCB7ba7A4B),
-            address(0xe142E9FCbd9E29C4A65C4979348d76147190a05a),
-            100_000_000_000,
+        gogeToken = new DogeGaySonFlat(
             address(0xa30D02C5CdB6a76e47EA0D65f369FD39618541Fe) // goge v1
         );
 
@@ -104,6 +101,8 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.totalVotes(1), joe_votes);
         assertEq(gogeDao.historicalTally(1), joe_votes);
 
+        // TODO: Add voterLibrary and advocateFor state changes
+
         // Verify quorum
         uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve(); // => 10%
         assertEq(num, 10);
@@ -178,7 +177,6 @@ contract DaoTest is Utility, Test {
         // Pre-state check.
         assertEq(gogeToken.isBlacklisted(address(joe)), false);
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
 
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), joe_votes);
@@ -200,7 +198,87 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
         // Verify quorum math.
-        uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();
+        uint256 num = gogeDao.getProportion(1);
+        assertTrue(num >= gogeDao.quorum());
+
+        // Post-state check => gogeToken.
+        assertEq(gogeToken.isBlacklisted(address(joe)), true);
+    }
+
+    /// @notice Verifies state changes of an advocate in a 2 stage process. Votes a portion of quorum, then meets quorum.
+    function test_gogeDao_addVote_quorum_twoStage() public {
+        test_gogeDao_createPoll();
+        gogeDao.setGateKeeping(false);
+
+        uint256 joe_votes_1 = 40_000_000_000 ether;
+        uint256 joe_votes_2 = 10_000_000_000 ether;
+        uint256 total_votes = joe_votes_1 + joe_votes_2;
+
+        // NOTE: Pre state
+
+        // Pre-state check.
+        assertEq(gogeToken.isBlacklisted(address(joe)), false);
+        assertEq(gogeDao.passed(1), false);
+
+        // Transfer Joe tokens so he can vote on a poll.
+        gogeToken.transfer(address(joe), total_votes);
+        assertEq(gogeToken.balanceOf(address(joe)), total_votes);
+
+        // NOTE: First addVote
+
+        // Approve the transfer of tokens and execute first addVote.
+        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes_1));
+        assert(joe.try_addVote(address(gogeDao), 1, joe_votes_1));
+
+        // Verify token balance post first addVote.
+        assertEq(gogeToken.balanceOf(address(joe)), joe_votes_2);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), joe_votes_1);
+
+        // Post-state check after first addVote.
+        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.polls(1, address(joe)), joe_votes_1);
+        assertEq(gogeDao.historicalTally(1),     joe_votes_1);
+        assertEq(gogeDao.totalVotes(1),          joe_votes_1);
+        assertEq(gogeDao.passed(1),              false);
+
+        address[] memory voters = gogeDao.getVoterLibrary(1);
+        assertEq(voters.length, 1);
+        assertEq(voters[0], address(joe));
+
+        uint256[] memory advocateArr = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateArr.length, 1);
+        assertEq(advocateArr[0], 1);
+
+        assertEq(gogeToken.isBlacklisted(address(joe)), false);
+
+        // NOTE: Second addVote -> pass poll
+
+        // Approve the transfer of tokens and execute second addVote -> should pass poll.
+        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes_2));
+        assert(joe.try_addVote(address(gogeDao), 1, joe_votes_2));
+
+        // Verify token balance post second addVote.
+        assertEq(gogeToken.balanceOf(address(joe)), total_votes);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 0);
+
+        // Post-state check after second addVote.
+        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.polls(1, address(joe)), total_votes);
+        assertEq(gogeDao.historicalTally(1),     total_votes);
+        assertEq(gogeDao.totalVotes(1),          total_votes);
+        assertEq(gogeDao.passed(1),              true);
+
+        voters = gogeDao.getVoterLibrary(1);
+        assertEq(voters.length, 1);
+        assertEq(voters[0], address(joe));
+
+        advocateArr = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateArr.length, 0);
+
+        // NOTE: Final state check
+
+        // Verify quorum math.
+        uint256 num = gogeDao.getProportion(1);
         assertTrue(num >= gogeDao.quorum());
 
         // Post-state check => gogeToken.
@@ -678,5 +756,22 @@ contract DaoTest is Utility, Test {
         // Verify quorum math.
         uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();
         assertTrue(num >= gogeDao.quorum());        
+    }
+
+    /// @notice verifies advocateFor for proper usage, state changes, and pop/push implementation.
+    /// NOTE: A user must only be added to advocateFor if they addVotes to a poll
+    ///       A user must only be REMOVED from advocateFor if:
+    ///         - Poll is passed via addVote -> addVote()
+    ///         - Poll is passed via admin/owner -> endPoll()
+    ///         - User removes their votes manually -> removeVotesFromPoll() && removeAllVotes()
+    function test_gogeDaoPostToken_advocateFor() public {
+
+    }
+
+    /// @notice verifies correctness of queryEndTime()
+    /// NOTE: This function should be called on a regular interval by an external script.
+    ///       Could use Chainlink Automation -> https://automation.chain.link/
+    function test_gogeDaoPostToken_queryEndTime() public {
+
     }
 }

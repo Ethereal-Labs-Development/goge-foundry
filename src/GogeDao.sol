@@ -361,14 +361,14 @@ contract GogeDAO is Owned {
         require(block.timestamp >= pollStartTime[_pollNum] && block.timestamp < pollEndTime[_pollNum], "Poll Closed");
         require(IGogeERC20(governanceTokenAddr).transferFrom(msg.sender, address(this), _numVotes));
 
-        voterLibrary[_pollNum].push(msg.sender);
-        advocateFor[msg.sender].push(_pollNum);
+        _addToVoterLibrary(_pollNum, msg.sender);
+        _addToAdvocateFor(_pollNum, msg.sender);
 
         polls[_pollNum][msg.sender] += _numVotes;
         totalVotes[_pollNum]        += _numVotes;
         historicalTally[_pollNum]   += _numVotes;
 
-        bool quorumMet = ( totalVotes[_pollNum] * 100 / IGogeERC20(governanceTokenAddr).getCirculatingMinusReserve() ) >= quorum;
+        bool quorumMet = getProportion(_pollNum) >= quorum;
         bool enactChange = false;
 
         if (!gateKeeping && quorumMet) {
@@ -612,6 +612,34 @@ contract GogeDAO is Owned {
         emit ProposalPassed(_pollNum);
     }
 
+    function _addToVoterLibrary(uint256 _pollNum, address _voter) internal {
+        uint256 i = 0;
+        bool exists;
+        for (; i < voterLibrary[_pollNum].length; i++) {
+            if (_voter == voterLibrary[_pollNum][i]) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) {
+            voterLibrary[_pollNum].push(_voter);
+        }
+    }
+
+    function _addToAdvocateFor(uint256 _pollNum, address _advocate) internal {
+        uint256 i = 0;
+        bool exists;
+        for (; i < advocateFor[_advocate].length; i++) {
+            if (_pollNum == advocateFor[_advocate][i]) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) {
+            advocateFor[_advocate].push(_pollNum);
+        }
+    }
+
     /// @notice A method for a voter to remove their votes from a single poll.
     /// @param  _pollNum The poll number.
     function _removeVote(uint256 _pollNum) internal {
@@ -674,7 +702,7 @@ contract GogeDAO is Owned {
 
     function _removePollFromActivePolls(uint256 _pollNum) internal {
         uint256 l = activePolls.length;
-        for (uint256 i = 0; i < l; i++){
+        for (uint256 i = 0; i < l; i++) {
             if (_pollNum == activePolls[i]) {
                 activePolls[i] = activePolls[l - 1];
                 activePolls.pop();
@@ -701,6 +729,10 @@ contract GogeDAO is Owned {
 
     // ---------- View ----------
 
+    function getProportion(uint256 _pollNum) public view returns (uint256) {
+        return totalVotes[_pollNum] * 100 / IGogeERC20(governanceTokenAddr).getCirculatingMinusReserve();
+    }
+
     function isActivePoll(uint256 _pollNum) public view returns (bool active) {
         for (uint8 i = 0; i < activePolls.length; i++){
             if (_pollNum == pollEndTime[activePolls[i]]) {
@@ -719,6 +751,14 @@ contract GogeDAO is Owned {
 
     function getActivePolls() external view returns (uint256[] memory) {
         return activePolls;
+    }
+
+    function getVoterLibrary(uint256 _pollNum) external view returns (address[] memory) {
+        return voterLibrary[_pollNum];
+    }
+
+    function getAdvocateFor(address _advocate) external view returns (uint256[] memory) {
+        return advocateFor[_advocate];
     }
 
     function getHistoricalResults(uint256 _pollNum) public view returns (uint256, PollType, string memory, bool) {

@@ -1,5 +1,6 @@
-TODO:
-- fix funding / marketing funding / team funding stuff
+-------------------------------------------------------------------------------
+TODO (TESTING):
+
 - Test all new changes
     - gateKeeper and setGateKeeping both onlyOwner and as poll
     - new state changes when poll is passed
@@ -9,18 +10,26 @@ TODO:
     - endPoll
     - transferOwnership
     - setGateKeeping
-    - queryEndTime
+- Test advocateFor
+- Test QueryEndTime
+- Test payTeam -> Change .transfer to .call ?
+- Test activePolls 
+
+-------------------------------------------------------------------------------
+TODO (BUG FIXES / ADDITIONS):
+
+- fix funding / marketing funding / team funding stuff
 - Add VIEW function to return proportion of pollNum
 - Add revokeAllVotes
 - Add list of votes to ongoing polls for each user -> activePolls?
 - Add Dao Description
 - Add better method for tracking users and their votes
     - As a user I want to see a separate page of polls I have voted for and individually remove my votes If I need to
-- Test advocateFor
-- Test QueryEndTime
-- Test payTeam -> Change .transfer to .call ?
+- Add contract token balance security -> If a vote is added or removed, check contract balance
 
+-------------------------------------------------------------------------------
 Changes:
+
 - an OWNER can hard stop or hard pass an active poll
 - if gatekeep is ENABLED, a gatekeeper must be the last vote on a poll to pass it
 - added activePolls array which keeps a library of all active polls.

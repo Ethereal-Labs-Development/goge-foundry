@@ -73,21 +73,14 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.pollNum(), 1);
         assert(gogeDao.pollTypes(1) == GogeDAO.PollType.modifyBlacklist);
 
-        assertEq(
-            gogeDao.getMetadata(1).description,
-            "I want to add Joe to the naughty list"
-        );
+        assertEq(gogeDao.getMetadata(1).description, "I want to add Joe to the naughty list");
         assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
         assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).addr1, address(joe));
         assertEq(gogeDao.getMetadata(1).boolVar, true);
 
-        // Emit poll data
-        // emit log_string  (gogeDao.getMetadata(1).description);
-        // emit log_uint    (gogeDao.getMetadata(1).time1);
-        // emit log_uint    (gogeDao.getMetadata(1).time2);
-        // emit log_address (gogeDao.getMetadata(1).addr1);
-        // emit log_bool    (gogeDao.getMetadata(1).boolVar);
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
     }
 
     function test_gogeDao_addVote_state_change() public {
@@ -99,13 +92,7 @@ contract DaoTest is Utility, Test {
         assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
 
         // Approve the transfer of tokens and add vote.
-        assert(
-            joe.try_approveToken(
-                address(gogeToken),
-                address(gogeDao),
-                joe_votes
-            )
-        );
+        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
         assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
 
         // Verify tokens were sent from Joe to Dao
@@ -118,8 +105,7 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.historicalTally(1), joe_votes);
 
         // Verify quorum
-        uint256 num = (gogeDao.totalVotes(1) * 100) /
-            gogeToken.getCirculatingMinusReserve(); // => 10%
+        uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve(); // => 10%
         assertEq(num, 10);
     }
 
@@ -131,13 +117,7 @@ contract DaoTest is Utility, Test {
         assertEq(gogeToken.balanceOf(address(joe)), 1_000_000_000 ether);
 
         // Approve tokens for vote.
-        assert(
-            joe.try_approveToken(
-                address(gogeToken),
-                address(gogeDao),
-                1_000_000_000 ether
-            )
-        );
+        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), 1_000_000_000 ether));
 
         // Verify Joe cannot make more votes than the balance in his wallet.
         assert(!joe.try_addVote(address(gogeDao), 1, 1_000_000_000 ether + 1));

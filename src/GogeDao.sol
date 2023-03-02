@@ -632,9 +632,9 @@ contract GogeDAO is Owned {
     /// @param  _pollNum The poll number.
     function _refundVotersPostChange(uint256 _pollNum) internal {
         for (uint256 i = 0; i < voterLibrary[_pollNum].length; i++) {
-            address voter = voterLibrary[_pollNum][i];
-            uint256 amnt  = polls[_pollNum][voter];
-            IGogeERC20(governanceTokenAddr).transfer(voter, amnt);
+            address voter  = voterLibrary[_pollNum][i];
+            uint256 amount = polls[_pollNum][voter];
+            IGogeERC20(governanceTokenAddr).transfer(voter, amount);
             _removeAdvocate(voter, _pollNum);
         }
     }
@@ -642,12 +642,12 @@ contract GogeDAO is Owned {
     /// TODO: NEEDS TESTING
     /// @notice A method for removing polls from an address's advocatesFor mapped array.
     /// @param _advocate address of wallet that we are removing their advocacy.
-    /// @param _poll the number of the poll the address is no longer an advocate for.
-    function _removeAdvocate(address _advocate, uint256 _poll) internal {
+    /// @param _pollNum the number of the poll the address is no longer an advocate for.
+    function _removeAdvocate(address _advocate, uint256 _pollNum) internal {
         uint256 l = advocateFor[_advocate].length;
         for (uint256 i = 0; i < l; i++) {
-            if (advocateFor[_advocate][i] == _poll) {
-                advocateFor[_advocate][i] = advocateFor[_advocate][l];
+            if (advocateFor[_advocate][i] == _pollNum) {
+                advocateFor[_advocate][i] = advocateFor[_advocate][l - 1];
                 advocateFor[_advocate].pop();
             }
         }
@@ -673,9 +673,10 @@ contract GogeDAO is Owned {
     }
 
     function _removePollFromActivePolls(uint256 _pollNum) internal {
-        for (uint8 i = 0; i < activePolls.length; i++){
+        uint256 l = activePolls.length;
+        for (uint256 i = 0; i < l; i++){
             if (_pollNum == activePolls[i]) {
-                activePolls[i] = activePolls[activePolls.length - 1];
+                activePolls[i] = activePolls[l - 1];
                 activePolls.pop();
             }
         }

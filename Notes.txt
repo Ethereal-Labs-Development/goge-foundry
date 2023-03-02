@@ -10,7 +10,7 @@ TODO:
     - transferOwnership
     - setGateKeeping
     - queryEndTime
-- Add proportion mapping ???
+- Add VIEW function to return proportion of pollNum
 - Add revokeAllVotes
 - Add list of votes to ongoing polls for each user -> activePolls?
 - Add Dao Description

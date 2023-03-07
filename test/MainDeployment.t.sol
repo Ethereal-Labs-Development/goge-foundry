@@ -82,7 +82,7 @@ contract MainDeploymentTesting is Utility, Test {
         // TODO: (4) Exclude v2 from fees on v1
         gogeToken_v1.excludeFromFees(address(gogeToken_v2), true);
 
-        // TODO: (5) Perform migration -> 6 days <<<<<<<<<<<<<<<<<<<<<<<<
+        // TODO: (5) Perform migration
         migrateActor(tim);
         migrateActor(joe);
         migrateActor(sal);
@@ -98,7 +98,7 @@ contract MainDeploymentTesting is Utility, Test {
         gogeToken_v2.transfer(address(567), 20_000_000_000 ether);
 
         // TODO: (7) enableTrading() on v2
-        gogeToken_v2.enableTrading();
+        gogeToken_v2.enableTrading(); //<<<<<<<<<<<<<<<<<<<<
     }
 
     // ~~ Utility Functions ~~

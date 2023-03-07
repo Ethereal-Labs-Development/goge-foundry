@@ -14,6 +14,8 @@ TODO (TESTING):
 - Test QueryEndTime
 - Test payTeam -> Change .transfer to .call ?
 - Test activePolls 
+- Possible exploit -> what happens if a poll has passed and someone goes to remove votes
+    technically since their votes still exist and there's a balance of tokens, the advocate could remove tokens.
 
 -------------------------------------------------------------------------------
 TODO (BUG FIXES / ADDITIONS):
@@ -35,4 +37,16 @@ Changes:
 - added activePolls array which keeps a library of all active polls.
     - Will be useful for front end
 - added advocateFor which maps addresses to an array of polls they have votes for.
-= removeAllVotes will iterate through all ACTIVE polls instead of all polls in general.
+- removeAllVotes will iterate through all ACTIVE polls instead of all polls in general.
+- Added queryEndTime()
+
+Historical Data:
+- polls[_pollNum][voter]          // Double Mapping of pollNum to amount of votes per voter
+- voterLibrary                    // Mapping of pollNum to array of addresses of voters
+- totalVotes                      // Mapping of pollNum to amount of total votes
+- pollStartTime                   // Mapping of pollNum to starting timestamp -> start timestamp is always block.timestamp of
+                                  //   when poll was created. Could potentially remove this variable
+- pollEndTime                     // Mapping of pollNum to ending timestamp
+
+Non-Historical Data:
+- uint[] activePolls

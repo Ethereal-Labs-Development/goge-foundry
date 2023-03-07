@@ -31,12 +31,12 @@ contract GogeDAO is Owned {
     mapping(uint256 => mapping(address => uint256)) public polls;
     mapping(uint256 => address[]) public voterLibrary;
     mapping(uint256 => uint256) public totalVotes;
-    mapping(uint256 => uint256) public historicalTally;
     mapping(uint256 => uint256) public pollStartTime;
     mapping(uint256 => uint256) public pollEndTime;
-    mapping(uint256 => bool) public passed;
 
+    mapping(uint256 => bool) public passed;
     mapping(address => bool) public gateKeeper;
+    
     mapping(address => uint256[]) public advocateFor;
 
     mapping(uint256 => PollType) public pollTypes;
@@ -366,7 +366,6 @@ contract GogeDAO is Owned {
 
         polls[_pollNum][msg.sender] += _numVotes;
         totalVotes[_pollNum]        += _numVotes;
-        historicalTally[_pollNum]   += _numVotes;
 
         bool quorumMet = getProportion(_pollNum) >= quorum;
         bool enactChange = false;
@@ -417,12 +416,12 @@ contract GogeDAO is Owned {
     /// @dev Should be called on a regular time interval using an external script.
     ///      Solution: https://automation.chain.link/
     function queryEndTime() external {
-        for (uint8 i = 0; i < activePolls.length; i++){
-            uint _pollNum = pollEndTime[activePolls[i]];
-            if (block.timestamp >= _pollNum) {
-                _removePollFromActivePolls(_pollNum);
-                _refundVotersPostChange(_pollNum);
-            }
+        uint counter;
+        uint256[] memory expired;
+        (expired, counter) = _findExpiredPolls();
+        for (uint256 i = 0; i < counter; i++) {
+            _removePollFromActivePolls(expired[i]);
+            _refundVotersPostChange(expired[i]);
         }
     }
 
@@ -612,6 +611,17 @@ contract GogeDAO is Owned {
         emit ProposalPassed(_pollNum);
     }
 
+    function _findExpiredPolls() internal view returns (uint256[] memory expired, uint256 counter) {
+        uint256 l = activePolls.length;
+        expired = new uint256[](l);
+        for (uint256 i = 0; i < l; i++) {
+            uint256 endTime = pollEndTime[activePolls[i]];
+            if (block.timestamp >= endTime) {
+                expired[counter++] = activePolls[i];
+            }
+        }
+    }
+
     function _addToVoterLibrary(uint256 _pollNum, address _voter) internal {
         uint256 i = 0;
         bool exists;
@@ -643,14 +653,13 @@ contract GogeDAO is Owned {
     /// @notice A method for a voter to remove their votes from a single poll.
     /// @param  _pollNum The poll number.
     function _removeVote(uint256 _pollNum) internal {
+        require(isActivePoll(_pollNum), "GogeDao.sol::removeVotesFromPoll() poll is not active");
         uint256 _numVotes = polls[_pollNum][msg.sender];
         if(_numVotes > 0) {
             polls[_pollNum][msg.sender] = 0;
             totalVotes[_pollNum] -= _numVotes;
-            if (block.timestamp <= pollEndTime[_pollNum]) {
-                historicalTally[_pollNum] -= _numVotes;
-            }
-            require(IGogeERC20(governanceTokenAddr).transfer(msg.sender, _numVotes));
+
+            _refundVoter(msg.sender, _numVotes);
             _removeAdvocate(msg.sender, _pollNum);
         }
     }
@@ -662,9 +671,14 @@ contract GogeDAO is Owned {
         for (uint256 i = 0; i < voterLibrary[_pollNum].length; i++) {
             address voter  = voterLibrary[_pollNum][i];
             uint256 amount = polls[_pollNum][voter];
-            IGogeERC20(governanceTokenAddr).transfer(voter, amount);
+            
+            _refundVoter(voter, amount);
             _removeAdvocate(voter, _pollNum);
         }
+    }
+
+    function _refundVoter(address _voter, uint256 _amount) internal {
+        require(IGogeERC20(governanceTokenAddr).transfer(_voter, _amount));
     }
 
     /// TODO: NEEDS TESTING
@@ -735,7 +749,7 @@ contract GogeDAO is Owned {
 
     function isActivePoll(uint256 _pollNum) public view returns (bool active) {
         for (uint8 i = 0; i < activePolls.length; i++){
-            if (_pollNum == pollEndTime[activePolls[i]]) {
+            if (_pollNum == activePolls[i]) {
                 return true;
             }
         }
@@ -743,8 +757,8 @@ contract GogeDAO is Owned {
     }
 
     function isTeamMember(address _address) public view returns(bool, uint8) {
-        for (uint8 s = 0; s < teamMembers.length; s += 1){
-            if (_address == teamMembers[s]) return (true, s);
+        for (uint8 i = 0; i < teamMembers.length; i += 1){
+            if (_address == teamMembers[i]) return (true, i);
         }
         return (false, 0);
     }
@@ -778,7 +792,7 @@ contract GogeDAO is Owned {
         taxChange.buyBackFee = poll.fee3;
         taxChange.teamFee = poll.fee4;
 
-        return (historicalTally[_pollNum], taxChange, passed[_pollNum]);
+        return (totalVotes[_pollNum], taxChange, passed[_pollNum]);
     }
 
     function getFunding(uint256 _pollNum) public view returns(uint256, Funding memory, bool) {
@@ -792,7 +806,7 @@ contract GogeDAO is Owned {
         funding.token = poll.addr2;
         funding.amount = poll.amount;
 
-        return (historicalTally[_pollNum], funding, passed[_pollNum]);
+        return (totalVotes[_pollNum], funding, passed[_pollNum]);
     }
 
     function getSetGogeDao(uint256 _pollNum) public view returns(uint256, SetGogeDao memory, bool) {
@@ -804,7 +818,7 @@ contract GogeDAO is Owned {
         setGogeDao.endTime = poll.time2;
         setGogeDao.addr = poll.addr1;
 
-        return (historicalTally[_pollNum], setGogeDao, passed[_pollNum]);
+        return (totalVotes[_pollNum], setGogeDao, passed[_pollNum]);
     }
 
     function getSetCex(uint256 _pollNum) public view returns(uint256, SetCex memory, bool) {
@@ -816,7 +830,7 @@ contract GogeDAO is Owned {
         setCex.endTime = poll.time2;
         setCex.addr = poll.addr1;
 
-        return (historicalTally[_pollNum], setCex, passed[_pollNum]);
+        return (totalVotes[_pollNum], setCex, passed[_pollNum]);
     }
 
     function getSetDex(uint256 _pollNum) public view returns(uint256, SetDex memory, bool) {
@@ -829,7 +843,7 @@ contract GogeDAO is Owned {
         setDex.addr = poll.addr1;
         setDex.boolVar = poll.boolVar;
 
-        return (historicalTally[_pollNum], setDex, passed[_pollNum]);
+        return (totalVotes[_pollNum], setDex, passed[_pollNum]);
     }
 
     function getExcludeFromCirculatingSupply(uint256 _pollNum) public view returns(uint256, ExcludeFromCirculatingSupply memory, bool) {
@@ -842,7 +856,7 @@ contract GogeDAO is Owned {
         excludeFromCirculatingSupply.addr = poll.addr1;
         excludeFromCirculatingSupply.boolVar = poll.boolVar;
 
-        return (historicalTally[_pollNum], excludeFromCirculatingSupply, passed[_pollNum]);
+        return (totalVotes[_pollNum], excludeFromCirculatingSupply, passed[_pollNum]);
     }
 
     function getUpdateDividendToken(uint256 _pollNum) public view returns(uint256, UpdateDividendToken memory, bool) {
@@ -854,7 +868,7 @@ contract GogeDAO is Owned {
         updateDividendToken.endTime = poll.time2;
         updateDividendToken.addr = poll.addr1;
 
-        return (historicalTally[_pollNum], updateDividendToken, passed[_pollNum]);
+        return (totalVotes[_pollNum], updateDividendToken, passed[_pollNum]);
     }
 
     function getUpdateMarketingWallet(uint256 _pollNum) public view returns(uint256, UpdateMarketingWallet memory, bool) {
@@ -866,7 +880,7 @@ contract GogeDAO is Owned {
         updateMarketingWallet.endTime = poll.time2;
         updateMarketingWallet.addr = payable(poll.addr1);
 
-        return (historicalTally[_pollNum], updateMarketingWallet, passed[_pollNum]);
+        return (totalVotes[_pollNum], updateMarketingWallet, passed[_pollNum]);
     }
 
     function getUpdateTeamWallet(uint256 _pollNum) public view returns(uint256, UpdateTeamWallet memory, bool) {
@@ -878,7 +892,7 @@ contract GogeDAO is Owned {
         updateTeamWallet.endTime = poll.time2;
         updateTeamWallet.addr = payable(poll.addr1);
 
-        return (historicalTally[_pollNum], updateTeamWallet, passed[_pollNum]);
+        return (totalVotes[_pollNum], updateTeamWallet, passed[_pollNum]);
     }
 
     function getUpdateTeamMember(uint256 _pollNum) public view returns(uint256, UpdateTeamMember memory, bool) {
@@ -891,7 +905,7 @@ contract GogeDAO is Owned {
         updateTeamMember.addr = payable(poll.addr1);
         updateTeamMember.boolVar = poll.boolVar;
 
-        return (historicalTally[_pollNum], updateTeamMember, passed[_pollNum]);
+        return (totalVotes[_pollNum], updateTeamMember, passed[_pollNum]);
     }
 
     function getUpdateGateKeeper(uint256 _pollNum) public view returns(uint256, UpdateGateKeeper memory, bool) {
@@ -904,7 +918,7 @@ contract GogeDAO is Owned {
         updateGateKeeper.addr = poll.addr1;
         updateGateKeeper.boolVar = poll.boolVar;
 
-        return (historicalTally[_pollNum], updateGateKeeper, passed[_pollNum]);
+        return (totalVotes[_pollNum], updateGateKeeper, passed[_pollNum]);
     }
 
     function getSetGateKeeping(uint256 _pollNum) public view returns(uint256, SetGateKeeping memory, bool) {
@@ -916,7 +930,7 @@ contract GogeDAO is Owned {
         setGateKeeping.endTime = poll.time2;
         setGateKeeping.boolVar = poll.boolVar;
 
-        return (historicalTally[_pollNum], setGateKeeping, passed[_pollNum]);  
+        return (totalVotes[_pollNum], setGateKeeping, passed[_pollNum]);  
     }
 
     function getSetBuyBackEnabled(uint256 _pollNum) public view returns(uint256, SetBuyBackEnabled memory, bool) {
@@ -928,7 +942,7 @@ contract GogeDAO is Owned {
         setBuyBackEnabled.endTime = poll.time2;
         setBuyBackEnabled.boolVar = poll.boolVar;
 
-        return (historicalTally[_pollNum], setBuyBackEnabled, passed[_pollNum]);  
+        return (totalVotes[_pollNum], setBuyBackEnabled, passed[_pollNum]);  
     }
 
     function getSetCakeDividendEnabled(uint256 _pollNum) public view returns(uint256, SetCakeDividendEnabled memory, bool) {
@@ -940,7 +954,7 @@ contract GogeDAO is Owned {
         setCakeDividendEnabled.endTime = poll.time2;
         setCakeDividendEnabled.boolVar = poll.boolVar;
 
-        return (historicalTally[_pollNum], setCakeDividendEnabled, passed[_pollNum]);  
+        return (totalVotes[_pollNum], setCakeDividendEnabled, passed[_pollNum]);  
     }
 
     function getSetMarketingEnabled(uint256 _pollNum) public view returns(uint256, SetMarketingEnabled memory, bool) {
@@ -952,7 +966,7 @@ contract GogeDAO is Owned {
         setMarketingEnabled.endTime = poll.time2;
         setMarketingEnabled.boolVar = poll.boolVar;
 
-        return (historicalTally[_pollNum], setMarketingEnabled, passed[_pollNum]);  
+        return (totalVotes[_pollNum], setMarketingEnabled, passed[_pollNum]);  
     }
 
     function getSetTeamEnabled(uint256 _pollNum) public view returns(uint256, SetTeamEnabled memory, bool) {
@@ -964,7 +978,7 @@ contract GogeDAO is Owned {
         setTeamEnabled.endTime = poll.time2;
         setTeamEnabled.boolVar = poll.boolVar;
 
-        return (historicalTally[_pollNum], setTeamEnabled, passed[_pollNum]);  
+        return (totalVotes[_pollNum], setTeamEnabled, passed[_pollNum]);  
     }
 
     function getUpdateCakeDividendTracker(uint256 _pollNum) public view returns(uint256, UpdateCakeDividendTracker memory, bool) {
@@ -976,7 +990,7 @@ contract GogeDAO is Owned {
         updateCakeDividendTracker.endTime = poll.time2;
         updateCakeDividendTracker.addr = payable(poll.addr1);
 
-        return (historicalTally[_pollNum], updateCakeDividendTracker, passed[_pollNum]);
+        return (totalVotes[_pollNum], updateCakeDividendTracker, passed[_pollNum]);
     }
 
     function getUpdateUniswapV2Router(uint256 _pollNum) public view returns(uint256, UpdateUniswapV2Router memory, bool) {
@@ -988,7 +1002,7 @@ contract GogeDAO is Owned {
         updateUniswapV2Router.endTime = poll.time2;
         updateUniswapV2Router.addr = payable(poll.addr1);
 
-        return (historicalTally[_pollNum], updateUniswapV2Router, passed[_pollNum]);
+        return (totalVotes[_pollNum], updateUniswapV2Router, passed[_pollNum]);
     }
 
     function getExcludeFromFees(uint256 _pollNum) public view returns(uint256, ExcludeFromFees memory, bool) {
@@ -1001,7 +1015,7 @@ contract GogeDAO is Owned {
         excludeFromFees.addr = payable(poll.addr1);
         excludeFromFees.boolVar = poll.boolVar;
 
-        return (historicalTally[_pollNum], excludeFromFees, passed[_pollNum]);
+        return (totalVotes[_pollNum], excludeFromFees, passed[_pollNum]);
     }
 
     function getExcludeFromDividends(uint256 _pollNum) public view returns(uint256, ExcludeFromDividends memory, bool) {
@@ -1013,7 +1027,7 @@ contract GogeDAO is Owned {
         excludeFromDividends.endTime = poll.time2;
         excludeFromDividends.addr = payable(poll.addr1);
 
-        return (historicalTally[_pollNum], excludeFromDividends, passed[_pollNum]);
+        return (totalVotes[_pollNum], excludeFromDividends, passed[_pollNum]);
     }
 
     function getModifyBlacklist(uint256 _pollNum) public view returns(uint256, ModifyBlacklist memory, bool) {
@@ -1026,7 +1040,7 @@ contract GogeDAO is Owned {
         modifyBlacklist.addr = payable(poll.addr1);
         modifyBlacklist.blacklisted = poll.boolVar;
 
-        return (historicalTally[_pollNum], modifyBlacklist, passed[_pollNum]);
+        return (totalVotes[_pollNum], modifyBlacklist, passed[_pollNum]);
     }
 
     function getTransferOwnership(uint256 _pollNum) public view returns(uint256, TransferOwnership memory, bool) {
@@ -1038,7 +1052,7 @@ contract GogeDAO is Owned {
         transferOwnership.endTime = poll.time2;
         transferOwnership.addr = payable(poll.addr1);
 
-        return (historicalTally[_pollNum], transferOwnership, passed[_pollNum]);
+        return (totalVotes[_pollNum], transferOwnership, passed[_pollNum]);
     }
 
     function getMigrateTreasury(uint256 _pollNum) public view returns(uint256, MigrateTreasury memory, bool) {
@@ -1051,7 +1065,7 @@ contract GogeDAO is Owned {
         migrateTreasury.addr = payable(poll.addr1);
         migrateTreasury.token = poll.addr2;
 
-        return (historicalTally[_pollNum], migrateTreasury, passed[_pollNum]);   
+        return (totalVotes[_pollNum], migrateTreasury, passed[_pollNum]);   
     }
 
     function getSetQuorum(uint256 _pollNum) public view returns(uint256, SetQuorum memory, bool) {
@@ -1063,7 +1077,7 @@ contract GogeDAO is Owned {
         setQuorum.endTime = poll.time2;
         setQuorum.amount = poll.amount;
 
-        return (historicalTally[_pollNum], setQuorum, passed[_pollNum]);   
+        return (totalVotes[_pollNum], setQuorum, passed[_pollNum]);   
     }
 
     function getSetMinPollPeriod(uint256 _pollNum) public view returns(uint256, SetMinPollPeriod memory, bool) {
@@ -1075,7 +1089,7 @@ contract GogeDAO is Owned {
         setMinPollPeriod.endTime = poll.time2;
         setMinPollPeriod.amount = poll.amount;
 
-        return (historicalTally[_pollNum], setMinPollPeriod, passed[_pollNum]);   
+        return (totalVotes[_pollNum], setMinPollPeriod, passed[_pollNum]);   
     }
 
     function getUpdateGovernanceToken(uint256 _pollNum) public view returns(uint256, UpdateGovernanceToken memory, bool) {
@@ -1087,7 +1101,7 @@ contract GogeDAO is Owned {
         updateGovernanceToken.endTime = poll.time2;
         updateGovernanceToken.addr = poll.addr1;
 
-        return (historicalTally[_pollNum], updateGovernanceToken, passed[_pollNum]);
+        return (totalVotes[_pollNum], updateGovernanceToken, passed[_pollNum]);
     }
 
     function getOther(uint256 _pollNum) public view returns(uint256, string memory, uint256, uint256, bool) {
@@ -1098,7 +1112,7 @@ contract GogeDAO is Owned {
         other.startTime = poll.time1;
         other.endTime = poll.time2;
 
-        return (historicalTally[_pollNum], poll.description, poll.time1, poll.time2, passed[_pollNum]);
+        return (totalVotes[_pollNum], poll.description, poll.time1, poll.time2, passed[_pollNum]);
     }
     
 }

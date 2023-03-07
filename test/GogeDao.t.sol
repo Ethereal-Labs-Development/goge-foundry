@@ -50,10 +50,16 @@ contract DaoTest is Utility, Test {
         gogeToken.setGogeDao(address(gogeDao));
     }
 
+
+    // ~~ Init state test ~~
+
     function test_gogeDao_init_state() public {
         assertEq(address(gogeToken), gogeDao.governanceTokenAddr());
         assertEq(gogeDao.pollNum(), 0);
     }
+
+
+    // ~~ Unit Tests ~~
 
     function test_gogeDao_createPoll() public {
         // create poll metadata
@@ -78,6 +84,7 @@ contract DaoTest is Utility, Test {
 
         uint256[] memory activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 1);
+        assertEq(activePolls[0], 1);
     }
 
     function test_gogeDao_addVote_state_change() public {
@@ -99,7 +106,6 @@ contract DaoTest is Utility, Test {
         // Post-state check.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes);
-        assertEq(gogeDao.historicalTally(1), joe_votes);
 
         // TODO: Add voterLibrary and advocateFor state changes
 
@@ -161,7 +167,6 @@ contract DaoTest is Utility, Test {
         // Post-state check.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes);
-        assertEq(gogeDao.historicalTally(1), joe_votes);
 
         // Verify quorum
         uint256 num = (gogeDao.totalVotes(1) * 100) /
@@ -193,7 +198,6 @@ contract DaoTest is Utility, Test {
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes);
-        assertEq(gogeDao.historicalTally(1), joe_votes);
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
@@ -237,7 +241,6 @@ contract DaoTest is Utility, Test {
         // Post-state check after first addVote.
         assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
         assertEq(gogeDao.polls(1, address(joe)), joe_votes_1);
-        assertEq(gogeDao.historicalTally(1),     joe_votes_1);
         assertEq(gogeDao.totalVotes(1),          joe_votes_1);
         assertEq(gogeDao.passed(1),              false);
 
@@ -248,6 +251,10 @@ contract DaoTest is Utility, Test {
         uint256[] memory advocateArr = gogeDao.getAdvocateFor(address(joe));
         assertEq(advocateArr.length, 1);
         assertEq(advocateArr[0], 1);
+
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
+        assertEq(activePolls[0], 1);
 
         assertEq(gogeToken.isBlacklisted(address(joe)), false);
 
@@ -264,7 +271,6 @@ contract DaoTest is Utility, Test {
         // Post-state check after second addVote.
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
         assertEq(gogeDao.polls(1, address(joe)), total_votes);
-        assertEq(gogeDao.historicalTally(1),     total_votes);
         assertEq(gogeDao.totalVotes(1),          total_votes);
         assertEq(gogeDao.passed(1),              true);
 
@@ -280,6 +286,10 @@ contract DaoTest is Utility, Test {
         // Verify quorum math.
         uint256 num = gogeDao.getProportion(1);
         assertTrue(num >= gogeDao.quorum());
+
+        // Verify poll is no longer in activePolls
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
 
         // Post-state check => gogeToken.
         assertEq(gogeToken.isBlacklisted(address(joe)), true);
@@ -346,8 +356,7 @@ contract DaoTest is Utility, Test {
 
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(tim)), tim_votes);
-        assertEq(gogeDao.totalVotes(1),tim_votes);
-        assertEq(gogeDao.historicalTally(1), tim_votes);
+        assertEq(gogeDao.totalVotes(1), tim_votes);
         assertEq(gogeDao.passed(1), false);
 
         /// NOTE addVotes -> Jon
@@ -363,7 +372,6 @@ contract DaoTest is Utility, Test {
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(jon)), jon_votes);
         assertEq(gogeDao.totalVotes(1), tim_votes + jon_votes);
-        assertEq(gogeDao.historicalTally(1), tim_votes + jon_votes);
         assertEq(gogeDao.passed(1), false);
 
         /// NOTE addVotes -> Joe -> overcomes quorum therefore passes poll
@@ -379,7 +387,6 @@ contract DaoTest is Utility, Test {
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), tim_votes + jon_votes + joe_votes);
-        assertEq(gogeDao.historicalTally(1), tim_votes + jon_votes + joe_votes);
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
@@ -390,6 +397,120 @@ contract DaoTest is Utility, Test {
         uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();
         assertTrue(num >= gogeDao.quorum());        
     }
+
+    /// @notice verifies advocateFor for proper usage, state changes, and pop/push implementation.
+    /// NOTE: A user must only be added to advocateFor if they addVotes to a poll
+    ///       A user must only be REMOVED from advocateFor if:
+    ///         - Poll is passed via addVote -> addVote()
+    ///         - Poll is passed via admin/owner -> endPoll() or passPoll()
+    ///         - User removes their votes manually -> removeVotesFromPoll() && removeAllVotes()
+    function test_gogeDao_advocateFor() public {
+        test_gogeDao_createPoll();
+        gogeDao.setGateKeeping(false);
+
+        uint256 joe_votes = 10_000_000_000 ether;
+
+        // Transfer Joe tokens so he can vote on a poll.
+        gogeToken.transfer(address(joe), joe_votes);
+        assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
+
+        // NOTE: removeVotesFromPoll
+
+        // Pre-state check.
+        uint256[] memory advocateArr = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateArr.length, 0);
+
+        // Approve the transfer of tokens and execute addVote.
+        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
+        assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
+
+        // Post-state check after addVote.
+        advocateArr = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateArr.length, 1);
+        assertEq(advocateArr[0], 1);
+
+        // Joe calls removeVotesFromPoll
+        assert(joe.try_removeVotesFromPoll(address(gogeDao), 1));
+
+        // Post-state check after removeVotesFromPoll.
+        advocateArr = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateArr.length, 0);
+
+        // NOTE: endPoll
+
+        // Approve and addVote again
+        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
+        assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
+
+        // Post-state check after addVote.
+        advocateArr = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateArr.length, 1);
+        assertEq(advocateArr[0], 1);
+
+        // Owner calls endPoll
+        gogeDao.endPoll(1);
+
+        // Post-state check after removeVotesFromPoll.
+        advocateArr = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateArr.length, 0);
+    }
+
+    /// @notice verifies correctness of queryEndTime()
+    /// NOTE: This function should be called on a regular interval by an external script.
+    /// TODO: Expand
+    function test_gogeDao_queryEndTime() public {
+        test_gogeDao_createPoll();
+        gogeDao.setGateKeeping(false);
+
+        //Warp to end time
+        vm.warp(block.timestamp + 2 days);
+
+        // Pre-state check.
+        assertEq(gogeDao.passed(1),              false);
+        assertEq(gogeToken.isBlacklisted(address(joe)), false);
+
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
+        assertEq(activePolls[0], 1);
+
+        // Call queryEndTime() to 
+        gogeDao.queryEndTime();
+
+        // Post-state check.
+        assertEq(gogeDao.passed(1),              false);
+        assertEq(gogeToken.isBlacklisted(address(joe)), false);
+
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
+    }
+
+    function test_gogeDao_passPoll() public {
+        test_gogeDao_createPoll();
+        gogeDao.setGateKeeping(false);
+
+        // Pre-state check.
+        assertEq(gogeDao.passed(1), false);
+
+
+    }
+
+    function test_gogeDao_endPoll() public {
+        
+    }
+
+    function test_gogeDao_setGateKeeping() public {
+        
+    }
+
+    function test_gogeDao_payTeam() public {
+        
+    }
+
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
     // ~~ All poll type tests ~~
 
@@ -448,7 +569,6 @@ contract DaoTest is Utility, Test {
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes);
-        assertEq(gogeDao.historicalTally(1), joe_votes);
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
@@ -516,7 +636,6 @@ contract DaoTest is Utility, Test {
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes);
-        assertEq(gogeDao.historicalTally(1), joe_votes);
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
@@ -573,7 +692,6 @@ contract DaoTest is Utility, Test {
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes);
-        assertEq(gogeDao.historicalTally(1), joe_votes);
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
@@ -629,7 +747,6 @@ contract DaoTest is Utility, Test {
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes);
-        assertEq(gogeDao.historicalTally(1), joe_votes);
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
@@ -687,7 +804,6 @@ contract DaoTest is Utility, Test {
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes);
-        assertEq(gogeDao.historicalTally(1), joe_votes);
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
@@ -746,7 +862,6 @@ contract DaoTest is Utility, Test {
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes);
-        assertEq(gogeDao.historicalTally(1), joe_votes);
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
@@ -756,22 +871,5 @@ contract DaoTest is Utility, Test {
         // Verify quorum math.
         uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();
         assertTrue(num >= gogeDao.quorum());        
-    }
-
-    /// @notice verifies advocateFor for proper usage, state changes, and pop/push implementation.
-    /// NOTE: A user must only be added to advocateFor if they addVotes to a poll
-    ///       A user must only be REMOVED from advocateFor if:
-    ///         - Poll is passed via addVote -> addVote()
-    ///         - Poll is passed via admin/owner -> endPoll()
-    ///         - User removes their votes manually -> removeVotesFromPoll() && removeAllVotes()
-    function test_gogeDaoPostToken_advocateFor() public {
-
-    }
-
-    /// @notice verifies correctness of queryEndTime()
-    /// NOTE: This function should be called on a regular interval by an external script.
-    ///       Could use Chainlink Automation -> https://automation.chain.link/
-    function test_gogeDaoPostToken_queryEndTime() public {
-
     }
 }

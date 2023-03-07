@@ -126,4 +126,14 @@ contract Actor {
         string memory sig = "removeVotesFromPoll(uint256)";
         (ok,) = address(dao).call(abi.encodeWithSignature(sig, pollNum));
     }
+
+    function try_passPoll(address dao, uint256 pollNum) external returns (bool ok) {
+        string memory sig = "passPoll(uint256)";
+        (ok,) = address(dao).call(abi.encodeWithSignature(sig, pollNum));
+    }
+
+    function try_endPoll(address dao, uint256 pollNum) external returns (bool ok) {
+        string memory sig = "endPoll(uint256)";
+        (ok,) = address(dao).call(abi.encodeWithSignature(sig, pollNum));
+    }
 }

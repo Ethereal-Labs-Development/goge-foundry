@@ -3,19 +3,18 @@ TODO (TESTING):
 
 - Test all new changes
     - gateKeeper and setGateKeeping both onlyOwner and as poll
-    - new state changes when poll is passed
     - removeVotesFromPoll
     - removeAllVotes
-    - passPoll
-    - endPoll
     - transferOwnership
     - setGateKeeping
-- Test advocateFor
-- Test QueryEndTime
 - Test payTeam -> Change .transfer to .call ?
 - Test activePolls 
 - Possible exploit -> what happens if a poll has passed and someone goes to remove votes
     technically since their votes still exist and there's a balance of tokens, the advocate could remove tokens.
+- add enableCreatePoll
+- add test with MULTIPLE advocates when poll is passed/ended
+- Test migrate Treasury
+- Test addVote within 5minute period of purchase of tokens
 
 -------------------------------------------------------------------------------
 TODO (BUG FIXES / ADDITIONS):
@@ -39,6 +38,8 @@ Changes:
 - added advocateFor which maps addresses to an array of polls they have votes for.
 - removeAllVotes will iterate through all ACTIVE polls instead of all polls in general.
 - Added queryEndTime()
+- Added isActive when voters remove votes -> fixes possible exploit
+- Removed historicalTally -> unnecessary
 
 Historical Data:
 - polls[_pollNum][voter]          // Double Mapping of pollNum to amount of votes per voter

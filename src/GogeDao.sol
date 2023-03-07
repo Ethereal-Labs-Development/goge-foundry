@@ -294,6 +294,7 @@ contract GogeDAO is Owned {
     event GateKeepingModified(bool enabled);
 
     constructor(address _governanceToken) Owned(msg.sender) {
+       _setGateKeeper(owner, true);
         governanceTokenAddr = _governanceToken;
         actions = [
             "taxChange",
@@ -355,10 +356,12 @@ contract GogeDAO is Owned {
     /// @param  _pollNum The poll number.
     /// @param  _numVotes The size of the vote to be created.
     function addVote(uint256 _pollNum, uint256 _numVotes) public {
-        require(block.timestamp - IGogeERC20(governanceTokenAddr).getLastReceived(msg.sender) >= (5 minutes), "Must wait 5 minutes after purchasing tokens to place any votes.");
         require(_pollNum <= pollNum, "Poll doesn't Exist");
-        require(IGogeERC20(governanceTokenAddr).balanceOf(msg.sender) >= _numVotes, "Exceeds Balance");
         require(block.timestamp >= pollStartTime[_pollNum] && block.timestamp < pollEndTime[_pollNum], "Poll Closed");
+        require(isActivePoll(_pollNum), "Poll is not active");
+
+        require(block.timestamp - IGogeERC20(governanceTokenAddr).getLastReceived(msg.sender) >= (5 minutes), "Must wait 5 minutes after purchasing tokens to place any votes.");
+        require(IGogeERC20(governanceTokenAddr).balanceOf(msg.sender) >= _numVotes, "Exceeds Balance");
         require(IGogeERC20(governanceTokenAddr).transferFrom(msg.sender, address(this), _numVotes));
 
         _addToVoterLibrary(_pollNum, msg.sender);
@@ -420,6 +423,7 @@ contract GogeDAO is Owned {
         uint256[] memory expired;
         (expired, counter) = _findExpiredPolls();
         for (uint256 i = 0; i < counter; i++) {
+            _updateEndTime(expired[i]);
             _removePollFromActivePolls(expired[i]);
             _refundVotersPostChange(expired[i]);
         }
@@ -433,6 +437,10 @@ contract GogeDAO is Owned {
         _setGateKeeping(enabled);
     }
 
+    function updateGateKeeper(address _account, bool _gateKeeper) external onlyOwner() {
+        _setGateKeeper(_account, _gateKeeper);
+    }
+
     function passPoll(uint256 _pollNum) external onlyOwner() {
         require(isActivePoll(_pollNum), "Poll is not active");
 
@@ -442,6 +450,7 @@ contract GogeDAO is Owned {
     function endPoll(uint256 _pollNum) external onlyOwner() {
         require(isActivePoll(_pollNum), "Poll is not active");
 
+        _updateEndTime(_pollNum);
         _removePollFromActivePolls(_pollNum);
         _refundVotersPostChange(_pollNum);
     }
@@ -468,7 +477,7 @@ contract GogeDAO is Owned {
     /// @param _pollNum Unique poll number.
     function _executeProposal(uint256 _pollNum) internal {
 
-        pollEndTime[_pollNum] = block.timestamp;
+        _updateEndTime(_pollNum);
         passed[_pollNum] = true;
 
         if (pollTypes[_pollNum] == PollType.taxChange) {
@@ -654,6 +663,7 @@ contract GogeDAO is Owned {
     /// @param  _pollNum The poll number.
     function _removeVote(uint256 _pollNum) internal {
         require(isActivePoll(_pollNum), "GogeDao.sol::removeVotesFromPoll() poll is not active");
+
         uint256 _numVotes = polls[_pollNum][msg.sender];
         if(_numVotes > 0) {
             polls[_pollNum][msg.sender] = 0;
@@ -664,14 +674,13 @@ contract GogeDAO is Owned {
         }
     }
 
-    /// TODO: NEEDS TESTING
     /// @notice A method for all voters to be refunded after a poll that they've voted on has been passed.
     /// @param  _pollNum The poll number.
     function _refundVotersPostChange(uint256 _pollNum) internal {
         for (uint256 i = 0; i < voterLibrary[_pollNum].length; i++) {
             address voter  = voterLibrary[_pollNum][i];
             uint256 amount = polls[_pollNum][voter];
-            
+
             _refundVoter(voter, amount);
             _removeAdvocate(voter, _pollNum);
         }
@@ -681,7 +690,6 @@ contract GogeDAO is Owned {
         require(IGogeERC20(governanceTokenAddr).transfer(_voter, _amount));
     }
 
-    /// TODO: NEEDS TESTING
     /// @notice A method for removing polls from an address's advocatesFor mapped array.
     /// @param _advocate address of wallet that we are removing their advocacy.
     /// @param _pollNum the number of the poll the address is no longer an advocate for.
@@ -722,6 +730,10 @@ contract GogeDAO is Owned {
                 activePolls.pop();
             }
         }
+    }
+
+    function _updateEndTime(uint256 _pollNum) internal {
+        pollEndTime[_pollNum] = block.timestamp;
     }
 
     function _setGateKeeper(address addr, bool value) internal {

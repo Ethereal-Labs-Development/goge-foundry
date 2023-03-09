@@ -6,6 +6,8 @@ import { IERC20 } from "../interfaces/Interfaces.sol";
 
 contract Actor {
 
+    receive() payable external {}
+
     /*********************/
     /*** TRY FUNCTIONS ***/
     /*********************/
@@ -120,5 +122,20 @@ contract Actor {
     function try_addVote(address dao, uint256 pollNum, uint256 numVotes) external returns (bool ok) {
         string memory sig = "addVote(uint256,uint256)";
         (ok,) = address(dao).call(abi.encodeWithSignature(sig, pollNum, numVotes));
+    }
+
+    function try_removeVotesFromPoll(address dao, uint256 pollNum) external returns (bool ok) {
+        string memory sig = "removeVotesFromPoll(uint256)";
+        (ok,) = address(dao).call(abi.encodeWithSignature(sig, pollNum));
+    }
+
+    function try_passPoll(address dao, uint256 pollNum) external returns (bool ok) {
+        string memory sig = "passPoll(uint256)";
+        (ok,) = address(dao).call(abi.encodeWithSignature(sig, pollNum));
+    }
+
+    function try_endPoll(address dao, uint256 pollNum) external returns (bool ok) {
+        string memory sig = "endPoll(uint256)";
+        (ok,) = address(dao).call(abi.encodeWithSignature(sig, pollNum));
     }
 }

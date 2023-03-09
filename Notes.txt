@@ -1,22 +1,50 @@
-TODO:
-- fix funding / marketing funding / team funding stuff
+-------------------------------------------------------------------------------
+TODO (TESTING):
+
 - Test all new changes
     - gateKeeper and setGateKeeping both onlyOwner and as poll
-    - new state changes when poll is passed
-    - removeVotesSpecified
+    - removeVotesFromPoll
     - removeAllVotes
-    - passPoll
-    - endPoll
-    - transferOwnership
-    - setGateKeeping
-    - queryEndTime
-- Add proportion mapping
-- Add revokeALlVotes
-- Add list of votes to ongoing polls for each user
-- Add Dao Description
+- Test payTeam -> Change .transfer to .call ?
+- Test activePolls 
+- Possible exploit -> what happens if a poll has passed and someone goes to remove votes
+    technically since their votes still exist and there's a balance of tokens, the advocate could remove tokens
+- add test with MULTIPLE advocates when poll is passed/ended
+- Test migrate Treasury
+- Test addVote within 5minute period of purchase of tokens
 
+-------------------------------------------------------------------------------
+TODO (BUG FIXES / ADDITIONS):
+
+- fix funding / marketing funding / team funding stuff
+- Add VIEW function to return proportion of pollNum
+- Add revokeAllVotes
+- Add list of votes to ongoing polls for each user -> activePolls?
+- Add Dao Description
+- Add better method for tracking users and their votes
+    - As a user I want to see a separate page of polls I have voted for and individually remove my votes If I need to
+- Add contract token balance security -> If a vote is added or removed, check contract balance
+
+-------------------------------------------------------------------------------
 Changes:
+
 - an OWNER can hard stop or hard pass an active poll
 - if gatekeep is ENABLED, a gatekeeper must be the last vote on a poll to pass it
 - added activePolls array which keeps a library of all active polls.
     - Will be useful for front end
+- added advocateFor which maps addresses to an array of polls they have votes for.
+- removeAllVotes will iterate through all ACTIVE polls instead of all polls in general.
+- Added queryEndTime()
+- Added isActive when voters remove votes -> fixes possible exploit
+- Removed historicalTally -> unnecessary
+
+Historical Data:
+- polls[_pollNum][voter]          // Double Mapping of pollNum to amount of votes per voter
+- voterLibrary                    // Mapping of pollNum to array of addresses of voters
+- totalVotes                      // Mapping of pollNum to amount of total votes
+- pollStartTime                   // Mapping of pollNum to starting timestamp -> start timestamp is always block.timestamp of
+                                  //   when poll was created. Could potentially remove this variable
+- pollEndTime                     // Mapping of pollNum to ending timestamp
+
+Non-Historical Data:
+- uint[] activePolls

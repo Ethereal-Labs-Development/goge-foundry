@@ -409,8 +409,8 @@ contract GogeDAO is Owned {
 
     /// @notice Will take the BNB balance within teamBalance and pay team members.
     function payTeam() public {
-        uint256 amount = teamBalance.div(teamMembers.length);
-        uint256 l = teamMembers.length.sub(1);
+        uint256 amount = teamBalance / teamMembers.length;
+        uint256 l = teamMembers.length - 1;
 
         if (l > 0) {
             for(uint256 i = 0; i < l; i++) {

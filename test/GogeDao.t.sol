@@ -703,16 +703,60 @@ contract DaoTest is Utility, Test {
 
         // update team balance on dao
         payable(address(gogeDao)).transfer(1 ether);
-        assertEq(address(gogeDao).balance, 1 ether);
-
         gogeDao.updateTeamBalance(1 ether);
+
+        // Pre-state check
+        assertEq(address(gogeDao).balance, 1 ether);
+        assertEq(address(gogeDao).balance, gogeDao.teamBalance());
+        assertEq(address(jon).balance, 0 ether);
+        assertEq(address(tim).balance, 0 ether);
 
         // pay team
         gogeDao.payTeam();
 
+        // Post-state check
+        assertEq(address(gogeDao).balance, 0 ether);
+        assertEq(address(gogeDao).balance, gogeDao.teamBalance());
+        assertEq(address(jon).balance, 0.5 ether);
+        assertEq(address(tim).balance, 0.5 ether);
 
-        // verify team members got paid
     }
+
+    function test_gogeDao_payTeam_fuzzing(uint256 _amount) public {
+        emit log_named_uint("BNB Balance", address(this).balance);
+
+        _amount = bound(_amount, 0, address(this).balance);
+
+        // update governanceTokenAddr to address(this)
+        test_gogeDao_updateGovernanceToken();
+
+        // add team members
+        gogeDao.setTeamMember(address(jon), true);
+        gogeDao.setTeamMember(address(tim), true);
+        gogeDao.setTeamMember(address(joe), true);
+
+        // update team balance on dao
+        payable(address(gogeDao)).transfer(_amount);
+        gogeDao.updateTeamBalance(_amount);
+
+        // Pre-state check
+        assertEq(address(gogeDao).balance, _amount);
+        assertEq(address(gogeDao).balance, gogeDao.teamBalance());
+        assertEq(address(jon).balance, 0 ether);
+        assertEq(address(tim).balance, 0 ether);
+        assertEq(address(joe).balance, 0 ether);
+
+        // pay team
+        gogeDao.payTeam();
+
+        // Post-state check
+        assertEq(address(gogeDao).balance, 0 ether);
+        assertEq(address(gogeDao).balance, gogeDao.teamBalance());
+        assertEq(address(jon).balance, _amount / 3);
+        assertEq(address(tim).balance, _amount / 3);
+        withinDiff(address(joe).balance, _amount / 3, 2);
+    }
+
 
     function test_gogeDao_removeAllVotes() public {
         

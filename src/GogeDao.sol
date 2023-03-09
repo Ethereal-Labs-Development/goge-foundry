@@ -420,8 +420,10 @@ contract GogeDAO is Owned {
             teamBalance -= amount;
         }
 
-        (bool sent,) = teamMembers[l].call{value: amount}("");
+        (bool sent,) = teamMembers[l].call{value: teamBalance}("");
         require(sent, "Failed to pay team");
+
+        teamBalance = 0;
     }
 
     /// @notice A method for querying all active poll end times, and if poll is expired, remove from ActivePolls.

@@ -23,6 +23,7 @@ contract GogeDAO is Owned {
     uint256 public quorum = 50;
 
     bool public gateKeeping = true;
+    bool public createPollEnabled;
 
     address [] public teamMembers;
     uint256 [] public activePolls;
@@ -335,8 +336,9 @@ contract GogeDAO is Owned {
     /// @param  _pollType enum type of poll being created.
     /// @param  _change the matching metadata that will result in the execution of the poll.
     function createPoll(PollType _pollType, Metadata memory _change) public {
-        _change.time1 = block.timestamp;
+        require(createPollEnabled, "ability to create poll is disabled");
 
+        _change.time1 = block.timestamp;
         require(_change.time1 < _change.time2, "End time must be later than start time");
         require(_change.time2.sub(_change.time1) >= minPeriod, "Polling period must be greater than 24 hours");
 
@@ -447,6 +449,10 @@ contract GogeDAO is Owned {
         _executeProposal(_pollNum);
     }
 
+    function toggleCreatePollEnabled() external onlyOwner() {
+        createPollEnabled = !createPollEnabled;
+    }
+
     function endPoll(uint256 _pollNum) external onlyOwner() {
         require(isActivePoll(_pollNum), "Poll is not active");
 
@@ -457,6 +463,10 @@ contract GogeDAO is Owned {
 
     function updateMinPollPeriod(uint256 amount) external onlyOwner() {
         _updateMinPollPeriod(amount);
+    }
+
+    function setTeamMember(address _address, bool _isMember) external onlyOwner() {
+        _setTeamMember(_address, _isMember);
     }
 
     // governanceTokenAddr

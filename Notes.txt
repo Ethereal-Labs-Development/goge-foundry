@@ -5,13 +5,10 @@ TODO (TESTING):
     - gateKeeper and setGateKeeping both onlyOwner and as poll
     - removeVotesFromPoll
     - removeAllVotes
-    - transferOwnership
-    - setGateKeeping
 - Test payTeam -> Change .transfer to .call ?
 - Test activePolls 
 - Possible exploit -> what happens if a poll has passed and someone goes to remove votes
-    technically since their votes still exist and there's a balance of tokens, the advocate could remove tokens.
-- add enableCreatePoll
+    technically since their votes still exist and there's a balance of tokens, the advocate could remove tokens
 - add test with MULTIPLE advocates when poll is passed/ended
 - Test migrate Treasury
 - Test addVote within 5minute period of purchase of tokens

@@ -48,6 +48,8 @@ contract DaoTest is Utility, Test {
 
         gogeToken.enableTrading();
         gogeToken.setGogeDao(address(gogeDao));
+
+        gogeDao.toggleCreatePollEnabled();
     }
 
 
@@ -110,7 +112,7 @@ contract DaoTest is Utility, Test {
         // TODO: Add voterLibrary and advocateFor state changes
 
         // Verify quorum
-        uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve(); // => 10%
+        uint256 num = gogeDao.getProportion(1); // => 10%
         assertEq(num, 10);
     }
 
@@ -169,8 +171,7 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.totalVotes(1), joe_votes);
 
         // Verify quorum
-        uint256 num = (gogeDao.totalVotes(1) * 100) /
-            gogeToken.getCirculatingMinusReserve(); // => 10%
+        uint256 num = gogeDao.getProportion(1); // => 10%
         emit log_uint(num);
     }
 
@@ -691,7 +692,20 @@ contract DaoTest is Utility, Test {
     }
 
     function test_gogeDao_payTeam() public {
+        emit log_named_uint("BNB Balance", address(this).balance);
+        // change governance token to this address so we can call updateTeamBalance
+            // poll
+        // add team members
+        // pay team
+        // verify team members got paid
+    }
+
+    function test_gogeDao_removeAllVotes() public {
         
+    }
+
+    function test_gogeDao_removeVotesFromPoll() public {
+
     }
 
 
@@ -1058,6 +1072,51 @@ contract DaoTest is Utility, Test {
 
         // Verify quorum math.
         uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();
-        assertTrue(num >= gogeDao.quorum());        
+        assertTrue(num >= gogeDao.quorum());
+    }
+
+    function test_gogeDao_updateGovernanceToken() public {
+
+        // NOTE create poll
+
+        // create poll metadata
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "I want to propose we update the governance token to this address";
+        metadata.time2 = block.timestamp + 2 days;
+        metadata.addr1 = address(this);
+
+        // create poll
+        gogeDao.createPoll(GogeDAO.PollType.updateGovernanceToken, metadata);
+
+        // Verify state change
+        assertEq(gogeDao.pollNum(), 1);
+        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.updateGovernanceToken);
+
+        // Verify poll metadata
+        assertEq(gogeDao.getMetadata(1).description, "I want to propose we update the governance token to this address");
+        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
+        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).addr1, address(this));
+
+        // Pre-state check
+        assertEq(gogeDao.passed(1), false);
+        assertEq(gogeDao.governanceTokenAddr(), address(gogeToken));
+
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
+        assertEq(activePolls[0], 1);
+
+        // NOTE pass poll
+
+        // pass poll
+        //assert(dev.try_passPoll(address(gogeDao), 1));
+        gogeDao.passPoll(1);
+
+        // Post-state check
+        assertEq(gogeDao.passed(1), true);
+        assertEq(gogeDao.governanceTokenAddr(), address(this));
+
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
     }
 }

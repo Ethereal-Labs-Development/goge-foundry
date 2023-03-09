@@ -412,12 +412,14 @@ contract GogeDAO is Owned {
         uint256 amount = teamBalance.div(teamMembers.length);
         uint256 l = teamMembers.length.sub(1);
 
-        for(uint256 i = 0; i < l; i++) {
+        if (l > 0) {
+            for(uint256 i = 0; i < l; i++) {
 
-            (bool sent,) = teamMembers[i].call{value: amount}("");
-            require(sent, "Failed to pay team");
+                (bool sent,) = teamMembers[i].call{value: amount}("");
+                require(sent, "Failed to pay team");
 
-            teamBalance -= amount;
+                teamBalance -= amount;
+            }
         }
 
         (bool sent,) = teamMembers[l].call{value: teamBalance}("");

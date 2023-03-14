@@ -65,6 +65,26 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.pollNum(), 0);
     }
 
+    
+    // ~~ Utility Functions ~~
+
+    /// @notice Creates a mock poll
+    function create_mock_poll() public {
+        uint256 _pollNum = gogeDao.pollNum();
+
+        // create poll metadata
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "This is a mock poll, for testing";
+        metadata.endTime = block.timestamp + 5 days;
+
+        // create poll
+        gogeDao.createPoll(GogeDAO.PollType.other, metadata);
+
+        // Verify state change
+        assertEq(gogeDao.pollNum(), _pollNum + 1);
+        assertEq(gogeDao.getMetadata(gogeDao.pollNum()).description, "This is a mock poll, for testing");
+    }
+
 
     // ~~ Unit Tests ~~
 
@@ -82,6 +102,7 @@ contract DaoTest is Utility, Test {
 
         // Verify state change
         assertEq(gogeDao.pollNum(), 1);
+        assertEq(gogeDao.pollAuthor(1), address(this));
         assert(gogeDao.pollTypes(1) == GogeDAO.PollType.modifyBlacklist);
 
         assertEq(gogeDao.getMetadata(1).description, "I want to add Joe to the naughty list");
@@ -774,7 +795,45 @@ contract DaoTest is Utility, Test {
 
 
     function test_gogeDao_removeAllVotes() public {
-        
+        // Create 3 polls
+        create_mock_poll();
+        create_mock_poll();
+        create_mock_poll();
+
+        // Send Joe tokens
+        gogeToken.transfer(address(joe), 3_000 ether);
+        assertEq(gogeToken.balanceOf(address(joe)), 3_000 ether);
+
+        // Joe adds votes to all 3 polls
+        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), 3_000 ether));
+        assert(joe.try_addVote(address(gogeDao), 1, 1_000 ether));
+        assert(joe.try_addVote(address(gogeDao), 2, 1_000 ether));
+        assert(joe.try_addVote(address(gogeDao), 3, 1_000 ether));
+
+        // Verify state
+        assertEq(gogeToken.balanceOf(address(joe)), 0);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 3_000 ether);
+
+        assertEq(gogeDao.polls(1, address(joe)), 1_000 ether);
+        assertEq(gogeDao.totalVotes(1), 1_000 ether);
+        assertEq(gogeDao.polls(2, address(joe)), 1_000 ether);
+        assertEq(gogeDao.totalVotes(2), 1_000 ether);
+        assertEq(gogeDao.polls(3, address(joe)), 1_000 ether);
+        assertEq(gogeDao.totalVotes(3), 1_000 ether);
+
+        // Joe removes all votes
+        assert(joe.try_removeAllVotes(address(gogeDao)));
+
+        // Verify state
+        assertEq(gogeToken.balanceOf(address(joe)), 3_000 ether);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 0);
+
+        assertEq(gogeDao.polls(1, address(joe)), 0);
+        assertEq(gogeDao.totalVotes(1), 0);
+        assertEq(gogeDao.polls(2, address(joe)), 0);
+        assertEq(gogeDao.totalVotes(2), 0);
+        assertEq(gogeDao.polls(3, address(joe)), 0);
+        assertEq(gogeDao.totalVotes(3), 0);
     }
 
     function test_gogeDao_removeVotesFromPoll() public {

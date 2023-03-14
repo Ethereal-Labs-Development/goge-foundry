@@ -363,7 +363,7 @@ contract GogeDAO is Owned {
     /// @notice A method for a voter to remove their votes from all active polls.
     function removeAllVotes() public {
         for (uint256 i = 0; i < activePolls.length; i++) {
-            _removeVote(i);
+            _removeVote(activePolls[i]);
         }
     }
 
@@ -691,7 +691,7 @@ contract GogeDAO is Owned {
         uint256 l = advocateFor[_advocate].length;
         for (uint256 i = 0; i < l; i++) {
             if (advocateFor[_advocate][i] == _pollNum) {
-                advocateFor[_advocate][i] = advocateFor[_advocate][l - 1];
+                advocateFor[_advocate][i] = advocateFor[_advocate][--l];
                 advocateFor[_advocate].pop();
             }
         }

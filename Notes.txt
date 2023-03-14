@@ -14,10 +14,7 @@ TODO (TESTING):
 TODO (BUG FIXES / ADDITIONS):
 
 - fix funding / marketing funding / team funding stuff
-- Add VIEW function to return proportion of pollNum
 - Add Dao Description
-- Add better method for tracking users and their votes
-    - As a user I want to see a separate page of polls I have voted for and individually remove my votes If I need to
 - Add contract token balance security -> If a vote is added or removed, check contract balance
 
 -------------------------------------------------------------------------------

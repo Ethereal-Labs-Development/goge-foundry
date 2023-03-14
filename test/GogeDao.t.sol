@@ -73,7 +73,7 @@ contract DaoTest is Utility, Test {
         // create poll metadata
         GogeDAO.Metadata memory metadata;
         metadata.description = "I want to add Joe to the naughty list";
-        metadata.time2 = block.timestamp + 2 days;
+        metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(joe);
         metadata.boolVar = true;
 
@@ -85,8 +85,7 @@ contract DaoTest is Utility, Test {
         assert(gogeDao.pollTypes(1) == GogeDAO.PollType.modifyBlacklist);
 
         assertEq(gogeDao.getMetadata(1).description, "I want to add Joe to the naughty list");
-        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
-        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).addr1, address(joe));
         assertEq(gogeDao.getMetadata(1).boolVar, true);
 
@@ -312,7 +311,7 @@ contract DaoTest is Utility, Test {
         // create poll metadata
         GogeDAO.Metadata memory metadata;
         metadata.description = "I want to propose a funding";
-        metadata.time2 = block.timestamp + 2 days;
+        metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(joe);
         metadata.addr2 = BUSD;
         metadata.amount = 1_000 ether;
@@ -326,8 +325,7 @@ contract DaoTest is Utility, Test {
 
         // Verify poll metadata
         assertEq(gogeDao.getMetadata(1).description, "I want to propose a funding");
-        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
-        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).addr1, address(joe));
         assertEq(gogeDao.getMetadata(1).addr2, BUSD);
         assertEq(gogeDao.getMetadata(1).amount, 1_000 ether);
@@ -799,7 +797,7 @@ contract DaoTest is Utility, Test {
         // create poll metadata
         GogeDAO.Metadata memory metadata;
         metadata.description = "I want to propose a tax change";
-        metadata.time2 = block.timestamp + 2 days;
+        metadata.endTime = block.timestamp + 2 days;
         metadata.fee1 = 8;  // cakeDividendRewardsFee
         metadata.fee2 = 3;  // marketingFee
         metadata.fee3 = 4;  // buyBackFee
@@ -814,8 +812,7 @@ contract DaoTest is Utility, Test {
 
         // Verify poll metadata
         assertEq(gogeDao.getMetadata(1).description, "I want to propose a tax change");
-        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
-        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).fee1, 8);
         assertEq(gogeDao.getMetadata(1).fee2, 3);
         assertEq(gogeDao.getMetadata(1).fee3, 4);
@@ -869,7 +866,7 @@ contract DaoTest is Utility, Test {
         // create poll metadata
         GogeDAO.Metadata memory metadata;
         metadata.description = "I want to propose a funding";
-        metadata.time2 = block.timestamp + 2 days;
+        metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(joe);
         metadata.addr2 = BUSD;
         metadata.amount = 1_000 ether;
@@ -883,8 +880,7 @@ contract DaoTest is Utility, Test {
 
         // Verify poll metadata
         assertEq(gogeDao.getMetadata(1).description, "I want to propose a funding");
-        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
-        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).addr1, address(joe));
         assertEq(gogeDao.getMetadata(1).addr2, BUSD);
         assertEq(gogeDao.getMetadata(1).amount, 1_000 ether);
@@ -932,7 +928,7 @@ contract DaoTest is Utility, Test {
         // create poll metadata
         GogeDAO.Metadata memory metadata;
         metadata.description = "I want to propose setGogeDao";
-        metadata.time2 = block.timestamp + 2 days;
+        metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(222);
 
         // create poll
@@ -944,8 +940,7 @@ contract DaoTest is Utility, Test {
 
         // Verify poll metadata
         assertEq(gogeDao.getMetadata(1).description, "I want to propose setGogeDao");
-        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
-        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).addr1, address(222));
 
         // NOTE pass poll
@@ -987,7 +982,7 @@ contract DaoTest is Utility, Test {
         // create poll metadata
         GogeDAO.Metadata memory metadata;
         metadata.description = "I want to propose setCex";
-        metadata.time2 = block.timestamp + 2 days;
+        metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(222);
 
         // create poll
@@ -999,8 +994,7 @@ contract DaoTest is Utility, Test {
 
         // Verify poll metadata
         assertEq(gogeDao.getMetadata(1).description, "I want to propose setCex");
-        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
-        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).addr1, address(222));
 
         // NOTE pass poll
@@ -1042,7 +1036,7 @@ contract DaoTest is Utility, Test {
         // create poll metadata
         GogeDAO.Metadata memory metadata;
         metadata.description = "I want to propose setDex";
-        metadata.time2 = block.timestamp + 2 days;
+        metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(222);
         metadata.boolVar = true;
 
@@ -1055,8 +1049,7 @@ contract DaoTest is Utility, Test {
 
         // Verify poll metadata
         assertEq(gogeDao.getMetadata(1).description, "I want to propose setDex");
-        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
-        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).addr1, address(222));
         assertEq(gogeDao.getMetadata(1).boolVar, true);
 
@@ -1099,7 +1092,7 @@ contract DaoTest is Utility, Test {
         // create poll metadata
         GogeDAO.Metadata memory metadata;
         metadata.description = "I want to propose excludeFromCirculatingSupply";
-        metadata.time2 = block.timestamp + 2 days;
+        metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(222);
         metadata.boolVar = true;
 
@@ -1112,8 +1105,7 @@ contract DaoTest is Utility, Test {
 
         // Verify poll metadata
         assertEq(gogeDao.getMetadata(1).description, "I want to propose excludeFromCirculatingSupply");
-        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
-        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).addr1, address(222));
         assertEq(gogeDao.getMetadata(1).boolVar, true);
 
@@ -1150,6 +1142,7 @@ contract DaoTest is Utility, Test {
         assertTrue(num >= gogeDao.quorum());
     }
 
+    /// @notice Verifies correct state changes when a poll of pollType updateGovernanceToken is created and executed.
     function test_gogeDao_updateGovernanceToken() public {
 
         // NOTE create poll
@@ -1157,7 +1150,7 @@ contract DaoTest is Utility, Test {
         // create poll metadata
         GogeDAO.Metadata memory metadata;
         metadata.description = "I want to propose we update the governance token to this address";
-        metadata.time2 = block.timestamp + 2 days;
+        metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(this);
 
         // create poll
@@ -1169,8 +1162,7 @@ contract DaoTest is Utility, Test {
 
         // Verify poll metadata
         assertEq(gogeDao.getMetadata(1).description, "I want to propose we update the governance token to this address");
-        assertEq(gogeDao.getMetadata(1).time1, block.timestamp);
-        assertEq(gogeDao.getMetadata(1).time2, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).addr1, address(this));
 
         // Pre-state check

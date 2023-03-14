@@ -7,7 +7,7 @@ import "./extensions/IGogeERC20.sol";
 import "./libraries/SafeMath.sol";
 
 /*
- TODO: Add description
+    TODO: Add description
 */
 
 contract GogeDAO is Owned {
@@ -34,6 +34,7 @@ contract GogeDAO is Owned {
     mapping(uint256 => uint256) public totalVotes;
     mapping(uint256 => uint256) public pollStartTime;
     mapping(uint256 => uint256) public pollEndTime;
+    mapping(uint256 => address) public pollAuthor;
 
     mapping(uint256 => bool) public passed;
     mapping(address => bool) public gateKeeper;
@@ -77,8 +78,7 @@ contract GogeDAO is Owned {
 
     struct Metadata {
         string description;
-        uint256 time1;
-        uint256 time2;
+        uint256 endTime;
         uint8 fee1;
         uint8 fee2;
         uint8 fee3;
@@ -92,7 +92,6 @@ contract GogeDAO is Owned {
 
     struct TaxChange {
         string description;
-        uint256 startTime;
         uint256 endTime;
         uint8 cakeDividendsFee;
         uint8 marketingFee;
@@ -102,7 +101,6 @@ contract GogeDAO is Owned {
 
     struct Funding {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address payable recipient;
         address token;
@@ -111,21 +109,18 @@ contract GogeDAO is Owned {
 
     struct SetGogeDao {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address addr;
     }
 
     struct SetCex {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address addr; 
     }
 
     struct SetDex {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address addr;
         bool boolVar;
@@ -133,7 +128,6 @@ contract GogeDAO is Owned {
 
     struct ExcludeFromCirculatingSupply {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address addr;
         bool boolVar;
@@ -141,28 +135,24 @@ contract GogeDAO is Owned {
 
     struct UpdateDividendToken {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address addr;
     }
 
     struct UpdateMarketingWallet {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address payable addr;
     }
 
     struct UpdateTeamWallet {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address payable addr;
     }
 
     struct UpdateTeamMember {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address payable addr;
         bool boolVar;
@@ -170,7 +160,6 @@ contract GogeDAO is Owned {
 
     struct UpdateGateKeeper {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address addr;
         bool boolVar;  
@@ -178,56 +167,48 @@ contract GogeDAO is Owned {
 
     struct SetGateKeeping {
         string description;
-        uint256 startTime;
         uint256 endTime;
         bool boolVar;      
     }
 
     struct SetBuyBackEnabled {
         string description;
-        uint256 startTime;
         uint256 endTime;
         bool boolVar;      
     }
 
     struct SetCakeDividendEnabled {
         string description;
-        uint256 startTime;
         uint256 endTime;
         bool boolVar;      
     }
 
     struct SetMarketingEnabled {
         string description;
-        uint256 startTime;
         uint256 endTime;
         bool boolVar;      
     }
 
     struct SetTeamEnabled {
         string description;
-        uint256 startTime;
         uint256 endTime;
         bool boolVar;      
     }
 
     struct UpdateCakeDividendTracker {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address payable addr;
     }
 
     struct UpdateUniswapV2Router {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address payable addr;
     }
 
     struct ExcludeFromFees {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address payable addr;
         bool boolVar;
@@ -235,14 +216,12 @@ contract GogeDAO is Owned {
 
     struct ExcludeFromDividends {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address payable addr;
     }
 
     struct ModifyBlacklist {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address payable addr;
         bool blacklisted;
@@ -250,14 +229,12 @@ contract GogeDAO is Owned {
 
     struct TransferOwnership {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address payable addr;
     }
 
     struct MigrateTreasury {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address payable addr;
         address token;
@@ -265,32 +242,28 @@ contract GogeDAO is Owned {
 
     struct SetQuorum {
         string description;
-        uint256 startTime;
         uint256 endTime;
         uint256 amount;
     }
 
     struct SetMinPollPeriod {
         string description;
-        uint256 startTime;
         uint256 endTime;
         uint256 amount;
     }
 
     struct UpdateGovernanceToken {
         string description;
-        uint256 startTime;
         uint256 endTime;
         address addr;
     }
 
     struct Other {
         string description;
-        uint256 startTime;
         uint256 endTime;
     }
 
-    event ProposalCreated(uint256 pollNum, PollType pollType, uint256 startTime, uint256 endTime);
+    event ProposalCreated(uint256 pollNum, PollType pollType, uint256 endTime);
     event ProposalPassed(uint256 pollNum);
     event GateKeepingModified(bool enabled);
 
@@ -338,18 +311,18 @@ contract GogeDAO is Owned {
     function createPoll(PollType _pollType, Metadata memory _change) public {
         require(createPollEnabled, "ability to create poll is disabled");
 
-        _change.time1 = block.timestamp;
-        require(_change.time1 < _change.time2, "End time must be later than start time");
-        require(_change.time2.sub(_change.time1) >= minPeriod, "Polling period must be greater than 24 hours");
+        require(block.timestamp < _change.endTime, "End time must be later than start time");
+        require(_change.endTime.sub(block.timestamp) >= minPeriod, "Polling period must be greater than 24 hours");
 
-        emit ProposalCreated(pollNum, _pollType, _change.time1, _change.time2);
+        emit ProposalCreated(pollNum, _pollType, _change.endTime);
 
         pollNum += 1;
 
         pollTypes[pollNum]     = _pollType;
         pollMap[pollNum]       = _change;
-        pollStartTime[pollNum] = _change.time1;
-        pollEndTime[pollNum]   = _change.time2;
+        pollStartTime[pollNum] = block.timestamp;
+        pollEndTime[pollNum]   = _change.endTime;
+        pollAuthor[pollNum]    = msg.sender;
 
         activePolls.push(pollNum);
     }
@@ -818,8 +791,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         TaxChange memory taxChange;
         taxChange.description = poll.description;
-        taxChange.startTime = poll.time1;
-        taxChange.endTime = poll.time2;
+        taxChange.endTime = poll.endTime;
         taxChange.cakeDividendsFee = poll.fee1;
         taxChange.marketingFee = poll.fee2;
         taxChange.buyBackFee = poll.fee3;
@@ -833,8 +805,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         Funding memory funding;
         funding.description = poll.description;
-        funding.startTime = poll.time1;
-        funding.endTime = poll.time2;
+        funding.endTime = poll.endTime;
         funding.recipient = payable(poll.addr1);
         funding.token = poll.addr2;
         funding.amount = poll.amount;
@@ -847,8 +818,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         SetGogeDao memory setGogeDao;
         setGogeDao.description = poll.description;
-        setGogeDao.startTime = poll.time1;
-        setGogeDao.endTime = poll.time2;
+        setGogeDao.endTime = poll.endTime;
         setGogeDao.addr = poll.addr1;
 
         return (totalVotes[_pollNum], setGogeDao, passed[_pollNum]);
@@ -859,8 +829,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         SetCex memory setCex;
         setCex.description = poll.description;
-        setCex.startTime = poll.time1;
-        setCex.endTime = poll.time2;
+        setCex.endTime = poll.endTime;
         setCex.addr = poll.addr1;
 
         return (totalVotes[_pollNum], setCex, passed[_pollNum]);
@@ -871,8 +840,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         SetDex memory setDex;
         setDex.description = poll.description;
-        setDex.startTime = poll.time1;
-        setDex.endTime = poll.time2;
+        setDex.endTime = poll.endTime;
         setDex.addr = poll.addr1;
         setDex.boolVar = poll.boolVar;
 
@@ -884,8 +852,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         ExcludeFromCirculatingSupply memory excludeFromCirculatingSupply;
         excludeFromCirculatingSupply.description = poll.description;
-        excludeFromCirculatingSupply.startTime = poll.time1;
-        excludeFromCirculatingSupply.endTime = poll.time2;
+        excludeFromCirculatingSupply.endTime = poll.endTime;
         excludeFromCirculatingSupply.addr = poll.addr1;
         excludeFromCirculatingSupply.boolVar = poll.boolVar;
 
@@ -897,8 +864,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         UpdateDividendToken memory updateDividendToken;
         updateDividendToken.description = poll.description;
-        updateDividendToken.startTime = poll.time1;
-        updateDividendToken.endTime = poll.time2;
+        updateDividendToken.endTime = poll.endTime;
         updateDividendToken.addr = poll.addr1;
 
         return (totalVotes[_pollNum], updateDividendToken, passed[_pollNum]);
@@ -909,8 +875,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         UpdateMarketingWallet memory updateMarketingWallet;
         updateMarketingWallet.description = poll.description;
-        updateMarketingWallet.startTime = poll.time1;
-        updateMarketingWallet.endTime = poll.time2;
+        updateMarketingWallet.endTime = poll.endTime;
         updateMarketingWallet.addr = payable(poll.addr1);
 
         return (totalVotes[_pollNum], updateMarketingWallet, passed[_pollNum]);
@@ -921,8 +886,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         UpdateTeamWallet memory updateTeamWallet;
         updateTeamWallet.description = poll.description;
-        updateTeamWallet.startTime = poll.time1;
-        updateTeamWallet.endTime = poll.time2;
+        updateTeamWallet.endTime = poll.endTime;
         updateTeamWallet.addr = payable(poll.addr1);
 
         return (totalVotes[_pollNum], updateTeamWallet, passed[_pollNum]);
@@ -933,8 +897,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         UpdateTeamMember memory updateTeamMember;
         updateTeamMember.description = poll.description;
-        updateTeamMember.startTime = poll.time1;
-        updateTeamMember.endTime = poll.time2;
+        updateTeamMember.endTime = poll.endTime;
         updateTeamMember.addr = payable(poll.addr1);
         updateTeamMember.boolVar = poll.boolVar;
 
@@ -946,8 +909,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         UpdateGateKeeper memory updateGateKeeper;
         updateGateKeeper.description = poll.description;
-        updateGateKeeper.startTime = poll.time1;
-        updateGateKeeper.endTime = poll.time2;
+        updateGateKeeper.endTime = poll.endTime;
         updateGateKeeper.addr = poll.addr1;
         updateGateKeeper.boolVar = poll.boolVar;
 
@@ -959,8 +921,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         SetGateKeeping memory setGateKeeping;
         setGateKeeping.description = poll.description;
-        setGateKeeping.startTime = poll.time1;
-        setGateKeeping.endTime = poll.time2;
+        setGateKeeping.endTime = poll.endTime;
         setGateKeeping.boolVar = poll.boolVar;
 
         return (totalVotes[_pollNum], setGateKeeping, passed[_pollNum]);  
@@ -971,8 +932,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         SetBuyBackEnabled memory setBuyBackEnabled;
         setBuyBackEnabled.description = poll.description;
-        setBuyBackEnabled.startTime = poll.time1;
-        setBuyBackEnabled.endTime = poll.time2;
+        setBuyBackEnabled.endTime = poll.endTime;
         setBuyBackEnabled.boolVar = poll.boolVar;
 
         return (totalVotes[_pollNum], setBuyBackEnabled, passed[_pollNum]);  
@@ -983,8 +943,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         SetCakeDividendEnabled memory setCakeDividendEnabled;
         setCakeDividendEnabled.description = poll.description;
-        setCakeDividendEnabled.startTime = poll.time1;
-        setCakeDividendEnabled.endTime = poll.time2;
+        setCakeDividendEnabled.endTime = poll.endTime;
         setCakeDividendEnabled.boolVar = poll.boolVar;
 
         return (totalVotes[_pollNum], setCakeDividendEnabled, passed[_pollNum]);  
@@ -995,8 +954,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         SetMarketingEnabled memory setMarketingEnabled;
         setMarketingEnabled.description = poll.description;
-        setMarketingEnabled.startTime = poll.time1;
-        setMarketingEnabled.endTime = poll.time2;
+        setMarketingEnabled.endTime = poll.endTime;
         setMarketingEnabled.boolVar = poll.boolVar;
 
         return (totalVotes[_pollNum], setMarketingEnabled, passed[_pollNum]);  
@@ -1007,8 +965,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         SetTeamEnabled memory setTeamEnabled;
         setTeamEnabled.description = poll.description;
-        setTeamEnabled.startTime = poll.time1;
-        setTeamEnabled.endTime = poll.time2;
+        setTeamEnabled.endTime = poll.endTime;
         setTeamEnabled.boolVar = poll.boolVar;
 
         return (totalVotes[_pollNum], setTeamEnabled, passed[_pollNum]);  
@@ -1019,8 +976,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         UpdateCakeDividendTracker memory updateCakeDividendTracker;
         updateCakeDividendTracker.description = poll.description;
-        updateCakeDividendTracker.startTime = poll.time1;
-        updateCakeDividendTracker.endTime = poll.time2;
+        updateCakeDividendTracker.endTime = poll.endTime;
         updateCakeDividendTracker.addr = payable(poll.addr1);
 
         return (totalVotes[_pollNum], updateCakeDividendTracker, passed[_pollNum]);
@@ -1031,8 +987,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         UpdateUniswapV2Router memory updateUniswapV2Router;
         updateUniswapV2Router.description = poll.description;
-        updateUniswapV2Router.startTime = poll.time1;
-        updateUniswapV2Router.endTime = poll.time2;
+        updateUniswapV2Router.endTime = poll.endTime;
         updateUniswapV2Router.addr = payable(poll.addr1);
 
         return (totalVotes[_pollNum], updateUniswapV2Router, passed[_pollNum]);
@@ -1043,8 +998,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         ExcludeFromFees memory excludeFromFees;
         excludeFromFees.description = poll.description;
-        excludeFromFees.startTime = poll.time1;
-        excludeFromFees.endTime = poll.time2;
+        excludeFromFees.endTime = poll.endTime;
         excludeFromFees.addr = payable(poll.addr1);
         excludeFromFees.boolVar = poll.boolVar;
 
@@ -1056,8 +1010,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         ExcludeFromDividends memory excludeFromDividends;
         excludeFromDividends.description = poll.description;
-        excludeFromDividends.startTime = poll.time1;
-        excludeFromDividends.endTime = poll.time2;
+        excludeFromDividends.endTime = poll.endTime;
         excludeFromDividends.addr = payable(poll.addr1);
 
         return (totalVotes[_pollNum], excludeFromDividends, passed[_pollNum]);
@@ -1068,8 +1021,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         ModifyBlacklist memory modifyBlacklist;
         modifyBlacklist.description = poll.description;
-        modifyBlacklist.startTime = poll.time1;
-        modifyBlacklist.endTime = poll.time2;
+        modifyBlacklist.endTime = poll.endTime;
         modifyBlacklist.addr = payable(poll.addr1);
         modifyBlacklist.blacklisted = poll.boolVar;
 
@@ -1081,8 +1033,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         TransferOwnership memory transferOwnership;
         transferOwnership.description = poll.description;
-        transferOwnership.startTime = poll.time1;
-        transferOwnership.endTime = poll.time2;
+        transferOwnership.endTime = poll.endTime;
         transferOwnership.addr = payable(poll.addr1);
 
         return (totalVotes[_pollNum], transferOwnership, passed[_pollNum]);
@@ -1093,8 +1044,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         MigrateTreasury memory migrateTreasury;
         migrateTreasury.description = poll.description;
-        migrateTreasury.startTime = poll.time1;
-        migrateTreasury.endTime = poll.time2;
+        migrateTreasury.endTime = poll.endTime;
         migrateTreasury.addr = payable(poll.addr1);
         migrateTreasury.token = poll.addr2;
 
@@ -1106,8 +1056,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         SetQuorum memory setQuorum;
         setQuorum.description = poll.description;
-        setQuorum.startTime = poll.time1;
-        setQuorum.endTime = poll.time2;
+        setQuorum.endTime = poll.endTime;
         setQuorum.amount = poll.amount;
 
         return (totalVotes[_pollNum], setQuorum, passed[_pollNum]);   
@@ -1118,8 +1067,7 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         SetMinPollPeriod memory setMinPollPeriod;
         setMinPollPeriod.description = poll.description;
-        setMinPollPeriod.startTime = poll.time1;
-        setMinPollPeriod.endTime = poll.time2;
+        setMinPollPeriod.endTime = poll.endTime;
         setMinPollPeriod.amount = poll.amount;
 
         return (totalVotes[_pollNum], setMinPollPeriod, passed[_pollNum]);   
@@ -1130,22 +1078,20 @@ contract GogeDAO is Owned {
         Metadata memory poll = pollMap[_pollNum];
         UpdateGovernanceToken memory updateGovernanceToken;
         updateGovernanceToken.description = poll.description;
-        updateGovernanceToken.startTime = poll.time1;
-        updateGovernanceToken.endTime = poll.time2;
+        updateGovernanceToken.endTime = poll.endTime;
         updateGovernanceToken.addr = poll.addr1;
 
         return (totalVotes[_pollNum], updateGovernanceToken, passed[_pollNum]);
     }
 
-    function getOther(uint256 _pollNum) public view returns(uint256, string memory, uint256, uint256, bool) {
+    function getOther(uint256 _pollNum) public view returns(uint256, string memory, uint256, bool) {
         require(pollTypes[_pollNum] == PollType.other, "Not Other");
         Metadata memory poll = pollMap[_pollNum];
         Other memory other;
         other.description = poll.description;
-        other.startTime = poll.time1;
-        other.endTime = poll.time2;
+        other.endTime = poll.endTime;
 
-        return (totalVotes[_pollNum], poll.description, poll.time1, poll.time2, passed[_pollNum]);
+        return (totalVotes[_pollNum], poll.description, poll.endTime, passed[_pollNum]);
     }
     
 }

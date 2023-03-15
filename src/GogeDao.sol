@@ -369,6 +369,7 @@ contract GogeDAO is Owned {
 
     /// @notice A method for a voter to remove their votes from a single poll.
     function removeVotesFromPoll(uint256 _pollNum) public {
+        require(isActivePoll(_pollNum), "GogeDao.sol::removeVotesFromPoll() poll is not active");
         _removeVote(_pollNum);
     }
 
@@ -656,8 +657,6 @@ contract GogeDAO is Owned {
     /// @notice A method for a voter to remove their votes from a single poll.
     /// @param  _pollNum The poll number.
     function _removeVote(uint256 _pollNum) internal {
-        require(isActivePoll(_pollNum), "GogeDao.sol::removeVotesFromPoll() poll is not active");
-
         uint256 _numVotes = polls[_pollNum][msg.sender];
         if(_numVotes > 0) {
             polls[_pollNum][msg.sender] = 0;
@@ -720,7 +719,7 @@ contract GogeDAO is Owned {
         uint256 l = activePolls.length;
         for (uint256 i = 0; i < l; i++) {
             if (_pollNum == activePolls[i]) {
-                activePolls[i] = activePolls[l - 1];
+                activePolls[i] = activePolls[--l];
                 activePolls.pop();
             }
         }

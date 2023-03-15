@@ -837,7 +837,80 @@ contract DaoTest is Utility, Test {
     }
 
     function test_gogeDao_removeVotesFromPoll() public {
+        gogeDao.setGateKeeping(false);
+        gogeDao.transferOwnership(address(dev));
 
+        // Create 3 polls
+        create_mock_poll();
+        create_mock_poll();
+        create_mock_poll();
+
+        // Send Joe tokens
+        gogeToken.transfer(address(joe), 3_000 ether);
+        assertEq(gogeToken.balanceOf(address(joe)), 3_000 ether);
+
+        // Joe adds votes to all 3 polls
+        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), 3_000 ether));
+        assert(joe.try_addVote(address(gogeDao), 1, 1_000 ether));
+        assert(joe.try_addVote(address(gogeDao), 2, 1_000 ether));
+        assert(joe.try_addVote(address(gogeDao), 3, 1_000 ether));
+
+        // Verify state
+        assertEq(gogeToken.balanceOf(address(joe)), 0);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 3_000 ether);
+        assertEq(gogeDao.polls(1, address(joe)), 1_000 ether);
+        assertEq(gogeDao.totalVotes(1), 1_000 ether);
+        assertEq(gogeDao.polls(2, address(joe)), 1_000 ether);
+        assertEq(gogeDao.totalVotes(2), 1_000 ether);
+        assertEq(gogeDao.polls(3, address(joe)), 1_000 ether);
+        assertEq(gogeDao.totalVotes(3), 1_000 ether);
+
+        // Joe removes votes from poll 2
+        assert(joe.try_removeVotesFromPoll(address(gogeDao), 2));
+
+        // Verify state
+        assertEq(gogeToken.balanceOf(address(joe)), 1_000 ether);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 2_000 ether);
+        assertEq(gogeDao.polls(1, address(joe)), 1_000 ether);
+        assertEq(gogeDao.totalVotes(1), 1_000 ether);
+        assertEq(gogeDao.polls(2, address(joe)), 0);
+        assertEq(gogeDao.totalVotes(2), 0);
+        assertEq(gogeDao.polls(3, address(joe)), 1_000 ether);
+        assertEq(gogeDao.totalVotes(3), 1_000 ether);
+
+        // Joe removes votes from poll 1
+        assert(joe.try_removeVotesFromPoll(address(gogeDao), 1));
+
+        // Verify state
+        assertEq(gogeToken.balanceOf(address(joe)), 2_000 ether);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 1_000 ether);
+        assertEq(gogeDao.polls(1, address(joe)), 0);
+        assertEq(gogeDao.totalVotes(1), 0);
+        assertEq(gogeDao.polls(2, address(joe)), 0);
+        assertEq(gogeDao.totalVotes(2), 0);
+        assertEq(gogeDao.polls(3, address(joe)), 1_000 ether);
+        assertEq(gogeDao.totalVotes(3), 1_000 ether);
+
+        // Joe removes votes from poll 3
+        assert(joe.try_removeVotesFromPoll(address(gogeDao), 3));
+
+        // Verify state
+        assertEq(gogeToken.balanceOf(address(joe)), 3_000 ether);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 0);
+        assertEq(gogeDao.polls(1, address(joe)), 0);
+        assertEq(gogeDao.totalVotes(1), 0);
+        assertEq(gogeDao.polls(2, address(joe)), 0);
+        assertEq(gogeDao.totalVotes(2), 0);
+        assertEq(gogeDao.polls(3, address(joe)), 0);
+        assertEq(gogeDao.totalVotes(3), 0);
+
+        // dev ends all polls -> sanity check
+        assert(dev.try_endPoll(address(gogeDao), 1));
+        assert(dev.try_endPoll(address(gogeDao), 2));
+        assert(dev.try_endPoll(address(gogeDao), 3));
+
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
     }
 
 

@@ -793,7 +793,7 @@ contract DaoTest is Utility, Test {
         withinDiff(address(joe).balance, _amount / 3, 2);
     }
 
-
+    /// @notice Verify correct logic when removeAllVotes is called.
     function test_gogeDao_removeAllVotes() public {
         // Create 3 polls
         create_mock_poll();
@@ -836,6 +836,7 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.totalVotes(3), 0);
     }
 
+    /// @notice Verify correctness when removeVotesFromPoll is called.
     function test_gogeDao_removeVotesFromPoll() public {
         gogeDao.setGateKeeping(false);
         gogeDao.transferOwnership(address(dev));

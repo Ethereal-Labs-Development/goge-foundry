@@ -16,6 +16,8 @@ TODO (BUG FIXES / ADDITIONS):
 - fix funding / marketing funding / team funding stuff
 - Add Dao Description
 - Add contract token balance security -> If a vote is added or removed, check contract balance
+- Poll creators should hold a min number of tokens to create a poll
+- Add a 1 poll limit to creators
 
 -------------------------------------------------------------------------------
 Changes:
@@ -29,6 +31,8 @@ Changes:
 - Added queryEndTime()
 - Added isActive when voters remove votes -> fixes possible exploit
 - Removed historicalTally -> unnecessary
+- Starting time will now be set to the time the poll was created
+- poll authors must hold a certain number of tokens to create a poll -> minAuthorBal
 
 Historical Data:
 - polls[_pollNum][voter]          // Double Mapping of pollNum to amount of votes per voter

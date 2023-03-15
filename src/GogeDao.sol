@@ -4,19 +4,18 @@ pragma solidity ^0.8.6;
 
 import { Owned } from "./extensions/Owned.sol";
 import "./extensions/IGogeERC20.sol";
-import "./libraries/SafeMath.sol";
 
 /*
     TODO: Add description
 */
 
 contract GogeDAO is Owned {
-    using SafeMath for uint256;
-    
+
     address public governanceTokenAddr;
 
     uint256 public pollNum;
     uint256 public minPeriod = 86400;
+    uint256 public minAuthorBal = 10_000_000 ether;
 
     uint256 public marketingBalance;
     uint256 public teamBalance;
@@ -310,9 +309,10 @@ contract GogeDAO is Owned {
     /// @param  _change the matching metadata that will result in the execution of the poll.
     function createPoll(PollType _pollType, Metadata memory _change) public {
         require(createPollEnabled, "ability to create poll is disabled");
+        require(IGogeERC20(governanceTokenAddr).balanceOf(msg.sender) >= minAuthorBal, "Exceeds Balance");
 
         require(block.timestamp < _change.endTime, "End time must be later than start time");
-        require(_change.endTime.sub(block.timestamp) >= minPeriod, "Polling period must be greater than 24 hours");
+        require(_change.endTime - block.timestamp >= minPeriod, "Polling period must be greater than 24 hours");
 
         emit ProposalCreated(pollNum, _pollType, _change.endTime);
 
@@ -409,7 +409,9 @@ contract GogeDAO is Owned {
         uint counter;
         uint256[] memory expired;
         (expired, counter) = _findExpiredPolls();
+
         for (uint256 i = 0; i < counter; i++) {
+
             _updateEndTime(expired[i]);
             _removePollFromActivePolls(expired[i]);
             _refundVotersPostChange(expired[i]);
@@ -452,6 +454,10 @@ contract GogeDAO is Owned {
 
     function setTeamMember(address _address, bool _isMember) external onlyOwner() {
         _setTeamMember(_address, _isMember);
+    }
+
+    function updateMinAuthorBal(uint256 _amount) external onlyOwner() {
+        minAuthorBal = _amount;
     }
 
     // governanceTokenAddr
@@ -618,8 +624,10 @@ contract GogeDAO is Owned {
     function _findExpiredPolls() internal view returns (uint256[] memory expired, uint256 counter) {
         uint256 l = activePolls.length;
         expired = new uint256[](l);
+
         for (uint256 i = 0; i < l; i++) {
             uint256 endTime = pollEndTime[activePolls[i]];
+
             if (block.timestamp >= endTime) {
                 expired[counter++] = activePolls[i];
             }

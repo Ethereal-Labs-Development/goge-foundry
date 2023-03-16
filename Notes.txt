@@ -16,7 +16,7 @@ TODO (BUG FIXES / ADDITIONS):
 - fix funding / marketing funding / team funding stuff
 - Add Dao Description
 - Add contract token balance security -> If a vote is added or removed, check contract balance
-- Poll creators should hold a min number of tokens to create a poll
+- Poll creators should hold a min number of tokens to create a poll -> 10M tokens
 - Add a 1 poll limit to creators
 
 -------------------------------------------------------------------------------

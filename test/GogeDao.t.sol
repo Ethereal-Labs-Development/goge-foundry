@@ -795,6 +795,8 @@ contract DaoTest is Utility, Test {
 
     /// @notice Verify correct logic when removeAllVotes is called.
     function test_gogeDao_removeAllVotes() public {
+        gogeDao.updateMinPollsPerAuthor(3);
+
         // Create 3 polls
         create_mock_poll();
         create_mock_poll();
@@ -839,6 +841,7 @@ contract DaoTest is Utility, Test {
     /// @notice Verify correctness when removeVotesFromPoll is called.
     function test_gogeDao_removeVotesFromPoll() public {
         gogeDao.setGateKeeping(false);
+        gogeDao.updateMinPollsPerAuthor(3);
         gogeDao.transferOwnership(address(dev));
 
         // Create 3 polls
@@ -912,6 +915,132 @@ contract DaoTest is Utility, Test {
 
         uint256[] memory activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 0);
+    }
+
+    // TODO:
+    // - require poll author holds a min amount of tokens -> DONE!!
+    // - require when a poll is created, creator stakes their tokens.
+    // - require poll authors can only have 1 active poll at a time -> DONE!!
+    // - allow poll authors to end their poll
+
+    /// @notice Verifies state change when updateMinAuthorBal() is called
+    function test_gogeDao_updateMinAuthorBal() public {
+        // Pre-state check.
+        assertEq(gogeDao.minAuthorBal(), 10_000_000 ether);
+
+        // call updateMinAuthorBal.
+        gogeDao.updateMinAuthorBal(5_000_000 ether);
+
+        // Post-state check.
+        assertEq(gogeDao.minAuthorBal(), 5_000_000 ether);
+    }
+
+    /// @notice Verifies minAuthorBal implementation -> poll creators MUST have a token balance greater than minAuthorBal
+    function test_gogeDao_minAuthorBal() public {
+
+        // create poll metadata
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "This is a mock poll, for testing";
+        metadata.endTime = block.timestamp + 5 days;
+
+        // start prank
+        vm.startPrank(address(joe));
+
+        // expect next call to revert
+        vm.expectRevert("GogeDao.sol::createPoll() Insufficient balance of tokens");
+
+        // Joe attempts to call createPoll
+        gogeDao.createPoll(GogeDAO.PollType.other, metadata);
+
+        // stop prank
+        vm.stopPrank();
+
+        // transfer tokens to Joe
+        gogeToken.transfer(address(joe), gogeDao.minAuthorBal());
+        assertEq(IERC20(address(gogeToken)).balanceOf(address(joe)), gogeDao.minAuthorBal());
+
+        // start prank
+        vm.startPrank(address(joe));
+
+        // Joe calls createPoll
+        gogeDao.createPoll(GogeDAO.PollType.other, metadata);
+
+        // stop prank
+        vm.stopPrank();
+
+        // Post-state check.
+        assertEq(gogeDao.pollNum(), 1);
+        assertEq(gogeDao.getMetadata(gogeDao.pollNum()).description, "This is a mock poll, for testing");
+    }
+
+    /// @notice Verifies minPollsPerAuthor implementation -> Creators can only have x amount of activePolls at the same time ( x == minPollsPerAuthor ).
+    function test_gogeDao_minPollsPerAuthor() public {
+
+        // create poll metadata
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "This is a mock poll, for testing";
+        metadata.endTime = block.timestamp + 5 days;
+
+        // transfer tokens to Joe
+        gogeToken.transfer(address(joe), gogeDao.minAuthorBal());
+        assertEq(IERC20(address(gogeToken)).balanceOf(address(joe)), gogeDao.minAuthorBal());
+
+        // start prank
+        vm.startPrank(address(joe));
+
+        // Joe calls createPoll
+        gogeDao.createPoll(GogeDAO.PollType.other, metadata);
+
+        // stop prank
+        vm.stopPrank();
+
+        // Verify poll has been created
+        assertEq(gogeDao.pollNum(), 1);
+        assertEq(gogeDao.getMetadata(gogeDao.pollNum()).description, "This is a mock poll, for testing");
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
+
+        // start prank
+        vm.startPrank(address(joe));
+
+        // expect next call to revert
+        vm.expectRevert("GogeDao.sol::createPoll() Exceeds minPollsPerAuthor");
+
+        // Joe calls createPoll
+        gogeDao.createPoll(GogeDAO.PollType.other, metadata);
+
+        // stop prank
+        vm.stopPrank();
+
+        // Verify there's still only 1 poll live
+        assertEq(gogeDao.pollNum(), 1);
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
+
+
+        // NOTE: Sanity Check
+
+        // End Poll 1
+        gogeDao.endPoll(1);
+
+        // Verify there's no activePoll
+        assertEq(gogeDao.pollNum(), 1);
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
+
+        // start prank
+        vm.startPrank(address(joe));
+
+        // Joe calls createPoll
+        gogeDao.createPoll(GogeDAO.PollType.other, metadata);
+
+        // stop prank
+        vm.stopPrank();
+
+        // Verify there's still only 1 poll live
+        assertEq(gogeDao.pollNum(), 2);
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
     }
 
 

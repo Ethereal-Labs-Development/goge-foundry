@@ -16,6 +16,7 @@ contract GogeDAO is Owned {
     uint256 public pollNum;
     uint256 public minPeriod = 86400;
     uint256 public minAuthorBal = 10_000_000 ether;
+    uint8   public minPollsPerAuthor = 1;
 
     uint256 public marketingBalance;
     uint256 public teamBalance;
@@ -308,11 +309,13 @@ contract GogeDAO is Owned {
     /// @param  _pollType enum type of poll being created.
     /// @param  _change the matching metadata that will result in the execution of the poll.
     function createPoll(PollType _pollType, Metadata memory _change) public {
-        require(createPollEnabled, "ability to create poll is disabled");
-        require(IGogeERC20(governanceTokenAddr).balanceOf(msg.sender) >= minAuthorBal, "Exceeds Balance");
+        require(createPollEnabled, "GogeDao.sol::createPoll() Ability to create poll is disabled");
+        require(IGogeERC20(governanceTokenAddr).balanceOf(msg.sender) >= minAuthorBal, "GogeDao.sol::createPoll() Insufficient balance of tokens");
 
-        require(block.timestamp < _change.endTime, "End time must be later than start time");
-        require(_change.endTime - block.timestamp >= minPeriod, "Polling period must be greater than 24 hours");
+        require(block.timestamp < _change.endTime, "GogeDao.sol::createPoll() End time must be later than start time");
+        require(_change.endTime - block.timestamp >= minPeriod, "GogeDao.sol::createPoll() Polling period must be greater than 24 hours");
+
+        require(getActivePollsFromAuthor(msg.sender) < minPollsPerAuthor, "GogeDao.sol::createPoll() Exceeds minPollsPerAuthor");
 
         emit ProposalCreated(pollNum, _pollType, _change.endTime);
 
@@ -331,12 +334,12 @@ contract GogeDAO is Owned {
     /// @param  _pollNum The poll number.
     /// @param  _numVotes The size of the vote to be created.
     function addVote(uint256 _pollNum, uint256 _numVotes) public {
-        require(_pollNum <= pollNum, "Poll doesn't Exist");
-        require(block.timestamp >= pollStartTime[_pollNum] && block.timestamp < pollEndTime[_pollNum], "Poll Closed");
-        require(isActivePoll(_pollNum), "Poll is not active");
+        require(_pollNum <= pollNum, "GogeDao.sol::addVote() Poll doesn't Exist");
+        require(block.timestamp >= pollStartTime[_pollNum] && block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::addVote() Poll Closed");
+        require(isActivePoll(_pollNum), "GogeDao.sol::addVote() Poll is not active");
 
-        require(block.timestamp - IGogeERC20(governanceTokenAddr).getLastReceived(msg.sender) >= (5 minutes), "Must wait 5 minutes after purchasing tokens to place any votes.");
-        require(IGogeERC20(governanceTokenAddr).balanceOf(msg.sender) >= _numVotes, "Exceeds Balance");
+        require(block.timestamp - IGogeERC20(governanceTokenAddr).getLastReceived(msg.sender) >= (5 minutes), "GogeDao.sol::addVote() Must wait 5 minutes after purchasing tokens to place any votes.");
+        require(IGogeERC20(governanceTokenAddr).balanceOf(msg.sender) >= _numVotes, "GogeDao.sol::addVote() Exceeds Balance");
         require(IGogeERC20(governanceTokenAddr).transferFrom(msg.sender, address(this), _numVotes));
 
         _addToVoterLibrary(_pollNum, msg.sender);
@@ -458,6 +461,10 @@ contract GogeDAO is Owned {
 
     function updateMinAuthorBal(uint256 _amount) external onlyOwner() {
         minAuthorBal = _amount;
+    }
+
+    function updateMinPollsPerAuthor(uint8 _limit) external onlyOwner() {
+        minPollsPerAuthor = _limit;
     }
 
     // governanceTokenAddr
@@ -761,12 +768,20 @@ contract GogeDAO is Owned {
     }
 
     function isActivePoll(uint256 _pollNum) public view returns (bool active) {
-        for (uint8 i = 0; i < activePolls.length; i++){
+        for (uint256 i = 0; i < activePolls.length; i++){
             if (_pollNum == activePolls[i]) {
                 return true;
             }
         }
         return false;
+    }
+
+    function getActivePollsFromAuthor(address _author) public view returns (uint256 _num) {
+        for (uint256 i = 0; i < activePolls.length; i++){
+            if (pollAuthor[activePolls[i]] == _author) {
+                _num++;
+            }
+        }
     }
 
     function isTeamMember(address _address) public view returns(bool, uint8) {

@@ -795,7 +795,7 @@ contract DaoTest is Utility, Test {
 
     /// @notice Verify correct logic when removeAllVotes is called.
     function test_gogeDao_removeAllVotes() public {
-        gogeDao.updateMinPollsPerAuthor(3);
+        gogeDao.updateMaxPollsPerAuthor(3);
 
         // Create 3 polls
         create_mock_poll();
@@ -841,7 +841,7 @@ contract DaoTest is Utility, Test {
     /// @notice Verify correctness when removeVotesFromPoll is called.
     function test_gogeDao_removeVotesFromPoll() public {
         gogeDao.setGateKeeping(false);
-        gogeDao.updateMinPollsPerAuthor(3);
+        gogeDao.updateMaxPollsPerAuthor(3);
         gogeDao.transferOwnership(address(dev));
 
         // Create 3 polls
@@ -973,8 +973,8 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.getMetadata(gogeDao.pollNum()).description, "This is a mock poll, for testing");
     }
 
-    /// @notice Verifies minPollsPerAuthor implementation -> Creators can only have x amount of activePolls at the same time ( x == minPollsPerAuthor ).
-    function test_gogeDao_minPollsPerAuthor() public {
+    /// @notice Verifies maxPollsPerAuthor implementation -> Creators can only have x amount of activePolls at the same time ( x == maxPollsPerAuthor ).
+    function test_gogeDao_maxPollsPerAuthor() public {
 
         // create poll metadata
         GogeDAO.Metadata memory metadata;
@@ -1004,7 +1004,7 @@ contract DaoTest is Utility, Test {
         vm.startPrank(address(joe));
 
         // expect next call to revert
-        vm.expectRevert("GogeDao.sol::createPoll() Exceeds minPollsPerAuthor");
+        vm.expectRevert("GogeDao.sol::createPoll() Exceeds maxPollsPerAuthor");
 
         // Joe calls createPoll
         gogeDao.createPoll(GogeDAO.PollType.other, metadata);

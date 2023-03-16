@@ -16,7 +16,7 @@ contract GogeDAO is Owned {
     uint256 public pollNum;
     uint256 public minPeriod = 86400;
     uint256 public minAuthorBal = 10_000_000 ether;
-    uint8   public minPollsPerAuthor = 1;
+    uint8   public maxPollsPerAuthor = 1;
 
     uint256 public marketingBalance;
     uint256 public teamBalance;
@@ -315,7 +315,7 @@ contract GogeDAO is Owned {
         require(block.timestamp < _change.endTime, "GogeDao.sol::createPoll() End time must be later than start time");
         require(_change.endTime - block.timestamp >= minPeriod, "GogeDao.sol::createPoll() Polling period must be greater than 24 hours");
 
-        require(getActivePollsFromAuthor(msg.sender) < minPollsPerAuthor, "GogeDao.sol::createPoll() Exceeds minPollsPerAuthor");
+        require(getActivePollsFromAuthor(msg.sender) < maxPollsPerAuthor, "GogeDao.sol::createPoll() Exceeds maxPollsPerAuthor");
 
         emit ProposalCreated(pollNum, _pollType, _change.endTime);
 
@@ -463,8 +463,8 @@ contract GogeDAO is Owned {
         minAuthorBal = _amount;
     }
 
-    function updateMinPollsPerAuthor(uint8 _limit) external onlyOwner() {
-        minPollsPerAuthor = _limit;
+    function updateMaxPollsPerAuthor(uint8 _limit) external onlyOwner() {
+        maxPollsPerAuthor = _limit;
     }
 
     // governanceTokenAddr

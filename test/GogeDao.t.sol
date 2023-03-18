@@ -78,6 +78,7 @@ contract DaoTest is Utility, Test {
         metadata.endTime = block.timestamp + 5 days;
 
         // create poll
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.other, metadata);
 
         // Verify state change
@@ -98,6 +99,7 @@ contract DaoTest is Utility, Test {
         metadata.boolVar = true;
 
         // create poll
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.modifyBlacklist, metadata);
 
         // Verify state change
@@ -228,7 +230,7 @@ contract DaoTest is Utility, Test {
 
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
-        assertEq(gogeDao.totalVotes(1), joe_votes);
+        assertEq(gogeDao.totalVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
@@ -267,17 +269,18 @@ contract DaoTest is Utility, Test {
 
         // Verify token balance post first addVote.
         assertEq(gogeToken.balanceOf(address(joe)), joe_votes_2);
-        assertEq(gogeToken.balanceOf(address(gogeDao)), joe_votes_1);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), joe_votes_1 + gogeDao.minAuthorBal());
 
         // Post-state check after first addVote.
         assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
         assertEq(gogeDao.polls(1, address(joe)), joe_votes_1);
-        assertEq(gogeDao.totalVotes(1),          joe_votes_1);
+        assertEq(gogeDao.totalVotes(1),          joe_votes_1 + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1),              false);
 
         address[] memory voters = gogeDao.getVoterLibrary(1);
-        assertEq(voters.length, 1);
-        assertEq(voters[0], address(joe));
+        assertEq(voters.length, 2);
+        assertEq(voters[0], address(this));
+        assertEq(voters[1], address(joe));
 
         uint256[] memory advocateArr = gogeDao.getAdvocateFor(address(joe));
         assertEq(advocateArr.length, 1);
@@ -302,12 +305,13 @@ contract DaoTest is Utility, Test {
         // Post-state check after second addVote.
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
         assertEq(gogeDao.polls(1, address(joe)), total_votes);
-        assertEq(gogeDao.totalVotes(1),          total_votes);
+        assertEq(gogeDao.totalVotes(1),          total_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1),              true);
 
         voters = gogeDao.getVoterLibrary(1);
-        assertEq(voters.length, 1);
-        assertEq(voters[0], address(joe));
+        assertEq(voters.length, 2);
+        assertEq(voters[0], address(this));
+        assertEq(voters[1], address(joe));
 
         advocateArr = gogeDao.getAdvocateFor(address(joe));
         assertEq(advocateArr.length, 0);

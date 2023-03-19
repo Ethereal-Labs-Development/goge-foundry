@@ -308,13 +308,12 @@ contract GogeDAO is Owned {
     /// @notice is used to create a new poll.
     /// @param  _pollType enum type of poll being created.
     /// @param  _change the matching metadata that will result in the execution of the poll.
-    function createPoll(PollType _pollType, Metadata memory _change) public {
+    function createPoll(PollType _pollType, Metadata memory _change) public {        
         require(createPollEnabled, "GogeDao.sol::createPoll() Ability to create poll is disabled");
         require(getActivePollsFromAuthor(msg.sender) < maxPollsPerAuthor, "GogeDao.sol::createPoll() Exceeds maxPollsPerAuthor");
         require(block.timestamp < _change.endTime, "GogeDao.sol::createPoll() End time must be later than start time");
         require(_change.endTime - block.timestamp >= minPeriod, "GogeDao.sol::createPoll() Polling period must be greater than 24 hours");
 
-        require(block.timestamp - IGogeERC20(governanceTokenAddr).getLastReceived(msg.sender) >= (5 minutes), "GogeDao.sol::createPoll() Must wait 5 minutes after purchasing tokens to create a poll.");
         require(IGogeERC20(governanceTokenAddr).balanceOf(msg.sender) >= minAuthorBal, "GogeDao.sol::createPoll() Insufficient balance of tokens");
         require(IGogeERC20(governanceTokenAddr).transferFrom(msg.sender, address(this), minAuthorBal));
 
@@ -358,16 +357,10 @@ contract GogeDAO is Owned {
         bool quorumMet = getProportion(_pollNum) >= quorum;
         bool enactChange = false;
 
-        if (!gateKeeping && quorumMet) {
-            enactChange = true;
-        }
-        else if (gateKeeper[msg.sender] && quorumMet) {
-            enactChange = true;
-        }
+        if (!gateKeeping && quorumMet) enactChange = true;
+        else if (gateKeeper[msg.sender] && quorumMet) enactChange = true;
 
-        if (enactChange) {
-            _executeProposal(_pollNum);
-        }
+        if (enactChange) _executeProposal(_pollNum);
     }
 
     /// @notice A method for a voter to remove their votes from all active polls.

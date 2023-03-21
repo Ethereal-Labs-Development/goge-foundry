@@ -5,6 +5,9 @@ out/
 .env
 Notes.txt
 
+args.txt
+daoArgs.txt
+
 # Ignores development broadcast logs
 !/broadcast
 /broadcast/*

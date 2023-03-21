@@ -31,7 +31,7 @@ contract GogeDAO is Owned {
 
     /// @notice Amount of BNB held for marketing purposes.
     uint256 public marketingBalance;
-    /// @notice Amount of BNB held for team pay.
+    /// @notice Amount of BNB held for team pay
     uint256 public teamBalance;
 
     /// @notice Bool if gate keeping is enabled.

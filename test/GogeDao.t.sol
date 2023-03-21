@@ -203,11 +203,11 @@ contract DaoTest is Utility, Test {
 
         // Verify tokens were sent from Joe to Dao
         assertEq(gogeToken.balanceOf(address(joe)), 0);
-        assertEq(gogeToken.balanceOf(address(gogeDao)), joe_votes);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), joe_votes + gogeDao.minAuthorBal());
 
         // Post-state check.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
-        assertEq(gogeDao.totalVotes(1), joe_votes);
+        assertEq(gogeDao.totalVotes(1), joe_votes + gogeDao.minAuthorBal());
 
         // Verify quorum
         uint256 num = gogeDao.getProportion(1); // => 10%
@@ -573,7 +573,7 @@ contract DaoTest is Utility, Test {
         assertEq(gogeDao.passed(1), false);
 
         assertEq(gogeToken.balanceOf(address(joe)), 0);
-        assertEq(gogeToken.balanceOf(address(gogeDao)), joe_votes);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), joe_votes + gogeDao.minAuthorBal());
 
         uint256[] memory advocateArr = gogeDao.getAdvocateFor(address(joe));
         assertEq(advocateArr.length, 1);
@@ -838,28 +838,28 @@ contract DaoTest is Utility, Test {
 
         // Verify state
         assertEq(gogeToken.balanceOf(address(joe)), 0);
-        assertEq(gogeToken.balanceOf(address(gogeDao)), 3_000 ether);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 3_000 ether + (gogeDao.minAuthorBal() * 3));
 
         assertEq(gogeDao.polls(1, address(joe)), 1_000 ether);
-        assertEq(gogeDao.totalVotes(1), 1_000 ether);
+        assertEq(gogeDao.totalVotes(1), 1_000 ether + gogeDao.minAuthorBal());
         assertEq(gogeDao.polls(2, address(joe)), 1_000 ether);
-        assertEq(gogeDao.totalVotes(2), 1_000 ether);
+        assertEq(gogeDao.totalVotes(2), 1_000 ether + gogeDao.minAuthorBal());
         assertEq(gogeDao.polls(3, address(joe)), 1_000 ether);
-        assertEq(gogeDao.totalVotes(3), 1_000 ether);
+        assertEq(gogeDao.totalVotes(3), 1_000 ether + gogeDao.minAuthorBal());
 
         // Joe removes all votes
         assert(joe.try_removeAllVotes(address(gogeDao)));
 
         // Verify state
         assertEq(gogeToken.balanceOf(address(joe)), 3_000 ether);
-        assertEq(gogeToken.balanceOf(address(gogeDao)), 0);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), gogeDao.minAuthorBal() * 3);
 
         assertEq(gogeDao.polls(1, address(joe)), 0);
-        assertEq(gogeDao.totalVotes(1), 0);
+        assertEq(gogeDao.totalVotes(1), gogeDao.minAuthorBal());
         assertEq(gogeDao.polls(2, address(joe)), 0);
-        assertEq(gogeDao.totalVotes(2), 0);
+        assertEq(gogeDao.totalVotes(2), gogeDao.minAuthorBal());
         assertEq(gogeDao.polls(3, address(joe)), 0);
-        assertEq(gogeDao.totalVotes(3), 0);
+        assertEq(gogeDao.totalVotes(3), gogeDao.minAuthorBal());
     }
 
     /// @notice Verify correctness when removeVotesFromPoll is called.
@@ -885,57 +885,62 @@ contract DaoTest is Utility, Test {
 
         // Verify state
         assertEq(gogeToken.balanceOf(address(joe)), 0);
-        assertEq(gogeToken.balanceOf(address(gogeDao)), 3_000 ether);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 3_000 ether + (gogeDao.minAuthorBal() * 3));
         assertEq(gogeDao.polls(1, address(joe)), 1_000 ether);
-        assertEq(gogeDao.totalVotes(1), 1_000 ether);
+        assertEq(gogeDao.totalVotes(1), 1_000 ether + gogeDao.minAuthorBal());
         assertEq(gogeDao.polls(2, address(joe)), 1_000 ether);
-        assertEq(gogeDao.totalVotes(2), 1_000 ether);
+        assertEq(gogeDao.totalVotes(2), 1_000 ether + gogeDao.minAuthorBal());
         assertEq(gogeDao.polls(3, address(joe)), 1_000 ether);
-        assertEq(gogeDao.totalVotes(3), 1_000 ether);
+        assertEq(gogeDao.totalVotes(3), 1_000 ether + gogeDao.minAuthorBal());
 
         // Joe removes votes from poll 2
         assert(joe.try_removeVotesFromPoll(address(gogeDao), 2));
 
         // Verify state
         assertEq(gogeToken.balanceOf(address(joe)), 1_000 ether);
-        assertEq(gogeToken.balanceOf(address(gogeDao)), 2_000 ether);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 2_000 ether + (gogeDao.minAuthorBal() * 3));
         assertEq(gogeDao.polls(1, address(joe)), 1_000 ether);
-        assertEq(gogeDao.totalVotes(1), 1_000 ether);
+        assertEq(gogeDao.totalVotes(1), 1_000 ether + gogeDao.minAuthorBal());
         assertEq(gogeDao.polls(2, address(joe)), 0);
-        assertEq(gogeDao.totalVotes(2), 0);
+        assertEq(gogeDao.totalVotes(2), gogeDao.minAuthorBal());
         assertEq(gogeDao.polls(3, address(joe)), 1_000 ether);
-        assertEq(gogeDao.totalVotes(3), 1_000 ether);
+        assertEq(gogeDao.totalVotes(3), 1_000 ether + gogeDao.minAuthorBal());
 
         // Joe removes votes from poll 1
         assert(joe.try_removeVotesFromPoll(address(gogeDao), 1));
 
         // Verify state
         assertEq(gogeToken.balanceOf(address(joe)), 2_000 ether);
-        assertEq(gogeToken.balanceOf(address(gogeDao)), 1_000 ether);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 1_000 ether + (gogeDao.minAuthorBal() * 3));
         assertEq(gogeDao.polls(1, address(joe)), 0);
-        assertEq(gogeDao.totalVotes(1), 0);
+        assertEq(gogeDao.totalVotes(1), gogeDao.minAuthorBal());
         assertEq(gogeDao.polls(2, address(joe)), 0);
-        assertEq(gogeDao.totalVotes(2), 0);
+        assertEq(gogeDao.totalVotes(2), gogeDao.minAuthorBal());
         assertEq(gogeDao.polls(3, address(joe)), 1_000 ether);
-        assertEq(gogeDao.totalVotes(3), 1_000 ether);
+        assertEq(gogeDao.totalVotes(3), 1_000 ether + gogeDao.minAuthorBal());
 
         // Joe removes votes from poll 3
         assert(joe.try_removeVotesFromPoll(address(gogeDao), 3));
 
         // Verify state
         assertEq(gogeToken.balanceOf(address(joe)), 3_000 ether);
-        assertEq(gogeToken.balanceOf(address(gogeDao)), 0);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), gogeDao.minAuthorBal() * 3);
         assertEq(gogeDao.polls(1, address(joe)), 0);
-        assertEq(gogeDao.totalVotes(1), 0);
+        assertEq(gogeDao.totalVotes(1), gogeDao.minAuthorBal());
         assertEq(gogeDao.polls(2, address(joe)), 0);
-        assertEq(gogeDao.totalVotes(2), 0);
+        assertEq(gogeDao.totalVotes(2), gogeDao.minAuthorBal());
         assertEq(gogeDao.polls(3, address(joe)), 0);
-        assertEq(gogeDao.totalVotes(3), 0);
+        assertEq(gogeDao.totalVotes(3), gogeDao.minAuthorBal());
 
         // dev ends all polls -> sanity check
         assert(dev.try_endPoll(address(gogeDao), 1));
+        assertEq(gogeToken.balanceOf(address(gogeDao)), gogeDao.minAuthorBal() * 2);
+
         assert(dev.try_endPoll(address(gogeDao), 2));
+        assertEq(gogeToken.balanceOf(address(gogeDao)), gogeDao.minAuthorBal());
+
         assert(dev.try_endPoll(address(gogeDao), 3));
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 0);
 
         uint256[] memory activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 0);
@@ -943,9 +948,9 @@ contract DaoTest is Utility, Test {
 
     // TODO:
     // - require poll author holds a min amount of tokens -> DONE!!
-    // - require when a poll is created, creator stakes their tokens.
+    // - require when a poll is created, creator stakes their tokens -> DONE!!
     // - require poll authors can only have 1 active poll at a time -> DONE!!
-    // - allow poll authors to end their poll
+    // - allow poll authors to end their poll -> DONE, BUT NEEDS TESTING
 
     /// @notice Verifies state change when updateMinAuthorBal() is called
     function test_gogeDao_updateMinAuthorBal() public {
@@ -985,6 +990,9 @@ contract DaoTest is Utility, Test {
 
         // start prank
         vm.startPrank(address(joe));
+
+        // approve transfer of minAuthorBal
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
 
         // Joe calls createPoll
         gogeDao.createPoll(GogeDAO.PollType.other, metadata);

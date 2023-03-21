@@ -263,9 +263,8 @@ contract GogeDAO is Owned {
         uint256 endTime;
     }
 
-    event ProposalCreated(uint256 pollNum, PollType pollType, uint256 endTime);
-    event ProposalPassed(uint256 pollNum);
-    event GateKeepingModified(bool enabled);
+
+    // ---------- Constructor ----------
 
     constructor(address _governanceToken) Owned(msg.sender) {
        _setGateKeeper(owner, true);
@@ -301,9 +300,25 @@ contract GogeDAO is Owned {
         ];
     }
 
-    receive() payable external {}
+
+    // ---------- Modifiers ----------
+
+    modifier onlyOwnerOrAuthor(uint256 _pollNum) {
+        require(msg.sender == owner || msg.sender == pollAuthor[_pollNum], "UNAUTHORIZED");
+        _;
+    }
+
+
+    // ---------- Events ----------
+
+    event ProposalCreated(uint256 pollNum, PollType pollType, uint256 endTime);
+    event ProposalPassed(uint256 pollNum);
+    event GateKeepingModified(bool enabled);
+
 
     // ---------- Functions ----------
+
+    receive() payable external {}
 
     /// @notice is used to create a new poll.
     /// @param  _pollType enum type of poll being created.
@@ -443,7 +458,7 @@ contract GogeDAO is Owned {
         createPollEnabled = !createPollEnabled;
     }
 
-    function endPoll(uint256 _pollNum) external onlyOwner() {
+    function endPoll(uint256 _pollNum) external onlyOwnerOrAuthor(_pollNum) {
         require(isActivePoll(_pollNum), "Poll is not active");
 
         _updateEndTime(_pollNum);

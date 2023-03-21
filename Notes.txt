@@ -8,7 +8,6 @@ TODO (TESTING):
 - add test with MULTIPLE advocates when poll is passed/ended
 - Test migrate Treasury
 - Test addVote within 5minute period of purchase of tokens
-- Test pollAuthor
 
 -------------------------------------------------------------------------------
 TODO (BUG FIXES / ADDITIONS):
@@ -17,7 +16,6 @@ TODO (BUG FIXES / ADDITIONS):
 - Add Dao Description
 - Add contract token balance security -> If a vote is added or removed, check contract balance
 - Poll creators should hold a min number of tokens to create a poll -> 10M tokens
-- Add a 1 poll limit to creators
 
 -------------------------------------------------------------------------------
 Changes:
@@ -31,8 +29,10 @@ Changes:
 - Added queryEndTime()
 - Added isActive when voters remove votes -> fixes possible exploit
 - Removed historicalTally -> unnecessary
+- Removed startTime param in polls -> unnecessary
 - Starting time will now be set to the time the poll was created
 - poll authors must hold a certain number of tokens to create a poll -> minAuthorBal
+- Can now track the authors of polls via pollAuthor
 
 Historical Data:
 - polls[_pollNum][voter]          // Double Mapping of pollNum to amount of votes per voter
@@ -41,6 +41,7 @@ Historical Data:
 - pollStartTime                   // Mapping of pollNum to starting timestamp -> start timestamp is always block.timestamp of
                                   //   when poll was created. Could potentially remove this variable
 - pollEndTime                     // Mapping of pollNum to ending timestamp
+- pollAuthor                      // Mapping of pollNum to address of poll author
 
 Non-Historical Data:
 - uint[] activePolls

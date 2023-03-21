@@ -325,7 +325,7 @@ contract GogeDAO is Owned {
     /// @param  _change the matching metadata that will result in the execution of the poll.
     function createPoll(PollType _pollType, Metadata memory _change) public {        
         require(createPollEnabled, "GogeDao.sol::createPoll() Ability to create poll is disabled");
-        require(getActivePollsFromAuthor(msg.sender) < maxPollsPerAuthor, "GogeDao.sol::createPoll() Exceeds maxPollsPerAuthor");
+        if (msg.sender != owner) require(getActivePollsFromAuthor(msg.sender) < maxPollsPerAuthor, "GogeDao.sol::createPoll() Exceeds maxPollsPerAuthor");
         require(block.timestamp < _change.endTime, "GogeDao.sol::createPoll() End time must be later than start time");
         require(_change.endTime - block.timestamp >= minPeriod, "GogeDao.sol::createPoll() Polling period must be greater than 24 hours");
 
@@ -633,7 +633,14 @@ contract GogeDAO is Owned {
         else if (pollTypes[_pollNum] == PollType.updateGovernanceToken) {
             UpdateGovernanceToken memory updateGovernanceToken;
             (,updateGovernanceToken,) = getUpdateGovernanceToken(_pollNum);
+
+            _removePollFromActivePolls(_pollNum);
+            _refundVotersPostChange(_pollNum);
+
             _changeGovernanceToken(updateGovernanceToken.addr);
+            emit ProposalPassed(_pollNum);
+            
+            return;
         }
 
         // remove poll from active polls and refund voters

@@ -616,15 +616,16 @@ contract DaoTest is Utility, Test {
 
     /// @notice Verify an admin can call endPoll to remove poll from activePolls and does NOT result in poll execution.
     function test_gogeDao_endPoll() public {
-        test_gogeDao_createPoll();
         gogeDao.setGateKeeping(false);
         gogeDao.transferOwnership(address(dev));
+
+        // NOTE: Owner ends poll
+        create_mock_poll();
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.isActivePoll(1), true);
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.pollEndTime(1), block.timestamp + 5 days);
 
         // endPoll
         assert(dev.try_endPoll(address(gogeDao), 1));
@@ -632,11 +633,26 @@ contract DaoTest is Utility, Test {
         // Post-state check.
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.isActivePoll(1), false);
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
         // dev tries to call endPoll -> fails
         assert(!dev.try_endPoll(address(gogeDao), 1));
+
+        // NOTE: Author ends poll
+        create_mock_poll();
+
+        // Pre-state check.
+        assertEq(gogeDao.passed(2), false);
+        assertEq(gogeDao.isActivePoll(2), true);
+        assertEq(gogeDao.pollEndTime(2), block.timestamp + 5 days);
+
+        // endPoll
+        gogeDao.endPoll(2);
+
+        // Post-state check.
+        assertEq(gogeDao.passed(2), false);
+        assertEq(gogeDao.isActivePoll(2), false);
+        assertEq(gogeDao.pollEndTime(2), block.timestamp);
     }
 
     /// @notice Verify that when endPoll is called, existing voters are refunded.
@@ -830,7 +846,6 @@ contract DaoTest is Utility, Test {
 
     /// @notice Verify correct logic when removeAllVotes is called.
     function test_gogeDao_removeAllVotes() public {
-        gogeDao.updateMaxPollsPerAuthor(3);
 
         // Create 3 polls
         create_mock_poll();
@@ -1493,7 +1508,6 @@ contract DaoTest is Utility, Test {
         // NOTE pass poll
 
         // pass poll
-        //assert(dev.try_passPoll(address(gogeDao), 1));
         gogeDao.passPoll(1);
 
         // Post-state check

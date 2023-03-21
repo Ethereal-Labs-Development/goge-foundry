@@ -350,6 +350,7 @@ contract DaoTest is Utility, Test {
         metadata.amount = 1_000 ether;
 
         // create poll
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.funding, metadata);
 
         // Verify state change
@@ -386,6 +387,9 @@ contract DaoTest is Utility, Test {
         assertEq(gogeToken.balanceOf(address(jon)), jon_votes);
         assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
 
+        // Get AuthorBal
+        uint256 authorBal = gogeToken.balanceOf(address(this));
+
         /// NOTE addVotes -> Tim
 
         // Approve the transfer of tokens and add vote for tim.
@@ -394,11 +398,11 @@ contract DaoTest is Utility, Test {
 
         // Verify tokens were sent from Tim to Dao
         assertEq(gogeToken.balanceOf(address(tim)), 0);
-        assertEq(gogeToken.balanceOf(address(gogeDao)), tim_votes);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), tim_votes + gogeDao.minAuthorBal());
 
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(tim)), tim_votes);
-        assertEq(gogeDao.totalVotes(1), tim_votes);
+        assertEq(gogeDao.totalVotes(1), tim_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), false);
 
         /// NOTE addVotes -> Jon
@@ -409,11 +413,11 @@ contract DaoTest is Utility, Test {
 
         // Verify tokens were sent from Jon to Dao
         assertEq(gogeToken.balanceOf(address(jon)), 0);
-        assertEq(gogeToken.balanceOf(address(gogeDao)), tim_votes + jon_votes);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), tim_votes + jon_votes + gogeDao.minAuthorBal());
 
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(jon)), jon_votes);
-        assertEq(gogeDao.totalVotes(1), tim_votes + jon_votes);
+        assertEq(gogeDao.totalVotes(1), tim_votes + jon_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), false);
 
         /// NOTE addVotes -> Joe -> overcomes quorum therefore passes poll
@@ -428,15 +432,22 @@ contract DaoTest is Utility, Test {
 
         // Post-state check => gogeDao.
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
-        assertEq(gogeDao.totalVotes(1), tim_votes + jon_votes + joe_votes);
+        assertEq(gogeDao.totalVotes(1), tim_votes + jon_votes + joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
+        // Verify all voters were refunded
+        assertEq(gogeToken.balanceOf(address(tim)), tim_votes);
+        assertEq(gogeToken.balanceOf(address(jon)), jon_votes);
+        assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
+        assertEq(gogeToken.balanceOf(address(this)), authorBal + gogeDao.minAuthorBal());
+
+        // Verify poll was executed
         assertEq(IERC20(BUSD).balanceOf(address(joe)), 1_000 ether);
         assertEq(IERC20(BUSD).balanceOf(address(gogeDao)), 0);
 
         // Verify quorum math.
-        uint256 num = (gogeDao.totalVotes(1) * 100) / gogeToken.getCirculatingMinusReserve();
+        uint256 num = gogeDao.getProportion(1);
         assertTrue(num >= gogeDao.quorum());        
     }
 

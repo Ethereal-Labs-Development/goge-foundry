@@ -155,7 +155,6 @@ contract GogeDAO is Owned {
         string description;
         uint256 endTime;
         address payable recipient;
-        address token;
         uint256 amount;
     }
 
@@ -730,7 +729,8 @@ contract GogeDAO is Owned {
             Funding memory funding;
             (,funding,) = getFunding(_pollNum);
             require(funding.amount <= marketingBalance, "Insufficient Funds");
-            IGogeERC20(funding.token).transfer(funding.recipient, funding.amount);
+            (bool success,) = funding.recipient.call{value: funding.amount}("");
+            require(success, "call unsuccessful");
             marketingBalance -= funding.amount;
         }
         else if (pollTypes[_pollNum] == PollType.setGogeDao) {
@@ -1128,7 +1128,6 @@ contract GogeDAO is Owned {
         funding.description = poll.description;
         funding.endTime = poll.endTime;
         funding.recipient = payable(poll.addr1);
-        funding.token = poll.addr2;
         funding.amount = poll.amount;
 
         return (totalVotes[_pollNum], funding, passed[_pollNum]);

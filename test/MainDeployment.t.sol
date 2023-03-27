@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.6;
 
-import "../lib/forge-std/src/Test.sol";
 import "./Utility.sol";
 
 import { IUniswapV2Router02, IUniswapV2Pair, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
@@ -13,7 +12,7 @@ import { DogeGaySonFlat } from "src/DeployedV2Token.sol";
 import { DogeGaySon1 } from "../src/TokenV1.sol";
 import { GogeDAO } from "../src/GogeDao.sol";
 
-contract MainDeploymentTesting is Utility, Test {
+contract MainDeploymentTesting is Utility {
     DogeGaySon1 gogeToken_v1;
     DogeGaySonFlat gogeToken_v2;
 

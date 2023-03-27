@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.6;
 
-import "../lib/forge-std/src/Test.sol";
 import "./Utility.sol";
 import { DogeGaySon, CakeDividendTracker } from "../src/GogeToken.sol";
 
 import { IUniswapV2Router02, IUniswapV2Pair, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
 import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
 
-contract TokenTest is Utility, Test {
+contract TokenTest is Utility {
     DogeGaySon gogeToken;
     CakeDividendTracker cakeTracker;
 
@@ -293,7 +292,7 @@ contract TokenTest is Utility, Test {
     // safeWithdraw test
     function test_gogeToken_safeWithdraw() public {
         // mint BUSD to gogeToken contract
-        mint("BUSD", address(gogeToken), 1_000 ether);
+        deal(BUSD, address(gogeToken), 1_000 ether);
 
         // Pre-state check.
         assertEq(IERC20(BUSD).balanceOf(address(gogeToken)), 1_000 ether);

@@ -3,7 +3,7 @@
 pragma solidity ^0.8.6;
 
 import { Owned } from "./extensions/Owned.sol";
-import "./extensions/IGogeERC20.sol";
+import { IGogeERC20 } from "./extensions/IGogeERC20.sol";
 
 /// @title Gay Doge Dao Contract.
 /// @notice This contract is a governance contract which acts as a layer that sits on top of a governance token. This contract allows holders of the governance token
@@ -20,12 +20,14 @@ contract GogeDAO is Owned {
     
     /// @notice Unique identifier of each poll that is created.
     uint256 public pollNum;
-    /// @notice The minimum time needed for a new poll -> default is 24 hours or 86400 seconds.
+    /// @notice The minimum time needed  () a new poll -> default is 1 day.
     uint256 public minPeriod = 1 days;
+    /// @notice The maximum time needed  () a new poll -> default is 60 days.
+    uint256 public maxPeriod = 60 days;
     /// @notice The minimum balance of governance token the author of a poll must be holding at the time of creation.
     uint256 public minAuthorBal = 10_000_000 ether;
     /// @notice The maximum amount of polls an author can have active at any given time.
-    uint8   public maxPollsPerAuthor = 1;
+    uint256 public maxPollsPerAuthor = 1;
     /// @notice The threshold that must be met to pass a poll
     uint256 public quorum = 50;
 
@@ -516,9 +518,7 @@ contract GogeDAO is Owned {
     /// @param  _pollNum The poll number.
     /// @param  _numVotes The size of the vote to be created.
     function addVote(uint256 _pollNum, uint256 _numVotes) external {
-        require(block.timestamp >= pollStartTime[_pollNum] && block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::addVote() Poll Closed");
-        require(isActivePoll(_pollNum), "GogeDao.sol::addVote() Poll is not active");
-
+        require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::addVote() Poll Closed");
         require(block.timestamp - IGogeERC20(governanceTokenAddr).getLastReceived(msg.sender) >= (5 minutes), "GogeDao.sol::addVote() Must wait 5 minutes after purchasing tokens to place any votes.");
         require(IGogeERC20(governanceTokenAddr).balanceOf(msg.sender) >= _numVotes, "GogeDao.sol::addVote() Exceeds Balance");
         require(IGogeERC20(governanceTokenAddr).transferFrom(msg.sender, address(this), _numVotes));
@@ -556,45 +556,45 @@ contract GogeDAO is Owned {
 
     /// @notice Will take the BNB balance within teamBalance and pay team members.
     function payTeam() public {
-        require(teamMembers.length > 0, "GogeDao.sol::payTeam() No team members inside teamMembers array");
+        // ensures contract balance can support team balance
+        uint256 balance = teamBalance;
+        require(balance <= address(this).balance, "GogeDao.sol::payTeam Insufficient balance!");
 
-        uint256 amount = teamBalance / teamMembers.length;
-        uint256 len = teamMembers.length - 1;
+        // ensures no division by zero.
+        uint256 length = teamMembers.length;
+        require(length > 0, "GogeDao.sol::payTeam No team members!");
 
-        if (len > 0) {
-            for(uint256 i; i < len;) {
+        // ensures no payments are made if payment is not greater than zero
+        uint256 payment = balance / length;
+        require(payment > 0, "GogeDao.sol::payTeam Insufficient balance!");
 
-                (bool sent,) = teamMembers[i].call{value: amount}("");
-                require(sent, "Failed to pay team");
-
-                teamBalance -= amount;
-
-                unchecked {
-                    i = i + 1;
-                }
+        for(uint256 i; i < length;) {
+            (bool sent,) = teamMembers[i].call{value: payment}("");
+            require(sent, "GogeDao.sol::payTeam Failed to send payment");
+            unchecked {
+                ++i;
             }
         }
 
-        (bool sent,) = teamMembers[len].call{value: teamBalance}("");
-        require(sent, "Failed to pay team");
-
-        teamBalance = 0;
+        teamBalance = balance % length;
     }
 
     /// @notice A method for querying all active poll end times, and if poll is expired, remove from ActivePolls.
     /// @dev Should be called on a regular time interval using an external script.
     ///      Solution: https://automation.chain.link/
     function queryEndTime() external {
-        uint counter;
-        uint256[] memory expired;
-        (expired, counter) = findExpiredPolls();
-
-        for (uint256 i; i < counter;) {
-
-            _updateEndTime(expired[i]);
-            _removePoll(expired[i]);
-            _refundVoters(expired[i]);
-
+        uint256 length = activePolls.length;
+        // iterate through activePolls
+        for (uint256 i; i < length;) {
+            uint256 endTime = pollEndTime[activePolls[i]];
+            // check if poll has reached endTime
+            if (block.timestamp >= endTime) {
+                // refund voters
+                _refundVoters(activePolls[i]);
+                // remove poll
+                activePolls[i] = activePolls[--length];
+                activePolls.pop();                
+            }
             unchecked {
                 i = i + 1;
             }
@@ -631,7 +631,7 @@ contract GogeDAO is Owned {
     /// @param  _pollNum unique poll identifier.
     /// @dev    poll must be an active poll
     function passPoll(uint256 _pollNum) external onlyOwner() {
-        require(isActivePoll(_pollNum), "Poll is not active");
+        require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::addVote() Poll Closed");
         _executeProposal(_pollNum);
     }
 
@@ -645,7 +645,7 @@ contract GogeDAO is Owned {
     /// @dev    Poll must be an active poll.
     ///         This function is also callable by the author of _pollNum.
     function endPoll(uint256 _pollNum) external onlyOwnerOrAuthor(_pollNum) {
-        require(isActivePoll(_pollNum), "Poll is not active");
+        require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::addVote() Poll Closed");
         _updateEndTime(_pollNum);
         _removePoll(_pollNum);
         _refundVoters(_pollNum);
@@ -673,7 +673,7 @@ contract GogeDAO is Owned {
     /// @notice An owner method for updating maxPollsPerAuthor.
     /// @param  _limit amount of active polls an author can have at any given time.
     function updateMaxPollsPerAuthor(uint8 _limit) external onlyOwner() {
-        maxPollsPerAuthor = _limit;
+        maxPollsPerAuthor = uint256(_limit);
     }
 
     // NOTE: governanceTokenAddr
@@ -703,8 +703,8 @@ contract GogeDAO is Owned {
     function _executeProposal(uint256 _pollNum) internal {
 
         _updateEndTime(_pollNum);
+        
         passed[_pollNum] = true;
-
         PollType _pollType = pollTypes[_pollNum];
 
         if (_pollType == PollType.taxChange) {
@@ -1007,25 +1007,6 @@ contract GogeDAO is Owned {
     /// @param _pollNum unique poll identifier.
     function getProportion(uint256 _pollNum) public view returns (uint256) {
         return totalVotes[_pollNum] * 100 / IGogeERC20(governanceTokenAddr).getCirculatingMinusReserve();
-    }
-
-    /// @notice A view method for returning the current polls (by pollNum) are active, but expired.
-    /// @return expired array of pollNums that are active, but expired.
-    /// @return counter the amount of polls that are active, but expired.
-    function findExpiredPolls() public view returns (uint256[] memory expired, uint256 counter) {
-        uint256 l = activePolls.length;
-        expired = new uint256[](l);
-
-        for (uint256 i; i < l;) {
-            uint256 endTime = pollEndTime[activePolls[i]];
-
-            if (block.timestamp >= endTime) {
-                expired[counter++] = activePolls[i];
-            }
-            unchecked {
-                i = i + 1;
-            }
-        }
     }
 
     /// @notice A view method for returning whether a given poll is active.

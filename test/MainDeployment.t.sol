@@ -98,7 +98,17 @@ contract MainDeploymentTesting is Utility, Test {
         gogeToken_v2.transfer(address(567), 20_000_000_000 ether);
 
         // TODO: (7) enableTrading() on v2
-        gogeToken_v2.enableTrading(); //<<<<<<<<<<<<<<<<<<<<
+        gogeToken_v2.enableTrading();
+
+
+        ////////////////////////////////// PHASE 2 //////////////////////////////////////////
+
+
+        // TODO: (1) launch DAO
+
+        // TODO: (2) SetDao on Token contract
+
+        // TODO: (3) enable createPoll
     }
 
     // ~~ Utility Functions ~~

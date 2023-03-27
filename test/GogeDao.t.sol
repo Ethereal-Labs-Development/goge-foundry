@@ -1449,6 +1449,188 @@ contract DaoTest is Utility, Test {
         assertTrue(num >= gogeDao.quorum());
     }
 
+    /// @notice Verifies correct state changes when a poll of pollType updateDividendToken is created and executed.
+    function test_gogeDao_updateDividendToken() public {
+
+        // NOTE create poll
+
+        // create poll metadata
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "I want to propose we update the dividend token to this address";
+        metadata.endTime = block.timestamp + 2 days;
+        metadata.addr1 = BUNY;
+
+        // create poll
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
+        gogeDao.createPoll(GogeDAO.PollType.updateDividendToken, metadata);
+
+        // Verify state change
+        assertEq(gogeDao.pollNum(), 1);
+        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.updateDividendToken);
+
+        // Verify poll metadata
+        assertEq(gogeDao.getMetadata(1).description, "I want to propose we update the dividend token to this address");
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).addr1, BUNY);
+
+        // Pre-state check
+        assertEq(gogeDao.passed(1), false);
+        assertEq(gogeToken.cakeDividendToken(), CAKE);
+
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
+        assertEq(activePolls[0], 1);
+
+        // NOTE pass poll
+
+        // pass poll
+        gogeDao.passPoll(1);
+
+        // Post-state check
+        assertEq(gogeDao.passed(1), true);
+        assertEq(gogeToken.cakeDividendToken(), BUNY);
+
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
+    }
+
+    /// @notice Verifies correct state changes when a poll of pollType updateMarketingWallet is created and executed.
+    function test_gogeDao_updateMarketingWallet() public {
+
+        // NOTE create poll
+
+        // create poll metadata
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "I want to propose we update the marketing wallet to this address";
+        metadata.endTime = block.timestamp + 2 days;
+        metadata.addr1 = address(this);
+
+        // create poll
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
+        gogeDao.createPoll(GogeDAO.PollType.updateMarketingWallet, metadata);
+
+        // Verify state change
+        assertEq(gogeDao.pollNum(), 1);
+        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.updateMarketingWallet);
+
+        // Verify poll metadata
+        assertEq(gogeDao.getMetadata(1).description, "I want to propose we update the marketing wallet to this address");
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).addr1, address(this));
+
+        // Pre-state check
+        assertEq(gogeDao.passed(1), false);
+        assertEq(gogeToken.marketingWallet(), 0xFecf1D51E984856F11B7D0872D40fC2F05377738);
+
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
+        assertEq(activePolls[0], 1);
+
+        // NOTE pass poll
+
+        // pass poll
+        gogeDao.passPoll(1);
+
+        // Post-state check
+        assertEq(gogeDao.passed(1), true);
+        assertEq(gogeToken.marketingWallet(), address(this));
+
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
+    }
+
+    /// @notice Verifies correct state changes when a poll of pollType updateTeamWallet is created and executed.
+    function test_gogeDao_updateTeamWallet() public {
+
+        // NOTE create poll
+
+        // create poll metadata
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "I want to propose we update the team wallet to this address";
+        metadata.endTime = block.timestamp + 2 days;
+        metadata.addr1 = address(this);
+
+        // create poll
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
+        gogeDao.createPoll(GogeDAO.PollType.updateTeamWallet, metadata);
+
+        // Verify state change
+        assertEq(gogeDao.pollNum(), 1);
+        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.updateTeamWallet);
+
+        // Verify poll metadata
+        assertEq(gogeDao.getMetadata(1).description, "I want to propose we update the team wallet to this address");
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).addr1, address(this));
+
+        // Pre-state check
+        assertEq(gogeDao.passed(1), false);
+        assertEq(gogeToken.teamWallet(), 0xC1Aa023A8fA820F4ed077f4dF4eBeD0a3351a324);
+
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
+        assertEq(activePolls[0], 1);
+
+        // NOTE pass poll
+
+        // pass poll
+        gogeDao.passPoll(1);
+
+        // Post-state check
+        assertEq(gogeDao.passed(1), true);
+        assertEq(gogeToken.teamWallet(), address(this));
+
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
+    }
+
+    /// @notice Verifies correct state changes when a poll of pollType updateTeamMember is created and executed.
+    function test_gogeDao_updateTeamMember() public {
+
+        // NOTE create poll
+
+        // create poll metadata
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "I want to propose we add an address as a team member";
+        metadata.endTime = block.timestamp + 2 days;
+        metadata.addr1 = address(sal);
+
+        // create poll
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
+        gogeDao.createPoll(GogeDAO.PollType.updateTeamMember, metadata);
+
+        // Verify state change
+        assertEq(gogeDao.pollNum(), 1);
+        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.updateTeamMember);
+
+        // Verify poll metadata
+        assertEq(gogeDao.getMetadata(1).description, "I want to propose we add an address as a team member");
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).addr1, address(sal));
+
+        // Pre-state check
+        assertEq(gogeDao.passed(1), false);
+        (bool _member,) = gogeDao.isTeamMember(address(sal));
+        assertEq(_member, false);
+
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
+        assertEq(activePolls[0], 1);
+
+        // NOTE pass poll
+
+        // pass poll
+        gogeDao.passPoll(1);
+
+        // Post-state check
+        assertEq(gogeDao.passed(1), true);
+        (_member,) = gogeDao.isTeamMember(address(sal));
+        assertEq(_member, true);
+
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
+    }
+
     /// @notice Verifies correct state changes when a poll of pollType updateGovernanceToken is created and executed.
     function test_gogeDao_updateGovernanceToken() public {
 

@@ -127,289 +127,7 @@ contract GogeDAO is Owned {
         uint256 amount;
         bool boolVar;
     }
-
-    /// @notice Poll type to propose a tax change.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  cakeDividendsFee uint8 rewardFee.
-    /// @param  marketingFee uint8 marketingFee.
-    /// @param  buyBackFee uint8 buyBackFee.
-    /// @param  teamFee uint8 teamFee.
-    /// @dev    Sum or totalFee has to be equal-to or less-than 40.
-    ///         Will result in a call to GovernanceTokenAddr.updateFees().
-    struct TaxChange {
-        string description;
-        uint256 endTime;
-        uint8 cakeDividendsFee;
-        uint8 marketingFee;
-        uint8 buyBackFee;
-        uint8 teamFee;
-    }
     
-    /// @notice Poll type to propose a funding from marketingBalance.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  recipient address of funding recipient.
-    /// @dev    Will result in a transfer of BNB from address(this) to recipient.
-    struct Funding {
-        string description;
-        uint256 endTime;
-        address payable recipient;
-        uint256 amount;
-    }
-
-    /// @notice Poll type to propose changing gogeDao address on governance token.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address of new DAO contract.
-    /// @dev    Will result in a call to GovernanceTokenAddr.setGogeDao().
-    struct SetGogeDao {
-        string description;
-        uint256 endTime;
-        address addr;
-    }
-
-    /// @notice Poll type to propose whitelisting and exluding from dividends an address.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address of partner address.
-    /// @dev    Will result in a call to GovernanceTokenAddr.addPartnerOrExchange().
-    struct SetCex {
-        string description;
-        uint256 endTime;
-        address addr; 
-    }
-
-    /// @notice Poll type to propose adding an exchange/pair to governacne token.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address of new exchange/pair.
-    /// @dev    Will result in a call to GovernanceTokenAddr.setAutomatedMarketMakerPair().
-    struct SetDex {
-        string description;
-        uint256 endTime;
-        address addr;
-        bool boolVar;
-    }
-
-    /// @notice Poll type to propose excluding an address from circulating supply.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address of excluded address.
-    /// @param  bool is excluded.
-    /// @dev    Will result in a call to GovernanceTokenAddr.excludeFromCirculatingSupply().
-    struct ExcludeFromCirculatingSupply {
-        string description;
-        uint256 endTime;
-        address addr;
-        bool boolVar;
-    }
-
-    /// @notice Poll type to propose changing the rewards token.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address of new dividend token.
-    /// @dev    Will result in a call to GovernanceTokenAddr.updateCakeDividendToken().
-    struct UpdateDividendToken {
-        string description;
-        uint256 endTime;
-        address addr;
-    }
-
-    /// @notice Poll type to propose changing the marketing wallet.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address of new marketing wallet.
-    /// @dev    Will result in a call to GovernanceTokenAddr.updateMarketingWallet().
-    struct UpdateMarketingWallet {
-        string description;
-        uint256 endTime;
-        address payable addr;
-    }
-
-    /// @notice Poll type to propose changing the team wallet.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address of new team wallet.
-    /// @dev    Will result in a call to GovernanceTokenAddr.updateTeamWallet().
-    struct UpdateTeamWallet {
-        string description;
-        uint256 endTime;
-        address payable addr;
-    }
-
-    /// @notice Poll type to propose adding a new team member.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address of new team member address.
-    /// @param  boolVar wallet is a team member.
-    /// @dev    Will result in a call to _setTeamMember().
-    struct UpdateTeamMember {
-        string description;
-        uint256 endTime;
-        address payable addr;
-        bool boolVar;
-    }
-
-    /// @notice Poll type to propose adding wallet to gate keepers.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address of new gate keeper address.
-    /// @param  boolVar wallet is a gate keeper.
-    /// @dev    Will result in a call to _setGateKeeper().
-    struct UpdateGatekeeper {
-        string description;
-        uint256 endTime;
-        address addr;
-        bool boolVar;  
-    }
-
-    /// @notice Poll type to propose updating status of gateKeeping.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  boolVar gateKeeping is enabled.
-    /// @dev    Will result in a call to _setGateKeeping().
-    struct SetGatekeeping {
-        string description;
-        uint256 endTime;
-        bool boolVar;      
-    }
-
-    /// @notice Poll type to propose updating status of buyBackFee tax.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  boolVar buyBackFee is enabled.
-    /// @dev    Will result in a call to GovernanceTokenAddr.setBuyBackEnabled().
-    struct SetBuyBackEnabled {
-        string description;
-        uint256 endTime;
-        bool boolVar;      
-    }
-
-    /// @notice Poll type to propose updating status of cakeDividendFee tax.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  boolVar cakeDividendFee is enabled.
-    /// @dev    Will result in a call to GovernanceTokenAddr.setCakeDividendEnabled().
-    struct SetCakeDividendEnabled {
-        string description;
-        uint256 endTime;
-        bool boolVar;      
-    }
-
-    /// @notice Poll type to propose updating status of cakeDividend tax.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  boolVar marketingFee is enabled.
-    /// @dev    Will result in a call to GovernanceTokenAddr.setMarketingEnabled().
-    struct SetMarketingEnabled {
-        string description;
-        uint256 endTime;
-        bool boolVar;      
-    }
-
-    /// @notice Poll type to propose updating status of teamFee tax.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  boolVar teamFee is enabled.
-    /// @dev    Will result in a call to GovernanceTokenAddr.setTeamEnabled().
-    struct SetTeamEnabled {
-        string description;
-        uint256 endTime;
-        bool boolVar;      
-    }
-
-    /// @notice Poll type to propose excluding an address from fees.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address to exclude from fees.
-    /// @param  boolVar is excluded from fees.
-    /// @dev    Will result in a call to GovernanceTokenAddr.excludeFromFees().
-    struct ExcludeFromFees {
-        string description;
-        uint256 endTime;
-        address payable addr;
-        bool boolVar;
-    }
-
-    /// @notice Poll type to propose excluding an address from dividend rewards.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address to exclude from dividends.
-    /// @dev    Will result in a call to GovernanceTokenAddr.excludeFromDividend().
-    struct ExcludeFromDividends {
-        string description;
-        uint256 endTime;
-        address payable addr;
-    }
-
-    /// @notice Poll type to propose adding an address to the blacklist.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address to blacklist.
-    /// @param  boolVar is blacklisted.
-    /// @dev    Will result in a call to GovernanceTokenAddr.modifyBlacklist().
-    struct ModifyBlacklist {
-        string description;
-        uint256 endTime;
-        address payable addr;
-        bool blacklisted;
-    }
-
-    /// @notice Poll type to propose transferring the ownership of governance token.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr address to pass ownership to.
-    /// @dev    Will result in a call to GovernanceTokenAddr._transferOwnership().
-    struct TransferOwnership {
-        string description;
-        uint256 endTime;
-        address payable addr;
-    }
-
-    /// @notice Poll type to propose withdrawing ERC20 tokens from this contract.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr recipient of tokens.
-    /// @param  token address of tokens to withdraw.
-    /// @dev    Will result in the transfer of funds from address(this) to a recipient.
-    struct MigrateTreasury {
-        string description;
-        uint256 endTime;
-        address payable addr;
-        address token;
-    }
-
-    /// @notice Poll type to propose changing the voting quorum.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  amount new quorum.
-    /// @dev    Will result in a call to _updateQuorum().
-    struct SetQuorum {
-        string description;
-        uint256 endTime;
-        uint256 amount;
-    }
-
-    /// @notice Poll type to propose updating the governanceTokenAddr.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr new governance token.
-    /// @dev    Will result in a call to _changeGovernanceToken().
-    struct UpdateGovernanceToken {
-        string description;
-        uint256 endTime;
-        address addr;
-    }
-
-    /// @notice Poll type to propose an arbitrary proposal.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    struct Other {
-        string description;
-        uint256 endTime;
-    }
-
 
     // -----------
     // Constructor
@@ -417,39 +135,9 @@ contract GogeDAO is Owned {
 
     /// @notice Initializes GogeDao.sol
     /// @param _governanceToken address of governance token.
-    constructor(
-        address _governanceToken
-    )
-        Owned(msg.sender)
-    {
+    constructor(address _governanceToken) Owned(msg.sender) {
        _setGateKeeper(owner, true);
         governanceTokenAddr = _governanceToken;
-        actions = [
-            "taxChange",
-            "funding",
-            "setGogeDao",
-            "setCex",
-            "setDex",
-            "excludeFromCirculatingSupply",
-            "updateDividendToken",
-            "updateMarketingWallet",
-            "updateTeamWallet",
-            "updateTeamMember",
-            "updateGateKeeper",
-            "setGateKeeping",
-            "setBuyBackEnabled",
-            "setCakeDividendEnabled",
-            "setMarketingEnabled",
-            "setTeamEnabled",
-            "excludeFromFees",
-            "excludeFromDividends",
-            "modifyBlacklist",
-            "transferOwnership",
-            "migrateTreasury",
-            "setQuorum",
-            "updateGovernanceToken",
-            "other"
-        ];
     }
 
 
@@ -708,126 +396,103 @@ contract GogeDAO is Owned {
         PollType _pollType = pollTypes[_pollNum];
 
         if (_pollType == PollType.taxChange) {
-            TaxChange memory taxchange;
-            (,taxchange,) = getTaxChange(_pollNum);
-            IGogeERC20(governanceTokenAddr).updateFees(taxchange.cakeDividendsFee, taxchange.marketingFee, taxchange.buyBackFee, taxchange.teamFee);
+            Metadata memory taxChange = pollMap[_pollNum];
+            IGogeERC20(governanceTokenAddr).updateFees(taxChange.fee1, taxChange.fee2, taxChange.fee3, taxChange.fee4);
         }
         else if (_pollType == PollType.funding) {
-            Funding memory funding;
-            (,funding,) = getFunding(_pollNum);
+            Metadata memory funding = pollMap[_pollNum];
             require(funding.amount <= marketingBalance, "Insufficient Funds");
-            (bool success,) = funding.recipient.call{value: funding.amount}("");
+            (bool success,) = funding.addr1.call{value: funding.amount}("");
             require(success, "call unsuccessful");
             marketingBalance -= funding.amount;
         }
         else if (_pollType == PollType.setGogeDao) {
-            SetGogeDao memory setGogeDao;
-            (,setGogeDao,) = getSetGogeDao(_pollNum);
-            IGogeERC20(governanceTokenAddr).setGogeDao(setGogeDao.addr);
+            Metadata memory setGogeDao = pollMap[_pollNum];
+            IGogeERC20(governanceTokenAddr).setGogeDao(setGogeDao.addr1);
         }
         else if (_pollType == PollType.setCex) {
-            SetCex memory setCex;
-            (,setCex,) = getSetCex(_pollNum);
-            IGogeERC20(governanceTokenAddr).addPartnerOrExchange(setCex.addr);
+            Metadata memory setCex = pollMap[_pollNum];
+            IGogeERC20(governanceTokenAddr).addPartnerOrExchange(setCex.addr1);
         }
         else if (_pollType == PollType.setDex) {
-            SetDex memory setDex;
-            (,setDex,) = getSetDex(_pollNum);
-            IGogeERC20(governanceTokenAddr).setAutomatedMarketMakerPair(setDex.addr, setDex.boolVar);
+            Metadata memory setDex = pollMap[_pollNum];
+            IGogeERC20(governanceTokenAddr).setAutomatedMarketMakerPair(setDex.addr1, setDex.boolVar);
         }
         else if (_pollType == PollType.excludeFromCirculatingSupply) {
-            ExcludeFromCirculatingSupply memory excludeFromCirculatingSupply;
-            (,excludeFromCirculatingSupply,) = getExcludeFromCirculatingSupply(_pollNum);
-            IGogeERC20(governanceTokenAddr).excludeFromCirculatingSupply(excludeFromCirculatingSupply.addr, excludeFromCirculatingSupply.boolVar);
+            Metadata memory excludeFromCirculatingSupply = pollMap[_pollNum];
+            IGogeERC20(governanceTokenAddr).excludeFromCirculatingSupply(excludeFromCirculatingSupply.addr1, excludeFromCirculatingSupply.boolVar);
         }
         else if (_pollType == PollType.updateDividendToken) {
-            UpdateDividendToken memory updateDividendToken;
-            (,updateDividendToken,) = getUpdateDividendToken(_pollNum);
-            IGogeERC20(governanceTokenAddr).updateCakeDividendToken(updateDividendToken.addr);
+            Metadata memory updateDividendToken = pollMap[_pollNum];
+            IGogeERC20(governanceTokenAddr).updateCakeDividendToken(updateDividendToken.addr1);
         }
         else if (_pollType == PollType.updateMarketingWallet) {
-            UpdateMarketingWallet memory updateMarketingWallet;
-            (,updateMarketingWallet,) = getUpdateMarketingWallet(_pollNum);
-            IGogeERC20(governanceTokenAddr).updateMarketingWallet(updateMarketingWallet.addr);
+            Metadata memory updateMarketingWallet = pollMap[_pollNum];
+            IGogeERC20(governanceTokenAddr).updateMarketingWallet(updateMarketingWallet.addr1);
         }
         else if (_pollType == PollType.updateTeamWallet) {
-            UpdateTeamWallet memory updateTeamWallet;
-            (,updateTeamWallet,) = getUpdateTeamWallet(_pollNum);
-            IGogeERC20(governanceTokenAddr).updateTeamWallet(updateTeamWallet.addr);
+            Metadata memory updateTeamWallet = pollMap[_pollNum];
+            IGogeERC20(governanceTokenAddr).updateTeamWallet(updateTeamWallet.addr1);
         }
         else if (_pollType == PollType.updateTeamMember) {
-            UpdateTeamMember memory updateTeamMember;
-            (,updateTeamMember,) = getUpdateTeamMember(_pollNum);
-            _setTeamMember(updateTeamMember.addr, updateTeamMember.boolVar);
+            Metadata memory updateTeamMember = pollMap[_pollNum];
+            _setTeamMember(updateTeamMember.addr1, updateTeamMember.boolVar);
         }
         else if (_pollType == PollType.updateGatekeeper) {
-            UpdateGatekeeper memory modifyGateKeeper;
-            (,modifyGateKeeper,) = getUpdateGateKeeper(_pollNum);
-            _setGateKeeper(modifyGateKeeper.addr, modifyGateKeeper.boolVar);
+            Metadata memory modifyGateKeeper = pollMap[_pollNum];
+            _setGateKeeper(modifyGateKeeper.addr1, modifyGateKeeper.boolVar);
         }
         else if (_pollType == PollType.setGatekeeping) {
-            SetGatekeeping memory modifyGateKeeping;
-            (,modifyGateKeeping,) = getSetGateKeeping(_pollNum);
+            Metadata memory modifyGateKeeping = pollMap[_pollNum];
             _setGateKeeping(modifyGateKeeping.boolVar);
         }
         else if (_pollType == PollType.setBuyBackEnabled) {
-            SetBuyBackEnabled memory setBuyBackEnabled;
-            (,setBuyBackEnabled,) = getSetBuyBackEnabled(_pollNum);
+            Metadata memory setBuyBackEnabled = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).setBuyBackEnabled(setBuyBackEnabled.boolVar);
         }
         else if (_pollType == PollType.setCakeDividendEnabled) {
-            SetCakeDividendEnabled memory setCakeDividendEnabled;
-            (,setCakeDividendEnabled,) = getSetCakeDividendEnabled(_pollNum);
+            Metadata memory setCakeDividendEnabled = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).setCakeDividendEnabled(setCakeDividendEnabled.boolVar);
         }
         else if (_pollType == PollType.setMarketingEnabled) {
-            SetMarketingEnabled memory setMarketingEnabled;
-            (,setMarketingEnabled,) = getSetMarketingEnabled(_pollNum);
+            Metadata memory setMarketingEnabled = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).setMarketingEnabled(setMarketingEnabled.boolVar);
         }
         else if (_pollType == PollType.setTeamEnabled) {
-            SetTeamEnabled memory setTeamEnabled;
-            (,setTeamEnabled,) = getSetTeamEnabled(_pollNum);
+            Metadata memory setTeamEnabled = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).setTeamEnabled(setTeamEnabled.boolVar);
         }
         else if (_pollType == PollType.excludeFromFees) {
-            ExcludeFromFees memory excludeFromFees;
-            (,excludeFromFees,) = getExcludeFromFees(_pollNum);
-            IGogeERC20(governanceTokenAddr).excludeFromFees(excludeFromFees.addr, excludeFromFees.boolVar);
+            Metadata memory excludeFromFees = pollMap[_pollNum];
+            IGogeERC20(governanceTokenAddr).excludeFromFees(excludeFromFees.addr1, excludeFromFees.boolVar);
         }
         else if (_pollType == PollType.excludeFromDividends) {
-            ExcludeFromDividends memory excludeFromDividends;
-            (,excludeFromDividends,) = getExcludeFromDividends(_pollNum);
-            IGogeERC20(governanceTokenAddr).excludeFromDividend(excludeFromDividends.addr);
+            Metadata memory excludeFromDividends = pollMap[_pollNum];
+            IGogeERC20(governanceTokenAddr).excludeFromDividend(excludeFromDividends.addr1);
         }
         else if (_pollType == PollType.modifyBlacklist) {
-            ModifyBlacklist memory modifyBlacklist;
-            (,modifyBlacklist,) = getModifyBlacklist(_pollNum);
-            IGogeERC20(governanceTokenAddr).modifyBlacklist(modifyBlacklist.addr, modifyBlacklist.blacklisted);
+            Metadata memory modifyBlacklist = pollMap[_pollNum];
+            IGogeERC20(governanceTokenAddr).modifyBlacklist(modifyBlacklist.addr1, modifyBlacklist.boolVar);
         }
         else if (_pollType == PollType.transferOwnership) {
-            TransferOwnership memory transferOwnership;
-            (,transferOwnership,) = getTransferOwnership(_pollNum);
-            IGogeERC20(governanceTokenAddr)._transferOwnership(transferOwnership.addr);
+            Metadata memory transferOwnership = pollMap[_pollNum];
+            IGogeERC20(governanceTokenAddr)._transferOwnership(transferOwnership.addr1);
         }
         else if (_pollType == PollType.migrateTreasury) {
-            MigrateTreasury memory migrateTreasury;
-            (,migrateTreasury,) = getMigrateTreasury(_pollNum);
-            IGogeERC20(migrateTreasury.token).transfer(migrateTreasury.addr, IGogeERC20(migrateTreasury.token).balanceOf(address(this)));
+            Metadata memory migrateTreasury = pollMap[_pollNum];
+            IGogeERC20(migrateTreasury.addr2).transfer(migrateTreasury.addr1, IGogeERC20(migrateTreasury.addr2).balanceOf(address(this)));
         }
         else if (_pollType == PollType.setQuorum) {
-            SetQuorum memory setQuorum;
-            (,setQuorum,) = getSetQuorum(_pollNum);
+            Metadata memory setQuorum = pollMap[_pollNum];
             _updateQuorum(setQuorum.amount);
         }
         else if (_pollType == PollType.updateGovernanceToken) {
-            UpdateGovernanceToken memory updateGovernanceToken;
-            (,updateGovernanceToken,) = getUpdateGovernanceToken(_pollNum);
+            Metadata memory updateGovernanceToken = pollMap[_pollNum];
 
             _removePoll(_pollNum);
             _refundVoters(_pollNum);
 
-            _changeGovernanceToken(updateGovernanceToken.addr);
+            _changeGovernanceToken(updateGovernanceToken.addr1);
             emit ProposalPassed(_pollNum);
 
             return;
@@ -1064,304 +729,6 @@ contract GogeDAO is Owned {
     /// @notice Returns an array of pollNum from advocateFor given _advocate.
     function getAdvocateFor(address _advocate) external view returns (uint256[] memory) {
         return advocateFor[_advocate];
-    }
-
-    /// @notice A view method for returning metadata for type taxChange.
-    function getTaxChange(uint256 _pollNum) public view returns(uint256, TaxChange memory, bool) {
-        require(pollTypes[_pollNum] == PollType.taxChange, "Not TaxChange");
-        Metadata memory poll = pollMap[_pollNum];
-        TaxChange memory taxChange;
-        taxChange.description = poll.description;
-        taxChange.endTime = poll.endTime;
-        taxChange.cakeDividendsFee = poll.fee1;
-        taxChange.marketingFee = poll.fee2;
-        taxChange.buyBackFee = poll.fee3;
-        taxChange.teamFee = poll.fee4;
-
-        return (totalVotes[_pollNum], taxChange, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type funding.
-    function getFunding(uint256 _pollNum) public view returns(uint256, Funding memory, bool) {
-        require(pollTypes[_pollNum] == PollType.funding, "Not Funding");
-        Metadata memory poll = pollMap[_pollNum];
-        Funding memory funding;
-        funding.description = poll.description;
-        funding.endTime = poll.endTime;
-        funding.recipient = payable(poll.addr1);
-        funding.amount = poll.amount;
-
-        return (totalVotes[_pollNum], funding, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type setGogeDao.
-    function getSetGogeDao(uint256 _pollNum) public view returns(uint256, SetGogeDao memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setGogeDao, "Not SetGogeDao");
-        Metadata memory poll = pollMap[_pollNum];
-        SetGogeDao memory setGogeDao;
-        setGogeDao.description = poll.description;
-        setGogeDao.endTime = poll.endTime;
-        setGogeDao.addr = poll.addr1;
-
-        return (totalVotes[_pollNum], setGogeDao, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type setCex.
-    function getSetCex(uint256 _pollNum) public view returns(uint256, SetCex memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setCex, "Not setCex");
-        Metadata memory poll = pollMap[_pollNum];
-        SetCex memory setCex;
-        setCex.description = poll.description;
-        setCex.endTime = poll.endTime;
-        setCex.addr = poll.addr1;
-
-        return (totalVotes[_pollNum], setCex, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type setDex.
-    function getSetDex(uint256 _pollNum) public view returns(uint256, SetDex memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setDex, "Not setDex");
-        Metadata memory poll = pollMap[_pollNum];
-        SetDex memory setDex;
-        setDex.description = poll.description;
-        setDex.endTime = poll.endTime;
-        setDex.addr = poll.addr1;
-        setDex.boolVar = poll.boolVar;
-
-        return (totalVotes[_pollNum], setDex, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type excludeFromCirculatingSupply.
-    function getExcludeFromCirculatingSupply(uint256 _pollNum) public view returns(uint256, ExcludeFromCirculatingSupply memory, bool) {
-        require(pollTypes[_pollNum] == PollType.excludeFromCirculatingSupply, "Not excludeFromCirculatingSupply");
-        Metadata memory poll = pollMap[_pollNum];
-        ExcludeFromCirculatingSupply memory excludeFromCirculatingSupply;
-        excludeFromCirculatingSupply.description = poll.description;
-        excludeFromCirculatingSupply.endTime = poll.endTime;
-        excludeFromCirculatingSupply.addr = poll.addr1;
-        excludeFromCirculatingSupply.boolVar = poll.boolVar;
-
-        return (totalVotes[_pollNum], excludeFromCirculatingSupply, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type updateDividendToken.
-    function getUpdateDividendToken(uint256 _pollNum) public view returns(uint256, UpdateDividendToken memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateDividendToken, "Not updateDividendToken");
-        Metadata memory poll = pollMap[_pollNum];
-        UpdateDividendToken memory updateDividendToken;
-        updateDividendToken.description = poll.description;
-        updateDividendToken.endTime = poll.endTime;
-        updateDividendToken.addr = poll.addr1;
-
-        return (totalVotes[_pollNum], updateDividendToken, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type updateMarketingWallet.
-    function getUpdateMarketingWallet(uint256 _pollNum) public view returns(uint256, UpdateMarketingWallet memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateMarketingWallet, "Not updateMarketingWallet");
-        Metadata memory poll = pollMap[_pollNum];
-        UpdateMarketingWallet memory updateMarketingWallet;
-        updateMarketingWallet.description = poll.description;
-        updateMarketingWallet.endTime = poll.endTime;
-        updateMarketingWallet.addr = payable(poll.addr1);
-
-        return (totalVotes[_pollNum], updateMarketingWallet, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type updateTeamWallet.
-    function getUpdateTeamWallet(uint256 _pollNum) public view returns(uint256, UpdateTeamWallet memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateTeamWallet, "Not updateTeamWallet");
-        Metadata memory poll = pollMap[_pollNum];
-        UpdateTeamWallet memory updateTeamWallet;
-        updateTeamWallet.description = poll.description;
-        updateTeamWallet.endTime = poll.endTime;
-        updateTeamWallet.addr = payable(poll.addr1);
-
-        return (totalVotes[_pollNum], updateTeamWallet, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type updateTeamMember.
-    function getUpdateTeamMember(uint256 _pollNum) public view returns(uint256, UpdateTeamMember memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateTeamMember, "Not updateTeamMember");
-        Metadata memory poll = pollMap[_pollNum];
-        UpdateTeamMember memory updateTeamMember;
-        updateTeamMember.description = poll.description;
-        updateTeamMember.endTime = poll.endTime;
-        updateTeamMember.addr = payable(poll.addr1);
-        updateTeamMember.boolVar = poll.boolVar;
-
-        return (totalVotes[_pollNum], updateTeamMember, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type updateGateKeeper.
-    function getUpdateGateKeeper(uint256 _pollNum) public view returns(uint256, UpdateGatekeeper memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateGatekeeper, "Not updateGateKeeper");
-        Metadata memory poll = pollMap[_pollNum];
-        UpdateGatekeeper memory modifyGatekeeper;
-        modifyGatekeeper.description = poll.description;
-        modifyGatekeeper.endTime = poll.endTime;
-        modifyGatekeeper.addr = poll.addr1;
-        modifyGatekeeper.boolVar = poll.boolVar;
-
-        return (totalVotes[_pollNum], modifyGatekeeper, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type setGateKeeping.
-    function getSetGateKeeping(uint256 _pollNum) public view returns(uint256, SetGatekeeping memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setGatekeeping, "Not setGateKeeping");
-        Metadata memory poll = pollMap[_pollNum];
-        SetGatekeeping memory modifyGatekeeping;
-        modifyGatekeeping.description = poll.description;
-        modifyGatekeeping.endTime = poll.endTime;
-        modifyGatekeeping.boolVar = poll.boolVar;
-
-        return (totalVotes[_pollNum], modifyGatekeeping, passed[_pollNum]);  
-    }
-
-    /// @notice A view method for returning metadata for type setBuyBackEnabled.
-    function getSetBuyBackEnabled(uint256 _pollNum) public view returns(uint256, SetBuyBackEnabled memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setBuyBackEnabled, "Not setBuyBackEnabled");
-        Metadata memory poll = pollMap[_pollNum];
-        SetBuyBackEnabled memory setBuyBackEnabled;
-        setBuyBackEnabled.description = poll.description;
-        setBuyBackEnabled.endTime = poll.endTime;
-        setBuyBackEnabled.boolVar = poll.boolVar;
-
-        return (totalVotes[_pollNum], setBuyBackEnabled, passed[_pollNum]);  
-    }
-
-    /// @notice A view method for returning metadata for type setCakeDividendEnabled.
-    function getSetCakeDividendEnabled(uint256 _pollNum) public view returns(uint256, SetCakeDividendEnabled memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setCakeDividendEnabled, "Not setCakeDividendEnabled");
-        Metadata memory poll = pollMap[_pollNum];
-        SetCakeDividendEnabled memory setCakeDividendEnabled;
-        setCakeDividendEnabled.description = poll.description;
-        setCakeDividendEnabled.endTime = poll.endTime;
-        setCakeDividendEnabled.boolVar = poll.boolVar;
-
-        return (totalVotes[_pollNum], setCakeDividendEnabled, passed[_pollNum]);  
-    }
-
-    /// @notice A view method for returning metadata for type setMarketingEnabled.
-    function getSetMarketingEnabled(uint256 _pollNum) public view returns(uint256, SetMarketingEnabled memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setMarketingEnabled, "Not setMarketingEnabled");
-        Metadata memory poll = pollMap[_pollNum];
-        SetMarketingEnabled memory setMarketingEnabled;
-        setMarketingEnabled.description = poll.description;
-        setMarketingEnabled.endTime = poll.endTime;
-        setMarketingEnabled.boolVar = poll.boolVar;
-
-        return (totalVotes[_pollNum], setMarketingEnabled, passed[_pollNum]);  
-    }
-
-    /// @notice A view method for returning metadata for type setTeamEnabled.
-    function getSetTeamEnabled(uint256 _pollNum) public view returns(uint256, SetTeamEnabled memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setTeamEnabled, "Not setTeamEnabled");
-        Metadata memory poll = pollMap[_pollNum];
-        SetTeamEnabled memory setTeamEnabled;
-        setTeamEnabled.description = poll.description;
-        setTeamEnabled.endTime = poll.endTime;
-        setTeamEnabled.boolVar = poll.boolVar;
-
-        return (totalVotes[_pollNum], setTeamEnabled, passed[_pollNum]);  
-    }
-
-    /// @notice A view method for returning metadata for type excludeFromFees.
-    function getExcludeFromFees(uint256 _pollNum) public view returns(uint256, ExcludeFromFees memory, bool) {
-        require(pollTypes[_pollNum] == PollType.excludeFromFees, "Not excludeFromFees");
-        Metadata memory poll = pollMap[_pollNum];
-        ExcludeFromFees memory excludeFromFees;
-        excludeFromFees.description = poll.description;
-        excludeFromFees.endTime = poll.endTime;
-        excludeFromFees.addr = payable(poll.addr1);
-        excludeFromFees.boolVar = poll.boolVar;
-
-        return (totalVotes[_pollNum], excludeFromFees, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type excludeFromDividends.
-    function getExcludeFromDividends(uint256 _pollNum) public view returns(uint256, ExcludeFromDividends memory, bool) {
-        require(pollTypes[_pollNum] == PollType.excludeFromDividends, "Not excludeFromDividends");
-        Metadata memory poll = pollMap[_pollNum];
-        ExcludeFromDividends memory excludeFromDividends;
-        excludeFromDividends.description = poll.description;
-        excludeFromDividends.endTime = poll.endTime;
-        excludeFromDividends.addr = payable(poll.addr1);
-
-        return (totalVotes[_pollNum], excludeFromDividends, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type modifyBlacklist.
-    function getModifyBlacklist(uint256 _pollNum) public view returns(uint256, ModifyBlacklist memory, bool) {
-        require(pollTypes[_pollNum] == PollType.modifyBlacklist, "Not modifyBlacklist");
-        Metadata memory poll = pollMap[_pollNum];
-        ModifyBlacklist memory modifyBlacklist;
-        modifyBlacklist.description = poll.description;
-        modifyBlacklist.endTime = poll.endTime;
-        modifyBlacklist.addr = payable(poll.addr1);
-        modifyBlacklist.blacklisted = poll.boolVar;
-
-        return (totalVotes[_pollNum], modifyBlacklist, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type transferOwnership.
-    function getTransferOwnership(uint256 _pollNum) public view returns(uint256, TransferOwnership memory, bool) {
-        require(pollTypes[_pollNum] == PollType.transferOwnership, "Not transferOwnership");
-        Metadata memory poll = pollMap[_pollNum];
-        TransferOwnership memory transferOwnership;
-        transferOwnership.description = poll.description;
-        transferOwnership.endTime = poll.endTime;
-        transferOwnership.addr = payable(poll.addr1);
-
-        return (totalVotes[_pollNum], transferOwnership, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type migrateTreasury.
-    function getMigrateTreasury(uint256 _pollNum) public view returns(uint256, MigrateTreasury memory, bool) {
-        require(pollTypes[_pollNum] == PollType.migrateTreasury, "Not migrateTreasury");
-        Metadata memory poll = pollMap[_pollNum];
-        MigrateTreasury memory migrateTreasury;
-        migrateTreasury.description = poll.description;
-        migrateTreasury.endTime = poll.endTime;
-        migrateTreasury.addr = payable(poll.addr1);
-        migrateTreasury.token = poll.addr2;
-
-        return (totalVotes[_pollNum], migrateTreasury, passed[_pollNum]);   
-    }
-
-    /// @notice A view method for returning metadata for type setQuorum.
-    function getSetQuorum(uint256 _pollNum) public view returns(uint256, SetQuorum memory, bool) {
-        require(pollTypes[_pollNum] == PollType.setQuorum, "Not setQuorum");
-        Metadata memory poll = pollMap[_pollNum];
-        SetQuorum memory setQuorum;
-        setQuorum.description = poll.description;
-        setQuorum.endTime = poll.endTime;
-        setQuorum.amount = poll.amount;
-
-        return (totalVotes[_pollNum], setQuorum, passed[_pollNum]);   
-    }
-
-    /// @notice A view method for returning metadata for type updateGovernanceToken.
-    function getUpdateGovernanceToken(uint256 _pollNum) public view returns(uint256, UpdateGovernanceToken memory, bool) {
-        require(pollTypes[_pollNum] == PollType.updateGovernanceToken, "Not updateGovernanceToken");
-        Metadata memory poll = pollMap[_pollNum];
-        UpdateGovernanceToken memory updateGovernanceToken;
-        updateGovernanceToken.description = poll.description;
-        updateGovernanceToken.endTime = poll.endTime;
-        updateGovernanceToken.addr = poll.addr1;
-
-        return (totalVotes[_pollNum], updateGovernanceToken, passed[_pollNum]);
-    }
-
-    /// @notice A view method for returning metadata for type other.
-    function getOther(uint256 _pollNum) public view returns(uint256, string memory, uint256, bool) {
-        require(pollTypes[_pollNum] == PollType.other, "Not Other");
-        Metadata memory poll = pollMap[_pollNum];
-        Other memory other;
-        other.description = poll.description;
-        other.endTime = poll.endTime;
-
-        return (totalVotes[_pollNum], poll.description, poll.endTime, passed[_pollNum]);
     }
     
 }

@@ -45,8 +45,6 @@ contract GogeDAO is Owned {
     address [] public teamMembers;
     /// @notice Array of active polls -> array of poll nums.
     uint256 [] public activePolls;
-    /// @notice Array of poll types as strings.
-    string  [] public actions;
     
     /// @notice Double Mapping of pollNum to amount of votes per voter.
     mapping(uint256 => mapping(address => uint256)) public polls;
@@ -151,6 +149,18 @@ contract GogeDAO is Owned {
         _;
     }
 
+    /// @notice Modifier for permissioned functions where msg.sender must be governance token.
+    modifier onlyGovernanceToken() {
+        require(msg.sender == governanceTokenAddr, "UNAUTHORIZED");
+        _;
+    }
+
+    /// @notice Modifier for permissioned functions excluding wallets except gatekeepers.
+    modifier onlyGatekeeper() {
+        require(gatekeeper[msg.sender], "UNAUTHORIZED");
+        _;
+    }
+
 
     // ------
     // Events
@@ -178,7 +188,8 @@ contract GogeDAO is Owned {
         require(createPollEnabled, "GogeDao.sol::createPoll() Ability to create poll is disabled");
         if (msg.sender != owner) require(getActivePollsFromAuthor(msg.sender) < maxPollsPerAuthor, "GogeDao.sol::createPoll() Exceeds maxPollsPerAuthor");
         require(block.timestamp < _change.endTime, "GogeDao.sol::createPoll() End time must be later than start time");
-        require(_change.endTime - block.timestamp >= minPeriod, "GogeDao.sol::createPoll() Polling period must be greater than 24 hours");
+        require(_change.endTime - block.timestamp >= minPeriod, "GogeDao.sol::createPoll() Polling period must be greater than minPeriod");
+        require(_change.endTime - block.timestamp <= maxPeriod, "GogeDao.sol::createPoll() Polling period must be less than maxPeriod");
 
         require(IGogeERC20(governanceTokenAddr).balanceOf(msg.sender) >= minAuthorBal, "GogeDao.sol::createPoll() Insufficient balance of tokens");
         require(IGogeERC20(governanceTokenAddr).transferFrom(msg.sender, address(this), minAuthorBal));
@@ -219,7 +230,7 @@ contract GogeDAO is Owned {
 
         bool quorumMet = getProportion(_pollNum) >= quorum;
 
-        if((gatekeeper[msg.sender] || !gatekeeping) && quorumMet) {
+        if(!gatekeeping && quorumMet) {
             _executeProposal(_pollNum);
         }
     }
@@ -319,7 +330,7 @@ contract GogeDAO is Owned {
     /// @param  _pollNum unique poll identifier.
     /// @dev    poll must be an active poll
     function passPoll(uint256 _pollNum) external onlyOwner() {
-        require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::addVote() Poll Closed");
+        require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::passPoll() Poll Closed");
         _executeProposal(_pollNum);
     }
 
@@ -333,16 +344,24 @@ contract GogeDAO is Owned {
     /// @dev    Poll must be an active poll.
     ///         This function is also callable by the author of _pollNum.
     function endPoll(uint256 _pollNum) external onlyOwnerOrAuthor(_pollNum) {
-        require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::addVote() Poll Closed");
+        require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::endPoll() Poll Closed");
         _updateEndTime(_pollNum);
         _removePoll(_pollNum);
         _refundVoters(_pollNum);
     }
 
-    /// @notice An owner method for updating minPollPeriod.
-    /// @param  _amount new minPollPeriod.
-    function updateMinPollPeriod(uint256 _amount) external onlyOwner() {
-        minPeriod = _amount;
+    /// @notice An owner method for updating minPeriod.
+    /// @param  _amountOfDays new minPeriod in days.
+    function updateMinPeriod(uint8 _amountOfDays) external onlyOwner() {
+        require(_amountOfDays < maxPeriod, "GogeDao.sol::updateMinPeriod() minPeriod must be less than maxPeriod");
+        minPeriod = uint256(_amountOfDays) * 1 days;
+    }
+
+    /// @notice An owner method for updating maxPeriod.
+    /// @param  _amountOfDays new maxPeriod in days.
+    function updateMaxPeriod(uint8 _amountOfDays) external onlyOwner() {
+        require(_amountOfDays > minPeriod, "GogeDao.sol::updateMaxPeriod() minPeriod must be greater than minPeriod");
+        maxPeriod = uint256(_amountOfDays) * 1 days;
     }
 
     /// @notice An owner method for adding new team member.
@@ -369,17 +388,28 @@ contract GogeDAO is Owned {
     /// @notice A method for updating team balance.
     /// @param  _amount amount of BNB to add to teamBalance.
     /// @dev    Only callable by governanceTokenAddr
-    function updateTeamBalance(uint256 _amount) external {
-        require(msg.sender == governanceTokenAddr, "Not Authorized");
+    function updateTeamBalance(uint256 _amount) external onlyGovernanceToken() {
         teamBalance += _amount;
     }
 
     /// @notice A method for updating marketing balance.
     /// @param  _amount amount of BNB to add to marketingBalanace.
     /// @dev    Only callable by governanceTokenAddr
-    function updateMarketingBalance(uint256 _amount) external {
-        require(msg.sender == governanceTokenAddr, "Not Authorized");
+    function updateMarketingBalance(uint256 _amount) external onlyGovernanceToken() {
         marketingBalance += _amount;
+    }
+
+    // NOTE: gatekeeper
+
+    /// @notice A Gatekeeper method for manually passing a poll.
+    /// @param  _pollNum unique poll identifier.
+    /// @dev    poll must be an active poll and have met quorum.
+    function passPollAsGatekeeper(uint256 _pollNum) external onlyGatekeeper() {
+        require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::passPollAsGatekeeper() Poll Closed");
+        require(gatekeeping, "GogeDao.sol::passPollAsGatekeeper() Gatekeeping disabled");
+        require(getProportion(_pollNum) >= quorum, "GogeDao.sol::passPollAsGatekeeper() Poll Quorum not met");
+
+        _executeProposal(_pollNum);
     }
 
     // --------
@@ -697,7 +727,9 @@ contract GogeDAO is Owned {
         uint256 length = activePolls.length;
         for (uint256 i = 0; i < length;){
             if (pollAuthor[activePolls[i]] == _account) {
-                _num++;
+                unchecked {
+                    _num = _num + 1;
+                }
             }
             unchecked {
                 i = i + 1;
@@ -710,8 +742,14 @@ contract GogeDAO is Owned {
     /// @return bool whether or not _account is inside teamMember array.
     /// @return uint8 index in teamMember array in which _account resides.
     function isTeamMember(address _account) public view returns(bool, uint8) {
-        for (uint8 i = 0; i < teamMembers.length; i += 1){
-            if (_account == teamMembers[i]) return (true, i);
+        uint256 length = teamMembers.length;
+        for (uint8 i; i < length;){
+            if (_account == teamMembers[i]) {
+                return (true, i);
+            }
+            unchecked {
+                i = i + 1;
+            }
         }
         return (false, 0);
     }

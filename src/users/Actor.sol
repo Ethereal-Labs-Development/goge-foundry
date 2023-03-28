@@ -143,4 +143,9 @@ contract Actor {
         string memory sig = "endPoll(uint256)";
         (ok,) = address(dao).call(abi.encodeWithSignature(sig, pollNum));
     }
+
+    function try_passPollAsGatekeeper(address dao, uint256 pollNum) external returns (bool ok) {
+        string memory sig = "passPollAsGatekeeper(uint256)";
+        (ok,) = address(dao).call(abi.encodeWithSignature(sig, pollNum));
+    }
 }

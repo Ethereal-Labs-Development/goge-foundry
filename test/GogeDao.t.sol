@@ -707,7 +707,7 @@ contract DaoTest is Utility {
     }
 
     /// @notice Verify gateKeeping enabled will need extra gatekeeper votes to pass a poll that's met quorum
-    function test_gogeDao_gateKeeping() public {
+    function test_gogeDao_gatekeeping() public {
         test_gogeDao_createPoll();
         uint256 joe_votes = 50_000_000_000 ether;
 
@@ -743,22 +743,15 @@ contract DaoTest is Utility {
         // Create gate keeper
         gogeDao.updateGateKeeper(address(dev), true);
 
-        // Transfer tokens to gatekeeper
-        gogeToken.transfer(address(dev), 1 ether);
-        assertEq(gogeToken.balanceOf(address(dev)), 1 ether);
-
         // gatekeeper adds vote to poll -> should pass poll
-        assert(dev.try_approveToken(address(gogeToken), address(gogeDao), 1 ether));
-        assert(dev.try_addVote(address(gogeDao), 1, 1 ether));
+        assert(dev.try_passPollAsGatekeeper(address(gogeDao), 1));
 
         // Verify state change post poll being passed.
-        assertEq(gogeToken.balanceOf(address(dev)), 1 ether);
         assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
         assertEq(gogeToken.balanceOf(address(gogeDao)), 0);
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.polls(1, address(this)), gogeDao.minAuthorBal());
-        assertEq(gogeDao.polls(1, address(dev)), 1 ether);
-        assertEq(gogeDao.totalVotes(1), joe_votes + 1 ether + gogeDao.minAuthorBal());
+        assertEq(gogeDao.totalVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.pollEndTime(1), block.timestamp);
 
@@ -1615,6 +1608,7 @@ contract DaoTest is Utility {
         metadata.description = "I want to propose we add an address as a team member";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(sal);
+        metadata.boolVar = true;
 
         // create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -1628,6 +1622,7 @@ contract DaoTest is Utility {
         assertEq(gogeDao.getMetadata(1).description, "I want to propose we add an address as a team member");
         assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getMetadata(1).addr1, address(sal));
+        assertEq(gogeDao.getMetadata(1).boolVar, true);
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);

@@ -1086,7 +1086,7 @@ contract DaoTest is Utility {
     }
 
     /// @notice Verify withdraw() function
-    function test_gogeDao_withdraw_base() public {
+    function test_gogeDao_withdraw() public {
         gogeDao.transferOwnership(address(dev));
 
         assertEq(address(gogeDao).balance, 0);
@@ -1138,7 +1138,7 @@ contract DaoTest is Utility {
     }
 
     /// @notice Test that ERC20 token amounts are withdrawn from the contract to multi-sig.
-    function test_gogeDao_withdrawERC20_Withdrawn() public {
+    function test_gogeDao_withdrawERC20() public {
         uint256 _amount = 1_000_000 ether;
 
         // Use LINK as an example ERC20 token
@@ -1154,25 +1154,14 @@ contract DaoTest is Utility {
         gogeDao.withdrawERC20(BUSD);
         assertEq(token.balanceOf(address(gogeDao)), 0);
         assertEq(token.balanceOf(address(this)), _amount);
-    }
-
-    /// @notice Test that ERC20 withdrawl attempts from the governance token address revert.
-    function test_gogeDao_withdrawERC20_GovernanceTokenAddress() public {
-        // Owner cannot withdraw from the governance token address
-        vm.expectRevert("GogeDao.sol::withdrawERC20() Address cannot be governance token");
-        gogeDao.withdrawERC20(address(gogeToken));
-    }
-
-    /// @notice Test that ERC20 withdrawl attempts when the contract balance is zero revert.
-    function test_gogeDao_withdrawERC20_InsufficientBalance() public {
-        // Use BUSD as an example ERC20 token
-        IERC20 token = IERC20(BUSD);
-        assertEq(token.balanceOf(address(gogeDao)), 0);
-        assertEq(token.balanceOf(address(this)), 0);
 
         // Owner cannot withdraw from token balance when the balance is zero
         vm.expectRevert("GogeDao.sol::withdrawERC20() Insufficient token balance");
         gogeDao.withdrawERC20(BUSD);
+
+        // Owner cannot withdraw from the governance token address
+        vm.expectRevert("GogeDao.sol::withdrawERC20() Address cannot be governance token");
+        gogeDao.withdrawERC20(address(gogeToken));
     }
 
 }

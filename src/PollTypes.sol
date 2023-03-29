@@ -269,19 +269,6 @@ contract PollTypes {
         address payable addr;
     }
 
-    /// @notice Poll type to propose withdrawing ERC20 tokens from this contract.
-    /// @param  description proposal description.
-    /// @param  endTime unix timestamp of poll expiration date.
-    /// @param  addr recipient of tokens.
-    /// @param  token address of tokens to withdraw.
-    /// @dev    Will result in the transfer of funds from address(this) to a recipient.
-    struct MigrateTreasury {
-        string description;
-        uint256 endTime;
-        address payable addr;
-        address token;
-    }
-
     /// @notice Poll type to propose changing the voting quorum.
     /// @param  description proposal description.
     /// @param  endTime unix timestamp of poll expiration date.

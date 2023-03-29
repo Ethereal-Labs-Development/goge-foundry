@@ -5,7 +5,7 @@ pragma solidity ^0.8.6;
 import { Owned } from "./extensions/Owned.sol";
 import { IGogeERC20 } from "./extensions/IGogeERC20.sol";
 
-/// @title Gay Doge Dao Contract.
+/// @title Doge Day Son Dao Contract.
 /// @notice This contract is a governance contract which acts as a layer that sits on top of a governance token. This contract allows holders of the governance token
 ///         to create proposals of a chosen pollType. Each pollType has unique parameters which, if passes quorum, will result in a function call to the governance token.
 /// @author Chase Brown
@@ -20,9 +20,9 @@ contract GogeDAO is Owned {
     
     /// @notice Unique identifier of each poll that is created.
     uint256 public pollNum;
-    /// @notice The minimum time needed  () a new poll -> default is 1 day.
+    /// @notice The minimum time needed for a new poll -> default is 1 day.
     uint256 public minPeriod = 1 days;
-    /// @notice The maximum time needed  () a new poll -> default is 60 days.
+    /// @notice The maximum time needed for a new poll -> default is 60 days.
     uint256 public maxPeriod = 60 days;
     /// @notice The minimum balance of governance token the author of a poll must be holding at the time of creation.
     uint256 public minAuthorBal = 10_000_000 ether;
@@ -94,7 +94,6 @@ contract GogeDAO is Owned {
         excludeFromDividends,
         modifyBlacklist,
         transferOwnership,
-        migrateTreasury,
         setQuorum,
         updateGovernanceToken,
         other
@@ -309,33 +308,33 @@ contract GogeDAO is Owned {
 
     /// @notice An owner method for updating status of gateKeeping.
     /// @param  _enabled status of gateKeeping.
-    function setGateKeeping(bool _enabled) external onlyOwner() {
+    function setGateKeeping(bool _enabled) external onlyOwner {
         _setGateKeeping(_enabled);
     }
 
     /// @notice An owner method for updating quorum.
     /// @param  _amount new quourum.
-    function updateQuorum(uint256 _amount) external onlyOwner() {
+    function updateQuorum(uint256 _amount) external onlyOwner {
         _updateQuorum(_amount);
     }
 
     /// @notice An owner method for adding new gate keeper addresses.
     /// @param  _account new gate keeper.
     /// @param  _gateKeeper is a gate keeper.
-    function updateGateKeeper(address _account, bool _gateKeeper) external onlyOwner() {
+    function updateGateKeeper(address _account, bool _gateKeeper) external onlyOwner {
         _setGateKeeper(_account, _gateKeeper);
     }
 
     /// @notice An owner method for manually passing a poll.
     /// @param  _pollNum unique poll identifier.
     /// @dev    poll must be an active poll
-    function passPoll(uint256 _pollNum) external onlyOwner() {
+    function passPoll(uint256 _pollNum) external onlyOwner {
         require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::passPoll() Poll Closed");
         _executeProposal(_pollNum);
     }
 
     /// @notice An owner method for updating status of createPoll.
-    function toggleCreatePollEnabled() external onlyOwner() {
+    function toggleCreatePollEnabled() external onlyOwner {
         createPollEnabled = !createPollEnabled;
     }
 
@@ -352,14 +351,14 @@ contract GogeDAO is Owned {
 
     /// @notice An owner method for updating minPeriod.
     /// @param  _amountOfDays new minPeriod in days.
-    function updateMinPeriod(uint8 _amountOfDays) external onlyOwner() {
+    function updateMinPeriod(uint8 _amountOfDays) external onlyOwner {
         require(_amountOfDays < maxPeriod, "GogeDao.sol::updateMinPeriod() minPeriod must be less than maxPeriod");
         minPeriod = uint256(_amountOfDays) * 1 days;
     }
 
     /// @notice An owner method for updating maxPeriod.
     /// @param  _amountOfDays new maxPeriod in days.
-    function updateMaxPeriod(uint8 _amountOfDays) external onlyOwner() {
+    function updateMaxPeriod(uint8 _amountOfDays) external onlyOwner {
         require(_amountOfDays > minPeriod, "GogeDao.sol::updateMaxPeriod() minPeriod must be greater than minPeriod");
         maxPeriod = uint256(_amountOfDays) * 1 days;
     }
@@ -367,20 +366,43 @@ contract GogeDAO is Owned {
     /// @notice An owner method for adding new team member.
     /// @param  _account new team member.
     /// @param  _isMember is a team member.
-    function setTeamMember(address _account, bool _isMember) external onlyOwner() {
+    function setTeamMember(address _account, bool _isMember) external onlyOwner {
         _setTeamMember(_account, _isMember);
     }
 
     /// @notice An owner method for updating minAuthorBal.
     /// @param  _amount new min balance of a poll author.
-    function updateMinAuthorBal(uint256 _amount) external onlyOwner() {
+    function updateMinAuthorBal(uint256 _amount) external onlyOwner {
         minAuthorBal = _amount;
     }
 
     /// @notice An owner method for updating maxPollsPerAuthor.
     /// @param  _limit amount of active polls an author can have at any given time.
-    function updateMaxPollsPerAuthor(uint8 _limit) external onlyOwner() {
+    function updateMaxPollsPerAuthor(uint8 _limit) external onlyOwner {
         maxPollsPerAuthor = uint256(_limit);
+    }
+
+    /// @notice Withdraws the entire ETH balance of this contract into the multisig wallet.
+    /// @dev Call pattern adopted from the sendValue(address payable recipient, uint256 amount)
+    ///      function in OZ's utils/Address.sol contract. "Please consider reentrancy potential" - OZ.
+    function withdraw() external onlyOwner {
+        uint256 balance = (marketingBalance + teamBalance) - address(this).balance;
+        require(balance > 0, "GogeDao.sol::withdraw() Insufficient ETH balance");
+
+        (bool success,) = owner.call{value: balance}("");
+        require(success, "GogeDao.sol::withdraw() Unable to withdraw funds, recipient may have reverted");
+    }
+
+    /// @notice Withdraws any ERC20 token balance of this contract.
+    /// @param  _token Address of an ERC20 compliant token.
+    /// @dev    _token cannot be governance token address.
+    function withdrawERC20(address _token) external onlyOwner {
+        require(_token != governanceTokenAddr, "GogeDao.sol::withdrawERC20() Address cannot be governance token");
+
+        uint256 balance = IGogeERC20(_token).balanceOf(address(this));
+        require(balance > 0, "GogeDao.sol::withdrawERC20() Insufficient token balance");
+
+        require(IGogeERC20(_token).transfer(msg.sender, balance), "GogeDao.sol::withdrawERC20() Transfer failed");
     }
 
     // NOTE: governanceTokenAddr
@@ -388,14 +410,14 @@ contract GogeDAO is Owned {
     /// @notice A method for updating team balance.
     /// @param  _amount amount of BNB to add to teamBalance.
     /// @dev    Only callable by governanceTokenAddr
-    function updateTeamBalance(uint256 _amount) external onlyGovernanceToken() {
+    function updateTeamBalance(uint256 _amount) external onlyGovernanceToken {
         teamBalance += _amount;
     }
 
     /// @notice A method for updating marketing balance.
     /// @param  _amount amount of BNB to add to marketingBalanace.
     /// @dev    Only callable by governanceTokenAddr
-    function updateMarketingBalance(uint256 _amount) external onlyGovernanceToken() {
+    function updateMarketingBalance(uint256 _amount) external onlyGovernanceToken {
         marketingBalance += _amount;
     }
 
@@ -404,7 +426,7 @@ contract GogeDAO is Owned {
     /// @notice A Gatekeeper method for manually passing a poll.
     /// @param  _pollNum unique poll identifier.
     /// @dev    poll must be an active poll and have met quorum.
-    function passPollAsGatekeeper(uint256 _pollNum) external onlyGatekeeper() {
+    function passPollAsGatekeeper(uint256 _pollNum) external onlyGatekeeper {
         require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::passPollAsGatekeeper() Poll Closed");
         require(gatekeeping, "GogeDao.sol::passPollAsGatekeeper() Gatekeeping disabled");
         require(getProportion(_pollNum) >= quorum, "GogeDao.sol::passPollAsGatekeeper() Poll Quorum not met");
@@ -507,10 +529,6 @@ contract GogeDAO is Owned {
         else if (_pollType == PollType.transferOwnership) {
             Metadata memory transferOwnership = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr)._transferOwnership(transferOwnership.addr1);
-        }
-        else if (_pollType == PollType.migrateTreasury) {
-            Metadata memory migrateTreasury = pollMap[_pollNum];
-            IGogeERC20(migrateTreasury.addr2).transfer(migrateTreasury.addr1, IGogeERC20(migrateTreasury.addr2).balanceOf(address(this)));
         }
         else if (_pollType == PollType.setQuorum) {
             Metadata memory setQuorum = pollMap[_pollNum];
@@ -627,7 +645,7 @@ contract GogeDAO is Owned {
     /// @param  _addr address of team member.
     /// @param  _value is a team member.
     function _setTeamMember(address _addr, bool _value) internal {
-        if(_value) {
+        if (_value) {
             (bool _isTeamMember, ) = isTeamMember(_addr);
             if(!_isTeamMember) teamMembers.push(_addr);        
         } else {
@@ -642,10 +660,10 @@ contract GogeDAO is Owned {
     /// @notice An internal method for removing a poll from activePolls array.
     /// @param _pollNum unique identifier for a poll.
     function _removePoll(uint256 _pollNum) internal {
-        uint256 l = activePolls.length;
-        for (uint256 i; i < l;) {
+        uint256 length = activePolls.length;
+        for (uint256 i; i < length;) {
             if (_pollNum == activePolls[i]) {
-                activePolls[i] = activePolls[--l];
+                activePolls[i] = activePolls[--length];
                 activePolls.pop();
             }
             unchecked {

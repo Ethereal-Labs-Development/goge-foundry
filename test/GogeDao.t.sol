@@ -1085,4 +1085,94 @@ contract DaoTest is Utility {
         assertEq(activePolls.length, 1);
     }
 
+    /// @notice Verify withdraw() function
+    function test_gogeDao_withdraw_base() public {
+        gogeDao.transferOwnership(address(dev));
+
+        assertEq(address(gogeDao).balance, 0);
+        assertEq(address(dev).balance, 0);
+
+        // Deal bnb to dao contract
+        uint256 _amount = 1_000 ether;
+        vm.deal(address(gogeDao), _amount);
+        assertEq(address(gogeDao).balance, _amount);
+
+        // Withdraw balance
+        vm.startPrank(address(dev));
+        gogeDao.withdraw();
+        vm.stopPrank();
+
+        assertEq(address(gogeDao).balance, 0);
+        assertEq(address(dev).balance, _amount);
+
+        // new owner -> clear balance
+        vm.startPrank(address(dev));
+        gogeDao.transferOwnership(address(joe));
+        vm.stopPrank();
+        assertEq(address(joe).balance, 0);
+
+        // send assets to dao and thi
+        _amount = 1_000 ether;
+        vm.deal(address(gogeDao), _amount);
+        assertEq(address(gogeDao).balance, _amount);
+
+        // update team bal and marketing bal
+        vm.startPrank(address(gogeToken));
+        gogeDao.updateTeamBalance(100 ether);
+        gogeDao.updateMarketingBalance(200 ether);
+        vm.stopPrank();
+
+        // withdraw again
+        vm.startPrank(address(joe));
+        gogeDao.withdraw();
+        vm.stopPrank();
+
+        assertEq(address(gogeDao).balance, 300 ether);
+        assertEq(address(joe).balance, _amount - 300 ether);
+
+        // withdraw AGAIN but this time expect insufficient reversion
+        vm.startPrank(address(joe));
+        vm.expectRevert("GogeDao.sol::withdraw() Insufficient BNB balance");
+        gogeDao.withdraw();
+        vm.stopPrank();
+    }
+
+    /// @notice Test that ERC20 token amounts are withdrawn from the contract to multi-sig.
+    function test_gogeDao_withdrawERC20_Withdrawn() public {
+        uint256 _amount = 1_000_000 ether;
+
+        // Use LINK as an example ERC20 token
+        IERC20 token = IERC20(BUSD);
+        assertEq(token.balanceOf(address(gogeDao)), 0);
+        assertEq(token.balanceOf(address(this)), 0);
+
+        // Deal tokens to contract
+        deal(address(BUSD), address(gogeDao), _amount);
+        assertEq(token.balanceOf(address(gogeDao)), _amount);
+
+        // Owner can withdraw ERC20 tokens
+        gogeDao.withdrawERC20(BUSD);
+        assertEq(token.balanceOf(address(gogeDao)), 0);
+        assertEq(token.balanceOf(address(this)), _amount);
+    }
+
+    /// @notice Test that ERC20 withdrawl attempts from the governance token address revert.
+    function test_gogeDao_withdrawERC20_GovernanceTokenAddress() public {
+        // Owner cannot withdraw from the governance token address
+        vm.expectRevert("GogeDao.sol::withdrawERC20() Address cannot be governance token");
+        gogeDao.withdrawERC20(address(gogeToken));
+    }
+
+    /// @notice Test that ERC20 withdrawl attempts when the contract balance is zero revert.
+    function test_gogeDao_withdrawERC20_InsufficientBalance() public {
+        // Use BUSD as an example ERC20 token
+        IERC20 token = IERC20(BUSD);
+        assertEq(token.balanceOf(address(gogeDao)), 0);
+        assertEq(token.balanceOf(address(this)), 0);
+
+        // Owner cannot withdraw from token balance when the balance is zero
+        vm.expectRevert("GogeDao.sol::withdrawERC20() Insufficient token balance");
+        gogeDao.withdrawERC20(BUSD);
+    }
+
 }

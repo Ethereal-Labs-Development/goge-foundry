@@ -386,8 +386,8 @@ contract GogeDAO is Owned {
     /// @dev Call pattern adopted from the sendValue(address payable recipient, uint256 amount)
     ///      function in OZ's utils/Address.sol contract. "Please consider reentrancy potential" - OZ.
     function withdraw() external onlyOwner {
-        uint256 balance = (marketingBalance + teamBalance) - address(this).balance;
-        require(balance > 0, "GogeDao.sol::withdraw() Insufficient ETH balance");
+        uint256 balance = address(this).balance - (marketingBalance + teamBalance);
+        require(balance > 0, "GogeDao.sol::withdraw() Insufficient BNB balance");
 
         (bool success,) = owner.call{value: balance}("");
         require(success, "GogeDao.sol::withdraw() Unable to withdraw funds, recipient may have reverted");

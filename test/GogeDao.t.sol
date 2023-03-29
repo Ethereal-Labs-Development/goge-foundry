@@ -1137,11 +1137,11 @@ contract DaoTest is Utility {
         vm.stopPrank();
     }
 
-    /// @notice Test that ERC20 token amounts are withdrawn from the contract to multi-sig.
+    /// @notice Test that ERC20 token amounts are withdrawn from the contract to the owner address.
     function test_gogeDao_withdrawERC20() public {
         uint256 _amount = 1_000_000 ether;
 
-        // Use LINK as an example ERC20 token
+        // Use BUSD as an example ERC20 token
         IERC20 token = IERC20(BUSD);
         assertEq(token.balanceOf(address(gogeDao)), 0);
         assertEq(token.balanceOf(address(this)), 0);

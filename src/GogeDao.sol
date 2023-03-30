@@ -598,12 +598,18 @@ contract GogeDAO is Owned {
     /// @notice A method for all voters to be refunded after a poll that they've voted on has been passed.
     /// @param  _pollNum The poll number.
     function _refundVoters(uint256 _pollNum) internal {
-        for (uint256 i = 0; i < voterLibrary[_pollNum].length; i++) {
+        uint256 length = voterLibrary[_pollNum].length;
+        for (uint256 i = 0; i < length;) {
+
             address voter  = voterLibrary[_pollNum][i];
             uint256 amount = polls[_pollNum][voter];
 
             _refundVoter(voter, amount);
             _removeAdvocate(voter, _pollNum);
+            
+            unchecked {
+                ++i;
+            }
         }
     }
 

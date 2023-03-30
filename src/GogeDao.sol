@@ -118,9 +118,9 @@ contract GogeDAO is Owned {
         uint8 fee3;
         uint8 fee4;
         bool boolVar;
-        address addr1;       // (slot 3 -> 25 bytes)
-        address addr2;       // (slot 4 -> 20 bytes)
-        string description;  // (slot 5+ -> 32 bytes+)
+        address addr1;       // Slot 3 -> 25 bytes
+        address addr2;       // Slot 4 -> 20 bytes
+        string description;  // Slot 5+ -> 32 bytes+
     }
     
 

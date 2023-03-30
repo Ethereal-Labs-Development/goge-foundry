@@ -91,6 +91,7 @@ contract DaoTest is Utility {
 
     /// @notice Verify the ability for holders of gogeToken to create polls on gogeDao
     function test_gogeDao_createPoll() public {
+
         // create poll metadata
         GogeDAO.Metadata memory metadata;
         metadata.description = "I want to add Joe to the naughty list";
@@ -123,6 +124,44 @@ contract DaoTest is Utility {
         uint256[] memory activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
+    }
+
+    /// @notice Verify restricted edge cases when creating a poll
+    function test_gogeDao_createPoll_restrictions() public {
+        gogeDao.toggleCreatePollEnabled();
+
+        GogeDAO.Metadata memory metadata;
+        metadata.description = "I want to propose xyz";
+        metadata.endTime = block.timestamp;
+
+        // approve transferFrom
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
+
+        // try to create poll while createPollEnabled is false
+        vm.expectRevert("GogeDao.sol::createPoll() Ability to create poll is disabled");
+        gogeDao.createPoll(GogeDAO.PollType.other, metadata);
+
+        // toggle createPollEnabled
+        gogeDao.toggleCreatePollEnabled();
+
+        // try to create poll while endTime is below minPeriod
+        vm.expectRevert("GogeDao.sol::createPoll() End time must be later than start time");
+        gogeDao.createPoll(GogeDAO.PollType.other, metadata);
+
+        // endTime is less than minPeriod
+        metadata.endTime = block.timestamp + 1 seconds;
+
+        // try to create poll while endTime is below minPeriod
+        vm.expectRevert("GogeDao.sol::createPoll() Polling period must be greater than minPeriod");
+        gogeDao.createPoll(GogeDAO.PollType.other, metadata);
+
+        // endTime is greater than maxPeriod
+        metadata.endTime = block.timestamp + 61 days;
+
+        // try to create poll while endTime to exceed maxPeriod
+        vm.expectRevert("GogeDao.sol::createPoll() Polling period must be less than maxPeriod");
+        gogeDao.createPoll(GogeDAO.PollType.other, metadata);
+
     }
 
     /// @notice Verify the ability for participants to add votes to a poll via addVote
@@ -165,10 +204,16 @@ contract DaoTest is Utility {
         assert(joe.try_approveToken(address(gogeToken), address(gogeDao), 1_000_000_000 ether));
 
         // Verify Joe cannot make more votes than the balance in his wallet.
-        assert(!joe.try_addVote(address(gogeDao), 1, 1_000_000_000 ether + 1));
+        vm.startPrank(address(joe));
+        vm.expectRevert("GogeDao.sol::addVote() Exceeds Balance");
+        gogeDao.addVote(1, 1_000_000_000 ether + 1);
+        vm.stopPrank();
 
         // Verify Joe cannot make a vote on a poll that doesnt exist.
-        assert(!joe.try_addVote(address(gogeDao), 2, 1_000_000_000 ether));
+        vm.startPrank(address(joe));
+        vm.expectRevert("GogeDao.sol::addVote() Poll Closed");
+        gogeDao.addVote(2, 1_000_000_000 ether);
+        vm.stopPrank();
 
         // Warp 1 day ahead of start time. +1 day.
         vm.warp(block.timestamp + 1 days);
@@ -184,7 +229,10 @@ contract DaoTest is Utility {
         vm.warp(block.timestamp + 1 days);
 
         // Verify Joe cannot make a vote on a poll that has been closed.
-        assert(!joe.try_addVote(address(gogeDao), 1, 500_000_000 ether));
+        vm.startPrank(address(joe));
+        vm.expectRevert("GogeDao.sol::addVote() Poll Closed");
+        gogeDao.addVote(1, 500_000_000 ether);
+        vm.stopPrank();
     }
 
     /// @notice Verify correct state changes and logic for addVote using fuzzing
@@ -551,7 +599,10 @@ contract DaoTest is Utility {
         assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         // dev tries to call passPoll -> fails
-        assert(!dev.try_passPoll(address(gogeDao), 1));
+        vm.startPrank(address(dev));
+        vm.expectRevert("GogeDao.sol::passPoll() Poll Closed");
+        gogeDao.passPoll(1);
+        vm.stopPrank();
     }
 
     /// @notice Verify execution of poll and voters refunded when passPoll is called.
@@ -601,7 +652,10 @@ contract DaoTest is Utility {
         assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         // dev tries to call passPoll -> fails
-        assert(!dev.try_passPoll(address(gogeDao), 1));
+        vm.startPrank(address(dev));
+        vm.expectRevert("GogeDao.sol::passPoll() Poll Closed");
+        gogeDao.passPoll(1);
+        vm.stopPrank();
     }
 
     /// @notice Verify an admin can call endPoll to remove poll from activePolls and does NOT result in poll execution.
@@ -626,7 +680,10 @@ contract DaoTest is Utility {
         assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         // dev tries to call endPoll -> fails
-        assert(!dev.try_endPoll(address(gogeDao), 1));
+        vm.startPrank(address(dev));
+        vm.expectRevert("GogeDao.sol::endPoll() Poll Closed");
+        gogeDao.endPoll(1);
+        vm.stopPrank();
 
         // NOTE: Author ends poll
         create_mock_poll();
@@ -703,7 +760,10 @@ contract DaoTest is Utility {
         assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         // dev tries to call endPoll -> fails
-        assert(!dev.try_endPoll(address(gogeDao), 1));
+        vm.startPrank(address(dev));
+        vm.expectRevert("GogeDao.sol::endPoll() Poll Closed");
+        gogeDao.endPoll(1);
+        vm.stopPrank();
     }
 
     /// @notice Verify gateKeeping enabled will need extra gatekeeper votes to pass a poll that's met quorum

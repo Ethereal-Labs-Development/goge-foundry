@@ -331,6 +331,7 @@ contract GogeDAO is Owned {
 
     /// @notice An owner method for updating status of createPoll.
     function toggleCreatePollEnabled() external onlyOwner {
+        require(IGogeERC20(governanceTokenAddr).isExcludedFromFees(address(this)), "GogeDao.sol::toggleCreatePollEnabled() !isExcludedFromFees(address(this))");
         createPollEnabled = !createPollEnabled;
     }
 

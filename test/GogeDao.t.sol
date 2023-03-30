@@ -1224,8 +1224,23 @@ contract DaoTest is Utility {
         gogeDao.withdrawERC20(address(gogeToken));
     }
 
-    function test_gas() public {
-        emit log_named_uint("timestamp", block.timestamp); /// 1680192663
+    /// @notice Verify that when toggleCreatePollEnabled is called, createPollEnabled is updated
+    function test_gogeDao_toggleCreatePollEnabled() public {
+        gogeToken.excludeFromFees(address(gogeDao), false);
+        assertEq(gogeDao.createPollEnabled(), true);
+
+        // toggle when dao is not excluded from fees
+        vm.expectRevert("GogeDao.sol::toggleCreatePollEnabled() !isExcludedFromFees(address(this))");
+        gogeDao.toggleCreatePollEnabled();
+
+        // exclude dao from fees
+        gogeToken.excludeFromFees(address(gogeDao), true);
+
+        // execute toggle again
+        gogeDao.toggleCreatePollEnabled();
+
+        // post-state check
+        assertEq(gogeDao.createPollEnabled(), false);
     }
 
 }

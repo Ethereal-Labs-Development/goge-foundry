@@ -25,6 +25,7 @@ interface IGogeERC20 {
     function updateCakeDividendTracker(address newAddress) external;
     function updateUniswapV2Router(address newAddress) external;
     function excludeFromFees(address account, bool excluded) external;
+    function isExcludedFromFees(address account) external returns (bool);
     function excludeFromDividend(address account) external;
     function setAutomatedMarketMakerPair(address pair, bool value) external;
     function excludeFromCirculatingSupply(address account, bool excluded) external;

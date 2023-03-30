@@ -110,7 +110,7 @@ contract DaoTestProposals is Utility {
         assertEq(gogeToken.teamFee(), 2);
         assertEq(gogeToken.totalFees(), 16);
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
 
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), joe_votes);
@@ -124,7 +124,7 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         // Verify quorum math.
         uint256 num = gogeDao.getProportion(1);
@@ -181,7 +181,7 @@ contract DaoTestProposals is Utility {
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
 
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), joe_votes);
@@ -195,7 +195,7 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         assertEq(address(joe).balance, 1_000 ether);
         assertEq(address(gogeDao).balance, 0);
@@ -241,7 +241,7 @@ contract DaoTestProposals is Utility {
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeToken.gogeDao(), address(gogeDao));
 
         // Approve the transfer of tokens and add vote.
@@ -252,7 +252,7 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         assertEq(gogeToken.gogeDao(), address(222));
 
@@ -296,7 +296,7 @@ contract DaoTestProposals is Utility {
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeToken.isExcludedFromFees(address(222)), false);
 
         // Approve the transfer of tokens and add vote.
@@ -307,7 +307,7 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         assertEq(gogeToken.isExcludedFromFees(address(222)), true);
 
@@ -353,7 +353,7 @@ contract DaoTestProposals is Utility {
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeToken.automatedMarketMakerPairs(address(222)), false);
 
         // Approve the transfer of tokens and add vote.
@@ -364,7 +364,7 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         assertEq(gogeToken.automatedMarketMakerPairs(address(222)), true);
 
@@ -410,7 +410,7 @@ contract DaoTestProposals is Utility {
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         (bool excludedPre,) = gogeToken.isExcludedFromCirculatingSupply(address(222));
         assertEq(excludedPre, false);
 
@@ -422,7 +422,7 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         (bool excludedPost,) = gogeToken.isExcludedFromCirculatingSupply(address(222));
         assertEq(excludedPost, true);

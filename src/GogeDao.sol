@@ -52,10 +52,6 @@ contract GogeDAO is Owned {
     mapping(uint256 => address[]) public voterLibrary;
     /// @notice Mapping of pollNum to amount of total votes per poll.
     mapping(uint256 => uint256) public totalVotes;
-    /// @notice Mapping of pollNum to starting timestamp.
-    mapping(uint256 => uint256) public pollStartTime;
-    /// @notice Mapping of pollNum to ending timestamp (expiration date).
-    mapping(uint256 => uint256) public pollEndTime;
     /// @notice Mapping of pollNum to poll author's address.
     mapping(uint256 => address) public pollAuthor;
 
@@ -102,27 +98,29 @@ contract GogeDAO is Owned {
     // -------- Poll Structs -----------
 
     /// @notice Metadata block. All combinations.
-    /// @param description proposal description.
+    /// @param amount uint256 amount input.                     
+    /// @param startTime unix timestamp of poll creation date.
     /// @param endTime unix timestamp of poll expiration date.
     /// @param fee1 uint8 rewardFee.
     /// @param fee2 uint8 marketingFee.
     /// @param fee3 uint8 buyBackFee.
     /// @param fee4 uint8 teamFee.
-    /// @param addr1 first address input.
-    /// @param addr2 second address input.
-    /// @param amount uint256 amount input.
     /// @param boolVar boolean input.
+    /// @param addr1 first address input.                       
+    /// @param addr2 second address input.
+    /// @param description proposal description.
     struct Metadata {
-        string description;
-        uint256 endTime;
+        uint256 amount;      // Slot 0 -> 32 bytes
+        uint256 startTime;   // Slot 1 -> 32 bytes
+        uint256 endTime;     // Slot 2 -> 32 bytes
         uint8 fee1;
         uint8 fee2;
         uint8 fee3;
         uint8 fee4;
-        address addr1;
-        address addr2;
-        uint256 amount;
         bool boolVar;
+        address addr1;       // (slot 3 -> 25 bytes)
+        address addr2;       // (slot 4 -> 20 bytes)
+        string description;  // (slot 5+ -> 32 bytes+)
     }
     
 
@@ -205,8 +203,6 @@ contract GogeDAO is Owned {
 
         pollTypes[pollNum]     = _pollType;
         pollMap[pollNum]       = _change;
-        pollStartTime[pollNum] = block.timestamp;
-        pollEndTime[pollNum]   = _change.endTime;
         pollAuthor[pollNum]    = msg.sender;
 
         activePolls.push(pollNum);
@@ -216,7 +212,7 @@ contract GogeDAO is Owned {
     /// @param  _pollNum The poll number.
     /// @param  _numVotes The size of the vote to be created.
     function addVote(uint256 _pollNum, uint256 _numVotes) external {
-        require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::addVote() Poll Closed");
+        require(block.timestamp < pollMap[_pollNum].endTime, "GogeDao.sol::addVote() Poll Closed");
         require(block.timestamp - IGogeERC20(governanceTokenAddr).getLastReceived(msg.sender) >= (5 minutes), "GogeDao.sol::addVote() Must wait 5 minutes after purchasing tokens to place any votes.");
         require(IGogeERC20(governanceTokenAddr).balanceOf(msg.sender) >= _numVotes, "GogeDao.sol::addVote() Exceeds Balance");
         require(IGogeERC20(governanceTokenAddr).transferFrom(msg.sender, address(this), _numVotes));
@@ -284,7 +280,7 @@ contract GogeDAO is Owned {
         uint256 length = activePolls.length;
         // iterate through activePolls
         for (uint256 i; i < length;) {
-            uint256 endTime = pollEndTime[activePolls[i]];
+            uint256 endTime = pollMap[activePolls[i]].endTime;
             // check if poll has reached endTime
             if (block.timestamp >= endTime) {
                 // refund voters
@@ -329,7 +325,7 @@ contract GogeDAO is Owned {
     /// @param  _pollNum unique poll identifier.
     /// @dev    poll must be an active poll
     function passPoll(uint256 _pollNum) external onlyOwner {
-        require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::passPoll() Poll Closed");
+        require(block.timestamp < pollMap[_pollNum].endTime, "GogeDao.sol::passPoll() Poll Closed");
         _executeProposal(_pollNum);
     }
 
@@ -343,7 +339,7 @@ contract GogeDAO is Owned {
     /// @dev    Poll must be an active poll.
     ///         This function is also callable by the author of _pollNum.
     function endPoll(uint256 _pollNum) external onlyOwnerOrAuthor(_pollNum) {
-        require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::endPoll() Poll Closed");
+        require(block.timestamp < pollMap[_pollNum].endTime, "GogeDao.sol::endPoll() Poll Closed");
         _updateEndTime(_pollNum);
         _removePoll(_pollNum);
         _refundVoters(_pollNum);
@@ -427,7 +423,7 @@ contract GogeDAO is Owned {
     /// @param  _pollNum unique poll identifier.
     /// @dev    poll must be an active poll and have met quorum.
     function passPollAsGatekeeper(uint256 _pollNum) external onlyGatekeeper {
-        require(block.timestamp < pollEndTime[_pollNum], "GogeDao.sol::passPollAsGatekeeper() Poll Closed");
+        require(block.timestamp < pollMap[_pollNum].endTime, "GogeDao.sol::passPollAsGatekeeper() Poll Closed");
         require(gatekeeping, "GogeDao.sol::passPollAsGatekeeper() Gatekeeping disabled");
         require(getProportion(_pollNum) >= quorum, "GogeDao.sol::passPollAsGatekeeper() Poll Quorum not met");
 
@@ -675,7 +671,7 @@ contract GogeDAO is Owned {
     /// @notice An internal method for updating a poll's end unix to current block.timestamp.
     /// @param  _pollNum unique poll identifier.
     function _updateEndTime(uint256 _pollNum) internal {
-        pollEndTime[_pollNum] = block.timestamp;
+        pollMap[_pollNum].endTime = block.timestamp;
     }
 
     /// @notice An internal method for setting the status of a gate keeper.

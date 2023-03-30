@@ -240,7 +240,7 @@ contract DaoTest is Utility {
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         // Verify quorum math.
         uint256 num = gogeDao.getProportion(1);
@@ -280,7 +280,7 @@ contract DaoTest is Utility {
         assertEq(gogeToken.balanceOf(address(gogeDao)), joe_votes_1 + gogeDao.minAuthorBal());
 
         // Post-state check after first addVote.
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.polls(1, address(joe)), joe_votes_1);
         assertEq(gogeDao.totalVotes(1),          joe_votes_1 + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1),              false);
@@ -311,7 +311,7 @@ contract DaoTest is Utility {
         assertEq(gogeToken.balanceOf(address(gogeDao)), 0);
 
         // Post-state check after second addVote.
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
         assertEq(gogeDao.polls(1, address(joe)), total_votes);
         assertEq(gogeDao.totalVotes(1),          total_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1),              true);
@@ -352,7 +352,7 @@ contract DaoTest is Utility {
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 5 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 5 days);
 
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(tim), tim_votes);
@@ -409,7 +409,7 @@ contract DaoTest is Utility {
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), tim_votes + jon_votes + joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         // Verify all voters were refunded
         assertEq(gogeToken.balanceOf(address(tim)), tim_votes);
@@ -494,7 +494,7 @@ contract DaoTest is Utility {
         // Pre-state check.
         assertEq(gogeDao.passed(1),                     false);
         assertEq(gogeToken.isBlacklisted(address(joe)), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
 
         uint256[] memory activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 3);
@@ -518,7 +518,7 @@ contract DaoTest is Utility {
         // Post-state check.
         assertEq(gogeDao.passed(1),                     false);
         assertEq(gogeToken.isBlacklisted(address(joe)), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 2);
@@ -539,7 +539,7 @@ contract DaoTest is Utility {
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.isActivePoll(1), true);
         assertEq(gogeToken.isBlacklisted(address(joe)), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
 
         // passPoll
         assert(dev.try_passPoll(address(gogeDao), 1));
@@ -548,7 +548,7 @@ contract DaoTest is Utility {
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.isActivePoll(1), false);
         assertEq(gogeToken.isBlacklisted(address(joe)), true);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         // dev tries to call passPoll -> fails
         assert(!dev.try_passPoll(address(gogeDao), 1));
@@ -582,7 +582,7 @@ contract DaoTest is Utility {
 
         assertEq(gogeDao.isActivePoll(1), true);
         assertEq(gogeToken.isBlacklisted(address(joe)), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
 
         // passPoll
         assert(dev.try_passPoll(address(gogeDao), 1));
@@ -598,7 +598,7 @@ contract DaoTest is Utility {
 
         assertEq(gogeDao.isActivePoll(1), false);
         assertEq(gogeToken.isBlacklisted(address(joe)), true);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         // dev tries to call passPoll -> fails
         assert(!dev.try_passPoll(address(gogeDao), 1));
@@ -615,7 +615,7 @@ contract DaoTest is Utility {
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.isActivePoll(1), true);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 5 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 5 days);
 
         // endPoll
         assert(dev.try_endPoll(address(gogeDao), 1));
@@ -623,7 +623,7 @@ contract DaoTest is Utility {
         // Post-state check.
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.isActivePoll(1), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         // dev tries to call endPoll -> fails
         assert(!dev.try_endPoll(address(gogeDao), 1));
@@ -634,7 +634,7 @@ contract DaoTest is Utility {
         // Pre-state check.
         assertEq(gogeDao.passed(2), false);
         assertEq(gogeDao.isActivePoll(2), true);
-        assertEq(gogeDao.pollEndTime(2), block.timestamp + 5 days);
+        assertEq(gogeDao.getMetadata(2).endTime, block.timestamp + 5 days);
 
         // endPoll
         gogeDao.endPoll(2);
@@ -642,7 +642,7 @@ contract DaoTest is Utility {
         // Post-state check.
         assertEq(gogeDao.passed(2), false);
         assertEq(gogeDao.isActivePoll(2), false);
-        assertEq(gogeDao.pollEndTime(2), block.timestamp);
+        assertEq(gogeDao.getMetadata(2).endTime, block.timestamp);
     }
 
     /// @notice Verify that when endPoll is called, existing voters are refunded.
@@ -678,7 +678,7 @@ contract DaoTest is Utility {
 
         assertEq(gogeDao.isActivePoll(1), true);
         assertEq(gogeToken.isBlacklisted(address(joe)), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
 
         uint256 author_bal = gogeToken.balanceOf(address(this));
 
@@ -700,7 +700,7 @@ contract DaoTest is Utility {
 
         assertEq(gogeDao.isActivePoll(1), false);
         assertEq(gogeToken.isBlacklisted(address(joe)), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         // dev tries to call endPoll -> fails
         assert(!dev.try_endPoll(address(gogeDao), 1));
@@ -731,7 +731,7 @@ contract DaoTest is Utility {
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.totalVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp + 2 days);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp + 2 days);
 
         // Verify quorum math.
         uint256 num = gogeDao.getProportion(1);
@@ -753,7 +753,7 @@ contract DaoTest is Utility {
         assertEq(gogeDao.polls(1, address(this)), gogeDao.minAuthorBal());
         assertEq(gogeDao.totalVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeDao.pollEndTime(1), block.timestamp);
+        assertEq(gogeDao.getMetadata(1).endTime, block.timestamp);
 
         // Verify poll has not been executed this Joe is not blacklisted, yet.
         assertEq(gogeToken.isBlacklisted(address(joe)), true);
@@ -1162,6 +1162,10 @@ contract DaoTest is Utility {
         // Owner cannot withdraw from the governance token address
         vm.expectRevert("GogeDao.sol::withdrawERC20() Address cannot be governance token");
         gogeDao.withdrawERC20(address(gogeToken));
+    }
+
+    function test_gas() public {
+        emit log_named_uint("timestamp", block.timestamp); /// 1680192663
     }
 
 }

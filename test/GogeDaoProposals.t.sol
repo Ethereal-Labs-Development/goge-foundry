@@ -74,7 +74,7 @@ contract DaoTestProposals is Utility {
         /// NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose a tax change";
         metadata.endTime = block.timestamp + 2 days;
         metadata.fee1 = 8;  // cakeDividendRewardsFee
@@ -151,7 +151,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose a funding";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(joe);
@@ -212,7 +212,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose setGogeDao";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(222);
@@ -267,7 +267,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose setCex";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(222);
@@ -322,7 +322,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose setDex";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(222);
@@ -379,7 +379,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose excludeFromCirculatingSupply";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(222);
@@ -438,7 +438,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we update the dividend token to this address";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = BUNY;
@@ -483,7 +483,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we update the marketing wallet to this address";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(this);
@@ -528,7 +528,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we update the team wallet to this address";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(this);
@@ -573,7 +573,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we add an address as a team member";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(sal);
@@ -622,7 +622,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we add an address as a gate keeper";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(sal);
@@ -669,7 +669,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we enable gate keeping";
         metadata.endTime = block.timestamp + 2 days;
         metadata.boolVar = false;
@@ -714,7 +714,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we disable buy back fees";
         metadata.endTime = block.timestamp + 2 days;
         metadata.boolVar = false;
@@ -759,7 +759,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we disable cake dividends";
         metadata.endTime = block.timestamp + 2 days;
         metadata.boolVar = false;
@@ -804,7 +804,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we disable marketing fees";
         metadata.endTime = block.timestamp + 2 days;
         metadata.boolVar = false;
@@ -849,7 +849,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we disable team fees";
         metadata.endTime = block.timestamp + 2 days;
         metadata.boolVar = false;
@@ -894,7 +894,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we exclude this address from fees";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(sal);
@@ -941,7 +941,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we blacklist this address";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(sal);
@@ -989,7 +989,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we transfer ownership to this address";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(sal);
@@ -1034,7 +1034,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we transfer ownership to this address";
         metadata.endTime = block.timestamp + 2 days;
         metadata.amount = 30;
@@ -1079,7 +1079,7 @@ contract DaoTestProposals is Utility {
         // NOTE create poll
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose we update the governance token to this address";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(this);

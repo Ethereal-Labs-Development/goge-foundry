@@ -66,7 +66,7 @@ contract GogeDAO is Owned {
     /// @notice Mapping of pollNum to it's specified pollType.
     mapping(uint256 => PollType) public pollTypes;
     /// @notice Mapping of pollNum to it's specified metadata.
-    mapping(uint256 => Metadata) public pollMap;
+    mapping(uint256 => Proposal) public pollMap;
 
     /// @notice enum of all pollTypes which correspond with it's index in the actions array.
     enum PollType {
@@ -97,7 +97,7 @@ contract GogeDAO is Owned {
 
     // -------- Poll Structs -----------
 
-    /// @notice Metadata block. All combinations.
+    /// @notice Proposal block. All combinations.
     /// @param amount uint256 amount input.                     
     /// @param startTime unix timestamp of poll creation date.
     /// @param endTime unix timestamp of poll expiration date.
@@ -109,7 +109,7 @@ contract GogeDAO is Owned {
     /// @param addr1 first address input.                       
     /// @param addr2 second address input.
     /// @param description proposal description.
-    struct Metadata {
+    struct Proposal {
         uint256 amount;      // Slot 0 -> 32 bytes
         uint256 startTime;   // Slot 1 -> 32 bytes
         uint256 endTime;     // Slot 2 -> 32 bytes
@@ -181,7 +181,7 @@ contract GogeDAO is Owned {
     /// @notice is used to create a new poll.
     /// @param  _pollType enum type of poll being created.
     /// @param  _change the matching metadata that will result in the execution of the poll.
-    function createPoll(PollType _pollType, Metadata memory _change) external {        
+    function createPoll(PollType _pollType, Proposal memory _change) external {        
         require(createPollEnabled, "GogeDao.sol::createPoll() Ability to create poll is disabled");
         if (msg.sender != owner) require(getActivePollsFromAuthor(msg.sender) < maxPollsPerAuthor, "GogeDao.sol::createPoll() Exceeds maxPollsPerAuthor");
         require(block.timestamp < _change.endTime, "GogeDao.sol::createPoll() End time must be later than start time");
@@ -445,94 +445,94 @@ contract GogeDAO is Owned {
         PollType _pollType = pollTypes[_pollNum];
 
         if (_pollType == PollType.taxChange) {
-            Metadata memory taxChange = pollMap[_pollNum];
+            Proposal memory taxChange = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).updateFees(taxChange.fee1, taxChange.fee2, taxChange.fee3, taxChange.fee4);
         }
         else if (_pollType == PollType.funding) {
-            Metadata memory funding = pollMap[_pollNum];
+            Proposal memory funding = pollMap[_pollNum];
             require(funding.amount <= marketingBalance, "Insufficient Funds");
             (bool success,) = funding.addr1.call{value: funding.amount}("");
             require(success, "call unsuccessful");
             marketingBalance -= funding.amount;
         }
         else if (_pollType == PollType.setGogeDao) {
-            Metadata memory setGogeDao = pollMap[_pollNum];
+            Proposal memory setGogeDao = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).setGogeDao(setGogeDao.addr1);
         }
         else if (_pollType == PollType.setCex) {
-            Metadata memory setCex = pollMap[_pollNum];
+            Proposal memory setCex = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).addPartnerOrExchange(setCex.addr1);
         }
         else if (_pollType == PollType.setDex) {
-            Metadata memory setDex = pollMap[_pollNum];
+            Proposal memory setDex = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).setAutomatedMarketMakerPair(setDex.addr1, setDex.boolVar);
         }
         else if (_pollType == PollType.excludeFromCirculatingSupply) {
-            Metadata memory excludeFromCirculatingSupply = pollMap[_pollNum];
+            Proposal memory excludeFromCirculatingSupply = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).excludeFromCirculatingSupply(excludeFromCirculatingSupply.addr1, excludeFromCirculatingSupply.boolVar);
         }
         else if (_pollType == PollType.updateDividendToken) {
-            Metadata memory updateDividendToken = pollMap[_pollNum];
+            Proposal memory updateDividendToken = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).updateCakeDividendToken(updateDividendToken.addr1);
         }
         else if (_pollType == PollType.updateMarketingWallet) {
-            Metadata memory updateMarketingWallet = pollMap[_pollNum];
+            Proposal memory updateMarketingWallet = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).updateMarketingWallet(updateMarketingWallet.addr1);
         }
         else if (_pollType == PollType.updateTeamWallet) {
-            Metadata memory updateTeamWallet = pollMap[_pollNum];
+            Proposal memory updateTeamWallet = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).updateTeamWallet(updateTeamWallet.addr1);
         }
         else if (_pollType == PollType.updateTeamMember) {
-            Metadata memory updateTeamMember = pollMap[_pollNum];
+            Proposal memory updateTeamMember = pollMap[_pollNum];
             _setTeamMember(updateTeamMember.addr1, updateTeamMember.boolVar);
         }
         else if (_pollType == PollType.updateGatekeeper) {
-            Metadata memory modifyGateKeeper = pollMap[_pollNum];
+            Proposal memory modifyGateKeeper = pollMap[_pollNum];
             _setGateKeeper(modifyGateKeeper.addr1, modifyGateKeeper.boolVar);
         }
         else if (_pollType == PollType.setGatekeeping) {
-            Metadata memory modifyGateKeeping = pollMap[_pollNum];
+            Proposal memory modifyGateKeeping = pollMap[_pollNum];
             _setGateKeeping(modifyGateKeeping.boolVar);
         }
         else if (_pollType == PollType.setBuyBackEnabled) {
-            Metadata memory setBuyBackEnabled = pollMap[_pollNum];
+            Proposal memory setBuyBackEnabled = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).setBuyBackEnabled(setBuyBackEnabled.boolVar);
         }
         else if (_pollType == PollType.setCakeDividendEnabled) {
-            Metadata memory setCakeDividendEnabled = pollMap[_pollNum];
+            Proposal memory setCakeDividendEnabled = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).setCakeDividendEnabled(setCakeDividendEnabled.boolVar);
         }
         else if (_pollType == PollType.setMarketingEnabled) {
-            Metadata memory setMarketingEnabled = pollMap[_pollNum];
+            Proposal memory setMarketingEnabled = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).setMarketingEnabled(setMarketingEnabled.boolVar);
         }
         else if (_pollType == PollType.setTeamEnabled) {
-            Metadata memory setTeamEnabled = pollMap[_pollNum];
+            Proposal memory setTeamEnabled = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).setTeamEnabled(setTeamEnabled.boolVar);
         }
         else if (_pollType == PollType.excludeFromFees) {
-            Metadata memory excludeFromFees = pollMap[_pollNum];
+            Proposal memory excludeFromFees = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).excludeFromFees(excludeFromFees.addr1, excludeFromFees.boolVar);
         }
         else if (_pollType == PollType.excludeFromDividends) {
-            Metadata memory excludeFromDividends = pollMap[_pollNum];
+            Proposal memory excludeFromDividends = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).excludeFromDividend(excludeFromDividends.addr1);
         }
         else if (_pollType == PollType.modifyBlacklist) {
-            Metadata memory modifyBlacklist = pollMap[_pollNum];
+            Proposal memory modifyBlacklist = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr).modifyBlacklist(modifyBlacklist.addr1, modifyBlacklist.boolVar);
         }
         else if (_pollType == PollType.transferOwnership) {
-            Metadata memory transferOwnership = pollMap[_pollNum];
+            Proposal memory transferOwnership = pollMap[_pollNum];
             IGogeERC20(governanceTokenAddr)._transferOwnership(transferOwnership.addr1);
         }
         else if (_pollType == PollType.setQuorum) {
-            Metadata memory setQuorum = pollMap[_pollNum];
+            Proposal memory setQuorum = pollMap[_pollNum];
             _updateQuorum(setQuorum.amount);
         }
         else if (_pollType == PollType.updateGovernanceToken) {
-            Metadata memory updateGovernanceToken = pollMap[_pollNum];
+            Proposal memory updateGovernanceToken = pollMap[_pollNum];
 
             _removePoll(_pollNum);
             _refundVoters(_pollNum);
@@ -709,7 +709,7 @@ contract GogeDAO is Owned {
 
     /// @notice A view method for returning a poll's unique metadata.
     /// @param _pollNum unique poll identifier.
-    function getMetadata(uint256 _pollNum) public view returns (Metadata memory) {
+    function getMetadata(uint256 _pollNum) public view returns (Proposal memory) {
         return pollMap[_pollNum];
     }
 

@@ -73,7 +73,7 @@ contract DaoTest is Utility {
         uint256 _pollNum = gogeDao.pollNum();
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "This is a mock poll, for testing";
         metadata.endTime = block.timestamp + 5 days;
 
@@ -93,7 +93,7 @@ contract DaoTest is Utility {
     function test_gogeDao_createPoll() public {
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to add Joe to the naughty list";
         metadata.endTime = block.timestamp + 2 days;
         metadata.addr1 = address(joe);
@@ -130,7 +130,7 @@ contract DaoTest is Utility {
     function test_gogeDao_createPoll_restrictions() public {
         gogeDao.toggleCreatePollEnabled();
 
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "I want to propose xyz";
         metadata.endTime = block.timestamp;
 
@@ -1033,7 +1033,7 @@ contract DaoTest is Utility {
     function test_gogeDao_minAuthorBal() public {
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "This is a mock poll, for testing";
         metadata.endTime = block.timestamp + 5 days;
 
@@ -1074,7 +1074,7 @@ contract DaoTest is Utility {
     function test_gogeDao_maxPollsPerAuthor() public {
 
         // create poll metadata
-        GogeDAO.Metadata memory metadata;
+        GogeDAO.Proposal memory metadata;
         metadata.description = "This is a mock poll, for testing";
         metadata.endTime = block.timestamp + 5 days;
 

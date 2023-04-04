@@ -101,6 +101,9 @@ contract DaoTest is Utility {
         // Verify state change
         assertEq(gogeDao.pollNum(), _pollNum + 1);
         assertEq(gogeDao.getProposal(gogeDao.pollNum()).description, "This is a mock poll, for testing");
+        assertEq(gogeDao.getProposal(gogeDao.pollNum()).endTime, block.timestamp + 5 days);
+        assertEq(gogeDao.pollAuthor(gogeDao.pollNum()), address(this));
+        assert(gogeDao.pollTypes(gogeDao.pollNum()) == GogeDAO.PollType.other);
     }
 
 

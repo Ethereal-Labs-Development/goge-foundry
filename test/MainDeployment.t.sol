@@ -108,7 +108,9 @@ contract MainDeploymentTesting is Utility {
 
         // TODO: (2) SetDao on Token contract
 
-        // TODO: (3) enable createPoll
+        // TODO: (3) exclude any locks from circulating supply
+
+        // TODO: (4) enable createPoll
     }
 
     // ~~ Utility Functions ~~

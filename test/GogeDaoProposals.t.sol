@@ -60,8 +60,26 @@ contract DaoTestProposals is Utility {
 
     /// @notice Verify initial state pf gpgeDao and gogeToken
     function test_gogeDao_init_state() public {
-        assertEq(address(gogeToken), gogeDao.governanceToken());
+        assertEq(gogeDao.governanceToken(), address(gogeToken));
         assertEq(gogeDao.pollNum(), 0);
+        assertEq(gogeDao.minPeriod(), 1 days);
+        assertEq(gogeDao.maxPeriod(), 60 days);
+        assertEq(gogeDao.minAuthorBal(), 10_000_000 ether);
+        assertEq(gogeDao.maxPollsPerAuthor(), 1);
+        assertEq(gogeDao.quorum(), 50);
+        assertEq(gogeDao.marketingBalance(), 0);
+        assertEq(gogeDao.teamBalance(), 0);
+        assertEq(gogeDao.gatekeeping(), true);
+        assertEq(gogeDao.createPollEnabled(), true);
+        assertEq(gogeDao.owner(), address(this));
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
+
+        assertEq(gogeToken.gogeDao(), address(gogeDao));
+        assertEq(gogeToken.isExcludedFromFees(address(gogeDao)), true);
+        assertEq(gogeToken.tradingIsEnabled(), true);
+        assertEq(gogeToken.owner(), address(this));
+        assertEq(gogeToken.balanceOf(address(this)), 95_000_000_000 ether);
     }
 
 

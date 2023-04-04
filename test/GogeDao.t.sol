@@ -725,6 +725,9 @@ contract DaoTest is Utility {
         assertEq(gogeDao.isActivePoll(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 5 days);
 
+        // verify a non-owner cannot call passPoll
+        assert(!joe.try_passPoll(address(gogeDao), 1));
+
         // passPoll
         assert(dev.try_passPoll(address(gogeDao), 1));
 

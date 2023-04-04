@@ -5,7 +5,7 @@ import { Utility } from "./Utility.sol";
 import { GogeDAO } from "../src/GogeDao.sol";
 import { DogeGaySonFlat } from "../src/DeployedV2Token.sol";
 
-import { IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
+import { IUniswapV2Router01, IUniswapV2Router02, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
 import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
 
 contract DaoTest is Utility {
@@ -104,6 +104,27 @@ contract DaoTest is Utility {
         assertEq(gogeDao.getProposal(gogeDao.pollNum()).endTime, block.timestamp + 5 days);
         assertEq(gogeDao.pollAuthor(gogeDao.pollNum()), address(this));
         assert(gogeDao.pollTypes(gogeDao.pollNum()) == GogeDAO.PollType.other);
+    }
+
+    /// @notice Perform a buy to generate fees
+    function buy(uint256 _amount, address _receiver) public {
+
+        // Approve
+        IERC20(WBNB).approve(address(UNIV2_ROUTER), _amount);
+
+        // Create path
+        address[] memory path = new address[](2);
+        path[0] = WBNB;
+        path[1] = address(gogeToken);
+
+        // Execute purchase
+        IUniswapV2Router02(UNIV2_ROUTER).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            _amount,
+            0,
+            path,
+            _receiver,
+            block.timestamp + 10
+        );
     }
 
 
@@ -259,6 +280,11 @@ contract DaoTest is Utility {
         gogeToken.transfer(address(joe), 1_000_000_000 ether);
         assertEq(gogeToken.balanceOf(address(joe)), 1_000_000_000 ether);
 
+        // Verify Joe cannot vote before approving.
+        vm.prank(address(joe));
+        vm.expectRevert("ERC20: transfer amount exceeds allowance");
+        gogeDao.addVote(1, 1_000_000_000 ether);
+
         // Approve tokens for vote.
         assert(joe.try_approveToken(address(gogeToken), address(gogeDao), 1_000_000_000 ether));
 
@@ -272,6 +298,14 @@ contract DaoTest is Utility {
         vm.expectRevert("GogeDao.sol::addVote() Poll Closed");
         gogeDao.addVote(2, 1_000_000_000 ether);
 
+        // Verify Joe cannot make a vote on a poll after purchasing tokens
+        deal(WBNB, address(joe), 1 ether);
+        vm.startPrank(address(joe));
+        buy(1 ether, address(joe));
+        vm.expectRevert("GogeDao.sol::addVote() Must wait 5 minutes after purchasing tokens to place any votes.");
+        gogeDao.addVote(1, 1_000_000_000 ether);
+        vm.stopPrank();
+
         // Warp 1 day ahead of start time. +1 day.
         vm.warp(block.timestamp + 1 days);
 
@@ -279,7 +313,7 @@ contract DaoTest is Utility {
         assert(joe.try_addVote(address(gogeDao), 1, 500_000_000 ether));
 
         // Verify tokens were sent from Joe to Dao
-        assertEq(gogeToken.balanceOf(address(joe)), 500_000_000 ether);
+        assertGt(gogeToken.balanceOf(address(joe)), 500_000_000 ether);
         assertEq(gogeToken.balanceOf(address(gogeDao)), 500_000_000 ether + gogeDao.minAuthorBal());
 
         // Warp to end time of poll 1. +4 days.
@@ -437,8 +471,6 @@ contract DaoTest is Utility {
 
         create_mock_poll();
         gogeDao.setGateKeeping(false);
-
-        // ~~ pass poll ~~
         
         uint256 tim_votes = 24_000_000_000 ether;
         uint256 jon_votes = 20_000_000_000 ether;
@@ -447,6 +479,19 @@ contract DaoTest is Utility {
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 5 days);
+
+        address[] memory voters = gogeDao.getVoterLibrary(1);
+        assertEq(voters.length, 1);
+        assertEq(voters[0], address(this));
+        uint256[] memory advocateFor = gogeDao.getAdvocateFor(address(this));
+        assertEq(advocateFor.length, 1);
+        assertEq(advocateFor[0], 1);
+        advocateFor = gogeDao.getAdvocateFor(address(tim));
+        assertEq(advocateFor.length, 0);
+        advocateFor = gogeDao.getAdvocateFor(address(jon));
+        assertEq(advocateFor.length, 0);
+        advocateFor = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateFor.length, 0);
 
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(tim), tim_votes);
@@ -473,6 +518,21 @@ contract DaoTest is Utility {
         assertEq(gogeDao.polls(1, address(tim)), tim_votes);
         assertEq(gogeDao.pollVotes(1), tim_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), false);
+        
+        voters = gogeDao.getVoterLibrary(1);
+        assertEq(voters.length, 2);
+        assertEq(voters[0], address(this));
+        assertEq(voters[1], address(tim));
+        advocateFor = gogeDao.getAdvocateFor(address(this));
+        assertEq(advocateFor.length, 1);
+        assertEq(advocateFor[0], 1);
+        advocateFor = gogeDao.getAdvocateFor(address(tim));
+        assertEq(advocateFor.length, 1);
+        assertEq(advocateFor[0], 1);
+        advocateFor = gogeDao.getAdvocateFor(address(jon));
+        assertEq(advocateFor.length, 0);
+        advocateFor = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateFor.length, 0);
 
         /// NOTE addVotes -> Jon
 
@@ -489,6 +549,23 @@ contract DaoTest is Utility {
         assertEq(gogeDao.pollVotes(1), tim_votes + jon_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), false);
 
+        voters = gogeDao.getVoterLibrary(1);
+        assertEq(voters.length, 3);
+        assertEq(voters[0], address(this));
+        assertEq(voters[1], address(tim));
+        assertEq(voters[2], address(jon));
+        advocateFor = gogeDao.getAdvocateFor(address(this));
+        assertEq(advocateFor.length, 1);
+        assertEq(advocateFor[0], 1);
+        advocateFor = gogeDao.getAdvocateFor(address(tim));
+        assertEq(advocateFor.length, 1);
+        assertEq(advocateFor[0], 1);
+        advocateFor = gogeDao.getAdvocateFor(address(jon));
+        assertEq(advocateFor.length, 1);
+        assertEq(advocateFor[0], 1);
+        advocateFor = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateFor.length, 0);
+
         /// NOTE addVotes -> Joe -> overcomes quorum therefore passes poll
 
         // Approve the transfer of tokens and add vote for Joe.
@@ -504,6 +581,21 @@ contract DaoTest is Utility {
         assertEq(gogeDao.pollVotes(1), tim_votes + jon_votes + joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
+
+        voters = gogeDao.getVoterLibrary(1);
+        assertEq(voters.length, 4);
+        assertEq(voters[0], address(this));
+        assertEq(voters[1], address(tim));
+        assertEq(voters[2], address(jon));
+        assertEq(voters[3], address(joe));
+        advocateFor = gogeDao.getAdvocateFor(address(this));
+        assertEq(advocateFor.length, 0);
+        advocateFor = gogeDao.getAdvocateFor(address(tim));
+        assertEq(advocateFor.length, 0);
+        advocateFor = gogeDao.getAdvocateFor(address(jon));
+        assertEq(advocateFor.length, 0);
+        advocateFor = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateFor.length, 0);
 
         // Verify all voters were refunded
         assertEq(gogeToken.balanceOf(address(tim)), tim_votes);

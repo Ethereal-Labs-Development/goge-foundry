@@ -27,17 +27,6 @@ contract TokenTest is Utility {
 
         cakeTracker = gogeToken.cakeDividendTracker();
 
-        // gogeToken.excludeFromFees(address(1), true); // marketing
-        // gogeToken.excludeFromFees(address(2), true); // team
-        // gogeToken.excludeFromFees(0xa13bBda8bE05462232D7Fc4B0aF8f9B57fFf5D02, true); // dev (not real dev)
-        // gogeToken.excludeFromFees(address(0), true); // addy0
-        // gogeToken.excludeFromFees(address(this), true); // owner
-        // cakeTracker.excludeFromDividends(address(1)); // marketing
-        // cakeTracker.excludeFromDividends(address(2)); // team
-        // cakeTracker.excludeFromDividends(0xa13bBda8bE05462232D7Fc4B0aF8f9B57fFf5D02); // dev (not real dev)
-        // cakeTracker.excludeFromDividends(address(0)); // addy0
-        // cakeTracker.excludeFromDividends(address(this)); // owner
-
         // Give tokens and ownership to dev.
         gogeToken.transfer(address(dev), 100_000_000_000 ether);
         gogeToken._transferOwnership(address(dev));

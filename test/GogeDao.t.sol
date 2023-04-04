@@ -263,16 +263,14 @@ contract DaoTest is Utility {
         assert(joe.try_approveToken(address(gogeToken), address(gogeDao), 1_000_000_000 ether));
 
         // Verify Joe cannot make more votes than the balance in his wallet.
-        vm.startPrank(address(joe));
+        vm.prank(address(joe));
         vm.expectRevert("GogeDao.sol::addVote() Exceeds Balance");
         gogeDao.addVote(1, 1_000_000_000 ether + 1);
-        vm.stopPrank();
 
         // Verify Joe cannot make a vote on a poll that doesnt exist.
-        vm.startPrank(address(joe));
+        vm.prank(address(joe));
         vm.expectRevert("GogeDao.sol::addVote() Poll Closed");
         gogeDao.addVote(2, 1_000_000_000 ether);
-        vm.stopPrank();
 
         // Warp 1 day ahead of start time. +1 day.
         vm.warp(block.timestamp + 1 days);
@@ -288,10 +286,9 @@ contract DaoTest is Utility {
         vm.warp(block.timestamp + 1 days);
 
         // Verify Joe cannot make a vote on a poll that has been closed.
-        vm.startPrank(address(joe));
+        vm.prank(address(joe));
         vm.expectRevert("GogeDao.sol::addVote() Poll Closed");
         gogeDao.addVote(1, 500_000_000 ether);
-        vm.stopPrank();
     }
 
     /// @notice Verify correct state changes and logic for addVote using fuzzing
@@ -658,10 +655,9 @@ contract DaoTest is Utility {
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         // dev tries to call passPoll -> fails
-        vm.startPrank(address(dev));
+        vm.prank(address(dev));
         vm.expectRevert("GogeDao.sol::passPoll() Poll Closed");
         gogeDao.passPoll(1);
-        vm.stopPrank();
     }
 
     /// @notice Verify execution of poll and voters refunded when passPoll is called.
@@ -711,10 +707,9 @@ contract DaoTest is Utility {
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         // dev tries to call passPoll -> fails
-        vm.startPrank(address(dev));
+        vm.prank(address(dev));
         vm.expectRevert("GogeDao.sol::passPoll() Poll Closed");
         gogeDao.passPoll(1);
-        vm.stopPrank();
     }
 
     /// @notice Verify an admin can call endPoll to remove poll from activePolls and does NOT result in poll execution.
@@ -739,10 +734,9 @@ contract DaoTest is Utility {
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         // dev tries to call endPoll -> fails
-        vm.startPrank(address(dev));
+        vm.prank(address(dev));
         vm.expectRevert("GogeDao.sol::endPoll() Poll Closed");
         gogeDao.endPoll(1);
-        vm.stopPrank();
 
         // NOTE: Author ends poll
         create_mock_poll();
@@ -819,10 +813,9 @@ contract DaoTest is Utility {
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         // dev tries to call endPoll -> fails
-        vm.startPrank(address(dev));
+        vm.prank(address(dev));
         vm.expectRevert("GogeDao.sol::endPoll() Poll Closed");
         gogeDao.endPoll(1);
-        vm.stopPrank();
     }
 
     /// @notice Verify gateKeeping enabled will need extra gatekeeper votes to pass a poll that's met quorum
@@ -889,9 +882,8 @@ contract DaoTest is Utility {
         // update team balance on dao
         payable(address(gogeDao)).transfer(1 ether);
 
-        vm.startPrank(address(gogeToken));
+        vm.prank(address(gogeToken));
         gogeDao.updateTeamBalance(1 ether);
-        vm.stopPrank();
 
         // Pre-state check
         assertEq(address(gogeDao).balance, 1 ether);
@@ -924,9 +916,8 @@ contract DaoTest is Utility {
         // update team balance on dao
         payable(address(gogeDao)).transfer(_amount);
 
-        vm.startPrank(address(gogeToken));
+        vm.prank(address(gogeToken));
         gogeDao.updateTeamBalance(_amount);
-        vm.stopPrank();
 
         // Pre-state check
         assertEq(address(gogeDao).balance, _amount);
@@ -1097,7 +1088,7 @@ contract DaoTest is Utility {
         proposal.endTime = block.timestamp + 5 days;
 
         // start prank
-        vm.startPrank(address(joe));
+        vm.prank(address(joe));
 
         // expect next call to revert
         vm.expectRevert("GogeDao.sol::createPoll() Insufficient balance of tokens");
@@ -1105,15 +1096,12 @@ contract DaoTest is Utility {
         // Joe attempts to call createPoll
         gogeDao.createPoll(GogeDAO.PollType.other, proposal);
 
-        // stop prank
-        vm.stopPrank();
-
         // transfer tokens to Joe
         gogeToken.transfer(address(joe), gogeDao.minAuthorBal());
         assertEq(IERC20(address(gogeToken)).balanceOf(address(joe)), gogeDao.minAuthorBal());
 
         // start prank
-        vm.startPrank(address(joe));
+        vm.prank(address(joe));
 
         // approve transfer of minAuthorBal
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -1217,17 +1205,15 @@ contract DaoTest is Utility {
         assertEq(address(gogeDao).balance, _amount);
 
         // Withdraw balance
-        vm.startPrank(address(dev));
+        vm.prank(address(dev));
         gogeDao.withdraw();
-        vm.stopPrank();
 
         assertEq(address(gogeDao).balance, 0);
         assertEq(address(dev).balance, _amount);
 
         // new owner -> clear balance
-        vm.startPrank(address(dev));
+        vm.prank(address(dev));
         gogeDao.transferOwnership(address(joe));
-        vm.stopPrank();
         assertEq(address(joe).balance, 0);
 
         // send assets to dao and thi
@@ -1242,18 +1228,16 @@ contract DaoTest is Utility {
         vm.stopPrank();
 
         // withdraw again
-        vm.startPrank(address(joe));
+        vm.prank(address(joe));
         gogeDao.withdraw();
-        vm.stopPrank();
 
         assertEq(address(gogeDao).balance, 300 ether);
         assertEq(address(joe).balance, _amount - 300 ether);
 
         // withdraw AGAIN but this time expect insufficient reversion
-        vm.startPrank(address(joe));
+        vm.prank(address(joe));
         vm.expectRevert("GogeDao.sol::withdraw() Insufficient BNB balance");
         gogeDao.withdraw();
-        vm.stopPrank();
     }
 
     /// @notice Test that ERC20 token amounts are withdrawn from the contract to the owner address.

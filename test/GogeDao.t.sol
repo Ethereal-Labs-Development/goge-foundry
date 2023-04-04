@@ -225,7 +225,7 @@ contract DaoTest is Utility {
 
     /// @notice Verify the ability for participants to add votes to a poll via addVote
     function test_gogeDao_addVote_state_change() public {
-        test_gogeDao_createPoll();
+        create_mock_poll();
         uint256 joe_votes = 10_000_000_000 ether;
 
         // Transfer Joe tokens so he can vote on a poll.
@@ -253,7 +253,7 @@ contract DaoTest is Utility {
 
     /// @notice Verify accessibility and edge cases of addVote
     function test_gogeDao_addVote_restrictions() public {
-        test_gogeDao_createPoll();
+        create_mock_poll();
 
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), 1_000_000_000 ether);
@@ -282,8 +282,8 @@ contract DaoTest is Utility {
         assertEq(gogeToken.balanceOf(address(joe)), 500_000_000 ether);
         assertEq(gogeToken.balanceOf(address(gogeDao)), 500_000_000 ether + gogeDao.minAuthorBal());
 
-        // Warp to end time of poll 1. +2 days.
-        vm.warp(block.timestamp + 1 days);
+        // Warp to end time of poll 1. +4 days.
+        vm.warp(block.timestamp + 4 days);
 
         // Verify Joe cannot make a vote on a poll that has been closed.
         vm.prank(address(joe));
@@ -293,7 +293,7 @@ contract DaoTest is Utility {
 
     /// @notice Verify correct state changes and logic for addVote using fuzzing
     function test_gogeDao_addVote_fuzzing(uint256 joe_votes) public {
-        test_gogeDao_createPoll();
+        create_mock_poll();
 
         joe_votes = bound(joe_votes, 1, 95_000_000_000 ether);
 
@@ -320,12 +320,11 @@ contract DaoTest is Utility {
 
     /// @notice Verify the execution of a poll when a poll reaches the quorum
     function test_gogeDao_addVote_quorum() public {
-        test_gogeDao_createPoll();
+        create_mock_poll();
         uint256 joe_votes = 50_000_000_000 ether;
         gogeDao.setGateKeeping(false);
 
         // Pre-state check.
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
         assertEq(gogeDao.passed(1), false);
 
         // Transfer Joe tokens so he can vote on a poll.
@@ -349,14 +348,11 @@ contract DaoTest is Utility {
         // Verify quorum math.
         uint256 num = gogeDao.getProportion(1);
         assertTrue(num >= gogeDao.quorum());
-
-        // Post-state check => gogeToken.
-        assertEq(gogeToken.isBlacklisted(address(joe)), true);
     }
 
     /// @notice Verifies state changes of an advocate in a 2 stage process. Votes a portion of quorum, then meets quorum.
     function test_gogeDao_addVote_quorum_twoStage() public {
-        test_gogeDao_createPoll();
+        create_mock_poll();
         gogeDao.setGateKeeping(false);
 
         uint256 joe_votes_1 = 40_000_000_000 ether;
@@ -366,7 +362,6 @@ contract DaoTest is Utility {
         // NOTE: Pre state
 
         // Pre-state check.
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
         assertEq(gogeDao.passed(1), false);
 
         // Transfer Joe tokens so he can vote on a poll.
@@ -384,9 +379,9 @@ contract DaoTest is Utility {
         assertEq(gogeToken.balanceOf(address(gogeDao)), joe_votes_1 + gogeDao.minAuthorBal());
 
         // Post-state check after first addVote.
-        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
+        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 5 days);
         assertEq(gogeDao.polls(1, address(joe)), joe_votes_1);
-        assertEq(gogeDao.pollVotes(1),          joe_votes_1 + gogeDao.minAuthorBal());
+        assertEq(gogeDao.pollVotes(1),           joe_votes_1 + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1),              false);
 
         address[] memory voters = gogeDao.getVoterLibrary(1);
@@ -402,8 +397,6 @@ contract DaoTest is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
-
         // NOTE: Second addVote -> pass poll
 
         // Approve the transfer of tokens and execute second addVote -> should pass poll.
@@ -417,7 +410,7 @@ contract DaoTest is Utility {
         // Post-state check after second addVote.
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
         assertEq(gogeDao.polls(1, address(joe)), total_votes);
-        assertEq(gogeDao.pollVotes(1),          total_votes + gogeDao.minAuthorBal());
+        assertEq(gogeDao.pollVotes(1),           total_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1),              true);
 
         voters = gogeDao.getVoterLibrary(1);
@@ -437,9 +430,6 @@ contract DaoTest is Utility {
         // Verify poll is no longer in activePolls
         activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 0);
-
-        // Post-state check => gogeToken.
-        assertEq(gogeToken.isBlacklisted(address(joe)), true);
     }
 
     /// @notice passes a funding poll but ensures the tokens are refunded to all voters.
@@ -533,7 +523,7 @@ contract DaoTest is Utility {
     ///         - Poll is passed via admin/owner -> endPoll() or passPoll()
     ///         - User removes their votes manually -> removeVotesFromPoll() && removeAllVotes()
     function test_gogeDao_advocateFor() public {
-        test_gogeDao_createPoll();
+        create_mock_poll();
         gogeDao.setGateKeeping(false);
 
         uint256 joe_votes = 10_000_000_000 ether;
@@ -587,7 +577,8 @@ contract DaoTest is Utility {
     /// NOTE: This function should be called on a regular interval by an external script.
     /// TODO: Expand
     function test_gogeDao_queryEndTime() public {
-        test_gogeDao_createPoll();
+        create_mock_poll();
+        vm.warp(block.timestamp + 1 days);
         create_mock_poll();
         create_mock_poll();
         gogeDao.setGateKeeping(false);
@@ -597,8 +588,7 @@ contract DaoTest is Utility {
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
-        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
+        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 4 days);
 
         uint256[] memory activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 3);
@@ -614,14 +604,13 @@ contract DaoTest is Utility {
         assert(joe.try_addVote(address(gogeDao), 1, 10_000_000_000 ether));
 
         //Warp to end time
-        vm.warp(block.timestamp + 2 days);
+        vm.warp(block.timestamp + 4 days);
 
         // Call queryEndTime()
         gogeDao.queryEndTime();
 
         // Post-state check.
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         activePolls = gogeDao.getActivePolls();
@@ -635,15 +624,14 @@ contract DaoTest is Utility {
 
     /// @notice Verify execution of poll when an admin calls passPoll
     function test_gogeDao_passPoll() public {
-        test_gogeDao_createPoll();
+        create_mock_poll();
         gogeDao.setGateKeeping(false);
         gogeDao.transferOwnership(address(dev));
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.isActivePoll(1), true);
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
-        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
+        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 5 days);
 
         // passPoll
         assert(dev.try_passPoll(address(gogeDao), 1));
@@ -651,7 +639,6 @@ contract DaoTest is Utility {
         // Post-state check.
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.isActivePoll(1), false);
-        assertEq(gogeToken.isBlacklisted(address(joe)), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         // dev tries to call passPoll -> fails
@@ -662,7 +649,7 @@ contract DaoTest is Utility {
 
     /// @notice Verify execution of poll and voters refunded when passPoll is called.
     function test_gogeDao_passPoll_withVotes() public {
-        test_gogeDao_createPoll();
+        create_mock_poll();
         gogeDao.setGateKeeping(false);
         gogeDao.transferOwnership(address(dev));
 
@@ -687,8 +674,7 @@ contract DaoTest is Utility {
         assertEq(advocateArr[0], 1);
 
         assertEq(gogeDao.isActivePoll(1), true);
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
-        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
+        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 5 days);
 
         // passPoll
         assert(dev.try_passPoll(address(gogeDao), 1));
@@ -703,7 +689,6 @@ contract DaoTest is Utility {
         assertEq(advocateArr.length, 0);
 
         assertEq(gogeDao.isActivePoll(1), false);
-        assertEq(gogeToken.isBlacklisted(address(joe)), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         // dev tries to call passPoll -> fails
@@ -757,7 +742,7 @@ contract DaoTest is Utility {
 
     /// @notice Verify that when endPoll is called, existing voters are refunded.
     function test_gogeDao_endPoll_withVotes() public {
-        test_gogeDao_createPoll();
+        create_mock_poll();
 
         gogeDao.setGateKeeping(false);
         gogeDao.transferOwnership(address(dev));
@@ -787,8 +772,7 @@ contract DaoTest is Utility {
         assertEq(advocateArr[0], 1);
 
         assertEq(gogeDao.isActivePoll(1), true);
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
-        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
+        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 5 days);
 
         uint256 author_bal = gogeToken.balanceOf(address(this));
 
@@ -809,7 +793,6 @@ contract DaoTest is Utility {
         assertEq(advocateArr.length, 0);
 
         assertEq(gogeDao.isActivePoll(1), false);
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         // dev tries to call endPoll -> fails
@@ -820,11 +803,10 @@ contract DaoTest is Utility {
 
     /// @notice Verify gateKeeping enabled will need extra gatekeeper votes to pass a poll that's met quorum
     function test_gogeDao_gatekeeping() public {
-        test_gogeDao_createPoll();
+        create_mock_poll();
         uint256 joe_votes = 50_000_000_000 ether;
 
         // Verify blacklist state and poll has not been passed
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
         assertEq(gogeDao.passed(1), false);
 
         // Transfer Joe tokens so he can vote on a poll.
@@ -843,14 +825,13 @@ contract DaoTest is Utility {
         assertEq(gogeDao.polls(1, address(joe)), joe_votes);
         assertEq(gogeDao.pollVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
+        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 5 days);
 
         // Verify quorum math.
         uint256 num = gogeDao.getProportion(1);
         assertTrue(num >= gogeDao.quorum()); // quorum met
 
         // Verify poll has not been executed thus Joe is not blacklisted, yet.
-        assertEq(gogeToken.isBlacklisted(address(joe)), false);
 
         // Create gate keeper
         gogeDao.updateGateKeeper(address(dev), true);
@@ -866,9 +847,6 @@ contract DaoTest is Utility {
         assertEq(gogeDao.pollVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
-
-        // Verify poll has not been executed thus Joe is not blacklisted, yet.
-        assertEq(gogeToken.isBlacklisted(address(joe)), true);
     }
 
     /// @notice Verify when payTeam is called the addresses held in teamMembers are paid out

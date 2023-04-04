@@ -169,19 +169,18 @@ contract DaoTest is Utility {
     /// @notice Verify restricted edge cases when creating a poll
     function test_gogeDao_createPoll_restrictions() public {
         gogeDao.toggleCreatePollEnabled();
+        gogeDao.transferOwnership(address(dev));
 
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose xyz";
         proposal.endTime = block.timestamp;
-
-        // approve transferFrom
-        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
 
         // try to create poll while createPollEnabled is false
         vm.expectRevert("GogeDao.sol::createPoll() Ability to create poll is disabled");
         gogeDao.createPoll(GogeDAO.PollType.other, proposal);
 
         // toggle createPollEnabled
+        vm.prank(address(dev));
         gogeDao.toggleCreatePollEnabled();
 
         // try to create poll while endTime is below minPeriod
@@ -200,6 +199,26 @@ contract DaoTest is Utility {
 
         // try to create poll while endTime to exceed maxPeriod
         vm.expectRevert("GogeDao.sol::createPoll() Polling period must be less than maxPeriod");
+        gogeDao.createPoll(GogeDAO.PollType.other, proposal);
+
+        // update to proper end time
+        proposal.endTime = block.timestamp + 60 days;
+
+        vm.prank(address(jon));
+        vm.expectRevert("GogeDao.sol::createPoll() Insufficient balance of tokens");
+        gogeDao.createPoll(GogeDAO.PollType.other, proposal);
+
+        // try to create poll while endTime does not exceed maxPeriod, but author has not increased allowance
+        vm.expectRevert("ERC20: transfer amount exceeds allowance");
+        gogeDao.createPoll(GogeDAO.PollType.other, proposal);
+
+        // approve transferFrom and createPoll
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
+        gogeDao.createPoll(GogeDAO.PollType.other, proposal);
+        assertEq(gogeDao.pollNum(), 1);
+
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
+        vm.expectRevert("GogeDao.sol::createPoll() Exceeds maxPollsPerAuthor");
         gogeDao.createPoll(GogeDAO.PollType.other, proposal);
 
     }

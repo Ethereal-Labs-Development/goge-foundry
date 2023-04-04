@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.6;
 
-import "../src/users/Actor.sol";
-import "../lib/forge-std/src/Test.sol";
+import { Actor } from "../src/users/Actor.sol";
+import { Test } from "../lib/forge-std/src/Test.sol";
+import { IERC20 } from "../src/interfaces/Interfaces.sol";
 
 
 // NOTE: All contract addresses provided below have been configured for a Binance Smart Chain contract.

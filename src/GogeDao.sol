@@ -197,11 +197,11 @@ contract GogeDAO is Owned {
         _addToAdvocateFor(pollNum, msg.sender);
 
         polls[pollNum][msg.sender] += minAuthorBal;
-        pollVotes[pollNum]        += minAuthorBal;
+        pollVotes[pollNum]         += minAuthorBal;
 
-        pollTypes[pollNum]     = _pollType;
-        proposals[pollNum]       = _change;
-        pollAuthor[pollNum]    = msg.sender;
+        pollTypes[pollNum]  = _pollType;
+        proposals[pollNum]  = _change;
+        pollAuthor[pollNum] = msg.sender;
 
         activePolls.push(pollNum);
     }

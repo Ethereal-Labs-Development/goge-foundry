@@ -112,6 +112,21 @@ contract DaoTest is Utility {
     /// @notice Verify the ability for holders of gogeToken to create polls on gogeDao
     function test_gogeDao_createPoll() public {
 
+        // Pre-state check
+        uint256 _preBal = gogeToken.balanceOf(address(this));
+        uint256 _pollNum = gogeDao.pollNum();
+
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 0);
+
+        address[] memory voters = gogeDao.getVoterLibrary(gogeDao.pollNum());
+        assertEq(voters.length, 0);
+
+        uint256[] memory advocateFor = gogeDao.getAdvocateFor(address(this));
+        assertEq(advocateFor.length, 0);
+
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
+
         // create poll proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to add Joe to the naughty list";
@@ -123,27 +138,32 @@ contract DaoTest is Utility {
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.modifyBlacklist, proposal);
 
-        // Verify state change
-        assertEq(gogeDao.pollNum(), 1);
-        assertEq(gogeDao.pollAuthor(1), address(this));
-        assert(gogeDao.pollTypes(1) == GogeDAO.PollType.modifyBlacklist);
+        // Post-state check
+        assertEq(gogeDao.pollNum(), _pollNum + 1);
+        assertEq(gogeDao.pollAuthor(gogeDao.pollNum()), address(this));
+        assert(gogeDao.pollTypes(gogeDao.pollNum()) == GogeDAO.PollType.modifyBlacklist);
 
-        assertEq(gogeDao.getProposal(1).description, "I want to add Joe to the naughty list");
-        assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(joe));
-        assertEq(gogeDao.getProposal(1).boolVar, true);
+        assertEq(gogeDao.getProposal(gogeDao.pollNum()).description, "I want to add Joe to the naughty list");
+        assertEq(gogeDao.getProposal(gogeDao.pollNum()).endTime, block.timestamp + 2 days);
+        assertEq(gogeDao.getProposal(gogeDao.pollNum()).addr1, address(joe));
+        assertEq(gogeDao.getProposal(gogeDao.pollNum()).boolVar, true);
 
-        assertEq(gogeDao.polls(1, address(this)), gogeDao.minAuthorBal());
-        assertEq(gogeDao.pollVotes(1), gogeDao.minAuthorBal());
+        assertEq(gogeDao.polls(gogeDao.pollNum(), address(this)), gogeDao.minAuthorBal());
+        assertEq(gogeDao.pollVotes(gogeDao.pollNum()), gogeDao.minAuthorBal());
         assertEq(gogeToken.balanceOf(address(gogeDao)), gogeDao.minAuthorBal());
+        assertEq(gogeToken.balanceOf(address(this)), _preBal - gogeDao.minAuthorBal());
 
-        address[] memory voters = gogeDao.getVoterLibrary(1);
+        voters = gogeDao.getVoterLibrary(gogeDao.pollNum());
         assertEq(voters.length, 1);
         assertEq(voters[0], address(this));
 
-        uint256[] memory activePolls = gogeDao.getActivePolls();
+        advocateFor = gogeDao.getAdvocateFor(address(this));
+        assertEq(advocateFor.length, 1);
+        assertEq(advocateFor[0], gogeDao.pollNum());
+
+        activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 1);
-        assertEq(activePolls[0], 1);
+        assertEq(activePolls[0], gogeDao.pollNum());
     }
 
     /// @notice Verify restricted edge cases when creating a poll

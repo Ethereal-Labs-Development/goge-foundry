@@ -183,8 +183,8 @@ contract GogeDAO is Owned {
         require(createPollEnabled, "GogeDao.sol::createPoll() Ability to create poll is disabled");
         if (msg.sender != owner) require(getActivePollsFromAuthor(msg.sender) < maxPollsPerAuthor, "GogeDao.sol::createPoll() Exceeds maxPollsPerAuthor");
         require(block.timestamp < _change.endTime, "GogeDao.sol::createPoll() End time must be later than start time");
-        require(_change.endTime - block.timestamp >= minPeriod, "GogeDao.sol::createPoll() Polling period must be greater than minPeriod");
-        require(_change.endTime - block.timestamp <= maxPeriod, "GogeDao.sol::createPoll() Polling period must be less than maxPeriod");
+        require(_change.endTime - block.timestamp >= minPeriod, "GogeDao.sol::createPoll() Polling period must be greater than or equal to minPeriod");
+        require(_change.endTime - block.timestamp <= maxPeriod, "GogeDao.sol::createPoll() Polling period must be less than or equal to maxPeriod");
 
         require(IGogeERC20(governanceToken).balanceOf(msg.sender) >= minAuthorBal, "GogeDao.sol::createPoll() Insufficient balance of tokens");
         require(IGogeERC20(governanceToken).transferFrom(msg.sender, address(this), minAuthorBal));
@@ -419,6 +419,8 @@ contract GogeDAO is Owned {
     /// @notice A Gatekeeper method for manually passing a poll.
     /// @param  _pollNum unique poll identifier.
     /// @dev    poll must be an active poll and have met quorum.
+    ///         if gatekeeping is enabled and a poll meets quorum it will stay in limbo
+    ///         until passed manually by a gatekeeper or it expires and is revoked.
     function passPollAsGatekeeper(uint256 _pollNum) external onlyGatekeeper {
         require(gatekeeping, "GogeDao.sol::passPollAsGatekeeper() Gatekeeping disabled");
         require(block.timestamp < proposals[_pollNum].endTime, "GogeDao.sol::passPollAsGatekeeper() Poll Closed");
@@ -645,30 +647,19 @@ contract GogeDAO is Owned {
     /// @param  _addr address of team member.
     /// @param  _value is a team member.
     function _setTeamMember(address _addr, bool _value) internal {
-        if (_value) {
-            (bool _isTeamMember, ) = isTeamMember(_addr);
-            if(!_isTeamMember) teamMembers.push(_addr);        
-        } else {
-            (bool _isTeamMember, uint8 s) = isTeamMember(_addr);
-            if(_isTeamMember) {
-                teamMembers[s] = teamMembers[teamMembers.length - 1];
+        (bool _isTeamMember, uint8 index) = isTeamMember(_addr);
+        if (_isTeamMember) {
+            if (!_value) {
+                teamMembers[index] = teamMembers[teamMembers.length - 1];
                 teamMembers.pop();
             }
+            return;
+        } else {
+            if (_value) {
+                teamMembers.push(_addr);
+            }
+            return;
         }
-
-        // (bool _isTeamMember, uint8 index) = isTeamMember(_addr);
-        // if (_isTeamMember) {
-        //     if (!_value) {
-        //         teamMembers[index] = teamMembers[teamMembers.length - 1];
-        //         teamMembers.pop();
-        //     }
-        //     return;
-        // } else {
-        //     if (_value) {
-        //         teamMembers.push(_addr);
-        //     }
-        //     return;
-        // }
     }
 
     /// @notice An internal method for removing a poll from activePolls array.
@@ -800,6 +791,10 @@ contract GogeDAO is Owned {
     /// @notice Returns an array of pollNum from advocateFor given _advocate.
     function getAdvocateFor(address _advocate) external view returns (uint256[] memory) {
         return advocateFor[_advocate];
+    }
+
+    function getTeamMembers() external view returns (address[] memory) {
+        return teamMembers;
     }
     
 }

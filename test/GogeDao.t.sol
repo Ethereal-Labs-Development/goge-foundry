@@ -1454,4 +1454,50 @@ contract DaoTest is Utility {
         assertEq(activePolls.length, 0);
     }
 
+    function test_gogeDao_setTeamMember() public {
+        // Pre-state check
+        address[] memory teamArr = gogeDao.getTeamMembers();
+        assertEq(teamArr.length, 0);
+
+        // add team members
+        gogeDao.setTeamMember(address(joe), true);
+        gogeDao.setTeamMember(address(jon), true);
+        gogeDao.setTeamMember(address(tim), true);
+
+        // verify state
+        teamArr = gogeDao.getTeamMembers();
+        assertEq(teamArr.length, 3);
+        assertEq(teamArr[0], address(joe));
+        assertEq(teamArr[1], address(jon));
+        assertEq(teamArr[2], address(tim));
+
+        // try to add joe who's already a team member -> should result in no change
+        gogeDao.setTeamMember(address(joe), true);
+
+        // verify state
+        teamArr = gogeDao.getTeamMembers();
+        assertEq(teamArr.length, 3);
+        assertEq(teamArr[0], address(joe));
+        assertEq(teamArr[1], address(jon));
+        assertEq(teamArr[2], address(tim));
+
+        // remove joe from teamMembers
+        gogeDao.setTeamMember(address(joe), false);
+
+        // verify state
+        teamArr = gogeDao.getTeamMembers();
+        assertEq(teamArr.length, 2);
+        assertEq(teamArr[0], address(tim));
+        assertEq(teamArr[1], address(jon));
+
+        // remove joe from teamMembers again -> should result in no change
+        gogeDao.setTeamMember(address(joe), false);
+
+        // verify state
+        teamArr = gogeDao.getTeamMembers();
+        assertEq(teamArr.length, 2);
+        assertEq(teamArr[0], address(tim));
+        assertEq(teamArr[1], address(jon));
+    }
+
 }

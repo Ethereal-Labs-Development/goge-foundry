@@ -3,6 +3,13 @@ cache/
 out/
 .env
 
+.env
+Notes.txt
+
+args.txt
+daoArgs.txt
+tokenTestArgs.txt
+
 # Ignores development broadcast logs
 !/broadcast
 /broadcast/*

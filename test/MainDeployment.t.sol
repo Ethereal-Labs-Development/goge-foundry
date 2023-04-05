@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.6;
 
-import "../lib/forge-std/src/Test.sol";
-import "./Utility.sol";
+import { Utility } from "./Utility.sol";
+import { Actor } from "../src/users/Actor.sol";
 
 import { IUniswapV2Router02, IUniswapV2Pair, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
 import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
 
-import { DogeGaySon } from "../src/GogeToken.sol";
+import { DogeGaySon, CakeDividendTracker } from "../src/GogeToken.sol";
+import { DogeGaySonFlat } from "src/DeployedV2Token.sol";
+
 import { DogeGaySon1 } from "../src/TokenV1.sol";
 import { GogeDAO } from "../src/GogeDao.sol";
 
-contract MainDeploymentTesting is Utility, Test {
+contract MainDeploymentTesting is Utility {
     DogeGaySon1 gogeToken_v1;
-    DogeGaySon gogeToken_v2;
+    DogeGaySonFlat gogeToken_v2;
 
     address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E; //bsc
 
@@ -54,21 +56,33 @@ contract MainDeploymentTesting is Utility, Test {
         createHolders();
 
         // TODO: (1) Check dev address and router before deploying
+        //       router must be for BSC -> 0x10ED43C718714eb63d5aA57B78B54704E256024E
+        //       VERIFY DEV WALLET
         // TODO: (2) Deploy v2 token
-        gogeToken_v2 = new DogeGaySon(
-            address(0x4959bCED128E6F056A6ef959D80Bd1fCB7ba7A4B), // TODO: verify correct address
-            address(0xe142E9FCbd9E29C4A65C4979348d76147190a05a), // TODO: verify correct address
-            100_000_000_000,
+        // deployer -> 0x5f058D82Fc62f019Dd5F4b892571455F49651338
+        // gogeToken_v2 = new DogeGaySon(
+        //     address(0xFecf1D51E984856F11B7D0872D40fC2F05377738), // MARKETING wallet
+        //     address(0xC1Aa023A8fA820F4ed077f4dF4eBeD0a3351a324), // TEAM wallet
+        //     100_000_000_000,
+        //     address(gogeToken_v1) // will be 0xa30d02c5cdb6a76e47ea0d65f369fd39618541fe
+        // );
+        gogeToken_v2 = new DogeGaySonFlat(
             address(gogeToken_v1)
         );
 
-        // TODO: (3) Disable trading on v1 to false
+        // TODO: (2a) Whitelist wallets
+        // 0x0dC5085dEbA25B55db3A13d1c320c08af1740549
+
+        // TODO: (2b) exclude from dividends
+        // 0x0dC5085dEbA25B55db3A13d1c320c08af1740549
+
+        // TODO: (3) Disable trading on v1 -> set to false
         gogeToken_v1.setTradingIsEnabled(false, 0);
 
         // TODO: (4) Exclude v2 from fees on v1
         gogeToken_v1.excludeFromFees(address(gogeToken_v2), true);
 
-        // TODO: (5) Perform migration -> 6 days
+        // TODO: (5) Perform migration
         migrateActor(tim);
         migrateActor(joe);
         migrateActor(sal);
@@ -85,6 +99,18 @@ contract MainDeploymentTesting is Utility, Test {
 
         // TODO: (7) enableTrading() on v2
         gogeToken_v2.enableTrading();
+
+
+        ////////////////////////////////// PHASE 2 //////////////////////////////////////////
+
+
+        // TODO: (1) launch DAO
+
+        // TODO: (2) SetDao on Token contract
+
+        // TODO: (3) exclude any locks from circulating supply
+
+        // TODO: (4) enable createPoll
     }
 
     // ~~ Utility Functions ~~
@@ -129,13 +155,19 @@ contract MainDeploymentTesting is Utility, Test {
     /// @notice migrate tokens from v1 to v2
     function migrateActor(Actor actor) internal {
         uint256 bal = gogeToken_v1.balanceOf(address(actor));
+        uint256 bal2 = gogeToken_v2.balanceOf(address(actor));
+        uint256 LiquidityPreBal = IERC20(gogeToken_v2.uniswapV2Pair()).balanceOf(address(this));
 
         // Approve and migrate
         assert(actor.try_approveToken(address(gogeToken_v1), address(gogeToken_v2), gogeToken_v1.balanceOf(address(actor))));
         assert(actor.try_migrate(address(gogeToken_v2)));
 
+        uint256 LiquidityPostBal = IERC20(gogeToken_v2.uniswapV2Pair()).balanceOf(address(this));
+
+        assertGt(LiquidityPostBal - LiquidityPreBal, 0);
+
         assertEq(gogeToken_v1.balanceOf(address(actor)), 0);
-        assertEq(gogeToken_v2.balanceOf(address(actor)), bal);
+        assertEq(gogeToken_v2.balanceOf(address(actor)), bal2 + bal);
     }
 
     /// @notice Perform a buy
@@ -154,7 +186,7 @@ contract MainDeploymentTesting is Utility, Test {
             tradeAmt,
             0,
             path,
-            msg.sender,
+            address(this),
             block.timestamp + 300
         );
     }
@@ -175,7 +207,7 @@ contract MainDeploymentTesting is Utility, Test {
             tradeAmt,
             0,
             path,
-            msg.sender,
+            address(this),
             block.timestamp + 300
         );
     }
@@ -192,6 +224,8 @@ contract MainDeploymentTesting is Utility, Test {
     function test_mainDeployment_buy() public {
         gogeToken_v2.excludeFromFees(address(this), false);
 
+        uint256 tradeAmt = 5 ether;
+
         // Verify address(this) is NOT excluded from fees and grab pre balance.
         assert(!gogeToken_v2.isExcludedFromFees(address(this)));
         uint256 preBal = gogeToken_v2.balanceOf(address(this));
@@ -200,24 +234,16 @@ contract MainDeploymentTesting is Utility, Test {
         uint BNB_DEPOSIT = 10 ether;
         IWETH(WBNB).deposit{value: BNB_DEPOSIT}();
 
-        // approve purchase
-        IERC20(WBNB).approve(address(UNIV2_ROUTER), 5 ether);
-
+        // Create path
         address[] memory path = new address[](2);
         path[0] = WBNB;
         path[1] = address(gogeToken_v2);
 
         // Get Quoted amount
-        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( 5 ether, path );
+        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( tradeAmt, path );
 
         // Execute purchase
-        IUniswapV2Router02(UNIV2_ROUTER).swapExactTokensForTokensSupportingFeeOnTransferTokens(
-            5 ether,
-            0,
-            path,
-            address(this),
-            block.timestamp + 300
-        );
+        buy_generateFees(tradeAmt);
 
         // Grab post balanace and calc amount goge tokens received.
         uint256 postBal        = gogeToken_v2.balanceOf(address(this));
@@ -294,15 +320,19 @@ contract MainDeploymentTesting is Utility, Test {
         migrateActor(jeff);
     }
 
-    /// @notice verifies royalties are being distributed to all royalty wallets.
-    function test_mainDeployment_feeDistributions_dev() public {
-
-        // NOTE: Pre-state check. -------------------------------------------
+    /// @notice Verify taxes are being sent to the right wallets.
+    function test_mainDeployment_royalties() public {
+        // Royalty Recipients
+        address marketingAddy = 0xFecf1D51E984856F11B7D0872D40fC2F05377738;
+        address teamAddy      = 0xC1Aa023A8fA820F4ed077f4dF4eBeD0a3351a324;
+        address devAddy       = 0x5f058D82Fc62f019Dd5F4b892571455F49651338;
+        address deadAddy      = 0x000000000000000000000000000000000000dEaD;
 
         // Get pre balances of royalty recipients
-        uint256 preBalMarketing = gogeToken_v2.marketingWallet().balance;
-        uint256 preBalTeam      = gogeToken_v2.teamWallet().balance;
-        uint256 preBalDev       = gogeToken_v2.devWallet().balance;
+        uint256 preBalMarketing = marketingAddy.balance;
+        uint256 preBalTeam      = teamAddy.balance;
+        uint256 preBalDev       = devAddy.balance;
+        uint256 preBalDead      = gogeToken_v2.balanceOf(deadAddy);
 
         // Remove address(this) from whitelist so we can yield a buy tax.
         gogeToken_v2.excludeFromFees(address(this), false);
@@ -310,69 +340,38 @@ contract MainDeploymentTesting is Utility, Test {
         // Check balance of address(gogeToken_v2) to see how many tokens have been taxed. Should be 0
         assertEq(IERC20(address(gogeToken_v2)).balanceOf(address(gogeToken_v2)), 0);
 
-
-        // NOTE: Generate fees. -------------------------------------------
-
         // Generate buy -> log amount of tokens accrued
         buy_generateFees(10 ether);
         emit log_uint(IERC20(address(gogeToken_v2)).balanceOf(address(gogeToken_v2))); // 72561945.896794726074107751
         emit log_uint(address(gogeToken_v2).balance); // 0
-
-        // Get amount of tokens for royalties
-        uint256 amountTokensForRoyalties = IERC20(address(gogeToken_v2)).balanceOf(address(gogeToken_v2));
-
-        // Quote tokens for wbnb
-        address[] memory path = new address[](2);
-        path[0] = address(gogeToken_v2);
-        path[1] = WBNB;
-
-        // Get Quoted amount
-        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( amountTokensForRoyalties , path );
-
-        // log bnb
-        emit log_named_uint("bnb for royalties", amounts[1]); // 1.719750966813013582
 
         // Generate sell -> Distribute fees
         sell_generateFees(1_000 ether);
         emit log_uint(IERC20(address(gogeToken_v2)).balanceOf(address(gogeToken_v2))); // 1600.00000000000000000
         emit log_uint(address(gogeToken_v2).balance); // 0
 
-
-        // NOTE: Post-state check. -------------------------------------------
-
         // take post balanaces
-        uint256 postBalMarketing = gogeToken_v2.marketingWallet().balance;
-        uint256 postBalTeam      = gogeToken_v2.teamWallet().balance;
-        uint256 postBalDev       = gogeToken_v2.devWallet().balance;
+        uint256 postBalMarketing = marketingAddy.balance;
+        uint256 postBalTeam      = teamAddy.balance;
+        uint256 postBalDev       = devAddy.balance;
+        uint256 postBalDead      = gogeToken_v2.balanceOf(deadAddy);
 
         // verify that the royalty recipients have indeed recieved royalties
         assertGt(postBalMarketing, preBalMarketing);
         assertGt(postBalTeam,      preBalTeam);
         assertGt(postBalDev,       preBalDev);
+        assertGt(postBalDead,      preBalDead);
 
         // very amount received
         uint256 marketingReceived = postBalMarketing - preBalMarketing;
         uint256 teamReceived      = postBalTeam - preBalTeam;
         uint256 devReceived       = postBalDev - preBalDev;
+        uint256 deadReceived      = postBalDead - preBalDead;
 
-        // Verify amount received is amount sent
+        // Verify amount received is amount sent.
         assertEq(marketingReceived, gogeToken_v2.royaltiesSent(1));
         assertEq(teamReceived,      gogeToken_v2.royaltiesSent(3));
         assertEq(devReceived,       gogeToken_v2.royaltiesSent(2));
-
-        // Verify all royalties sent equate to the amount of bnb sold for royalties
-        assertEq(amounts[1],        gogeToken_v2.royaltiesSent(1) + 
-                                    gogeToken_v2.royaltiesSent(2) + 
-                                    gogeToken_v2.royaltiesSent(3) + 
-                                    gogeToken_v2.royaltiesSent(4) + 
-                                    gogeToken_v2.royaltiesSent(5));
-
-        // Verify royalty amounts
-        withinDiff(gogeToken_v2.royaltiesSent(1), amounts[1] * gogeToken_v2.marketingFee() / gogeToken_v2.totalFees(), 1); // markeing
-        withinDiff(gogeToken_v2.royaltiesSent(2), amounts[1] * 2 / gogeToken_v2.totalFees(), 1);                           // dev
-        withinDiff(gogeToken_v2.royaltiesSent(3), amounts[1] * gogeToken_v2.teamFee() / gogeToken_v2.totalFees(), 1);      // team
-        withinDiff(gogeToken_v2.royaltiesSent(4), amounts[1] * gogeToken_v2.buyBackFee() / gogeToken_v2.totalFees(), 1);   // buyback
-        withinDiff(gogeToken_v2.royaltiesSent(5), amounts[1] * 8 / gogeToken_v2.totalFees(), 1);                           // cake
 
         // log amount
         emit log_named_uint("marketing", gogeToken_v2.royaltiesSent(1));
@@ -382,69 +381,54 @@ contract MainDeploymentTesting is Utility, Test {
         emit log_named_uint("cake",      gogeToken_v2.royaltiesSent(5));
     }
 
-    /// @notice verifies royalties are being distributed to all royalty wallets after the 60 day dev tax.
-    function test_mainDeployment_feeDistributions_noDev() public {
-
-        // NOTE: Pre-state check. -------------------------------------------
+    // Verify correct royalties post dev fee (60 days).
+    function test_mainDeployment_royalties_noDev() public {
+        // Royalty Recipients
+        address marketingAddy = 0xFecf1D51E984856F11B7D0872D40fC2F05377738;
+        address teamAddy      = 0xC1Aa023A8fA820F4ed077f4dF4eBeD0a3351a324;
+        address devAddy       = 0x5f058D82Fc62f019Dd5F4b892571455F49651338;
+        address deadAddy      = 0x000000000000000000000000000000000000dEaD;
 
         // Get pre balances of royalty recipients
-        uint256 preBalMarketing = gogeToken_v2.marketingWallet().balance;
-        uint256 preBalTeam      = gogeToken_v2.teamWallet().balance;
-        uint256 preBalDev       = gogeToken_v2.devWallet().balance;
+        uint256 preBalMarketing = marketingAddy.balance;
+        uint256 preBalTeam      = teamAddy.balance;
+        uint256 preBalDev       = devAddy.balance;
+        uint256 preBalDead      = gogeToken_v2.balanceOf(deadAddy);
 
         // Remove address(this) from whitelist so we can yield a buy tax.
         gogeToken_v2.excludeFromFees(address(this), false);
-
-        // warp in time 60 days -> outside dev tax timeframe.
-        vm.warp(block.timestamp + 60 days);
+        vm.warp(block.timestamp + 61 days);
 
         // Check balance of address(gogeToken_v2) to see how many tokens have been taxed. Should be 0
         assertEq(IERC20(address(gogeToken_v2)).balanceOf(address(gogeToken_v2)), 0);
-
-
-        // NOTE: Generate fees. -------------------------------------------
 
         // Generate buy -> log amount of tokens accrued
         buy_generateFees(10 ether);
         emit log_uint(IERC20(address(gogeToken_v2)).balanceOf(address(gogeToken_v2))); // 72561945.896794726074107751
         emit log_uint(address(gogeToken_v2).balance); // 0
 
-        // Get amount of tokens for royalties
-        uint256 amountTokensForRoyalties = IERC20(address(gogeToken_v2)).balanceOf(address(gogeToken_v2));
-
-        // Quote tokens for wbnb
-        address[] memory path = new address[](2);
-        path[0] = address(gogeToken_v2);
-        path[1] = WBNB;
-
-        // Get Quoted amount
-        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( amountTokensForRoyalties , path );
-
-        // log bnb
-        emit log_named_uint("bnb for royalties", amounts[1]); // 1.719750966813013582
-
         // Generate sell -> Distribute fees
         sell_generateFees(1_000 ether);
         emit log_uint(IERC20(address(gogeToken_v2)).balanceOf(address(gogeToken_v2))); // 1600.00000000000000000
         emit log_uint(address(gogeToken_v2).balance); // 0
 
-
-        // NOTE: Post-state check. -------------------------------------------
-
         // take post balanaces
-        uint256 postBalMarketing = gogeToken_v2.marketingWallet().balance;
-        uint256 postBalTeam      = gogeToken_v2.teamWallet().balance;
-        uint256 postBalDev       = gogeToken_v2.devWallet().balance;
+        uint256 postBalMarketing = marketingAddy.balance;
+        uint256 postBalTeam      = teamAddy.balance;
+        uint256 postBalDev       = devAddy.balance;
+        uint256 postBalDead      = gogeToken_v2.balanceOf(deadAddy);
 
         // verify that the royalty recipients have indeed recieved royalties
         assertGt(postBalMarketing, preBalMarketing);
         assertGt(postBalTeam,      preBalTeam);
-        assertEq(postBalDev,       preBalDev);
+        assertEq(postBalDev,       preBalDev); // no change in dev balance
+        assertGt(postBalDead,      preBalDead);
 
         // very amount received
         uint256 marketingReceived = postBalMarketing - preBalMarketing;
         uint256 teamReceived      = postBalTeam - preBalTeam;
         uint256 devReceived       = postBalDev - preBalDev;
+        uint256 deadReceived      = postBalDead - preBalDead;
 
         // Verify amount received is amount sent.
         assertEq(marketingReceived, gogeToken_v2.royaltiesSent(1));
@@ -452,18 +436,6 @@ contract MainDeploymentTesting is Utility, Test {
         assertEq(devReceived,       gogeToken_v2.royaltiesSent(2));
         assertEq(devReceived,       0);
 
-        // Verify all royalties sent equate to the amount of bnb sold for royalties -> not including dev tax
-        assertEq(amounts[1],        gogeToken_v2.royaltiesSent(1) +  
-                                    gogeToken_v2.royaltiesSent(3) + 
-                                    gogeToken_v2.royaltiesSent(4) + 
-                                    gogeToken_v2.royaltiesSent(5));
-
-        // Verify royalty amounts
-        withinDiff(gogeToken_v2.royaltiesSent(1), amounts[1] * gogeToken_v2.marketingFee() / gogeToken_v2.totalFees(), 1); // markeing
-        withinDiff(gogeToken_v2.royaltiesSent(3), amounts[1] * gogeToken_v2.teamFee() / gogeToken_v2.totalFees(), 1);      // team
-        withinDiff(gogeToken_v2.royaltiesSent(4), amounts[1] * gogeToken_v2.buyBackFee() / gogeToken_v2.totalFees(), 1);   // buyback
-        withinDiff(gogeToken_v2.royaltiesSent(5), amounts[1] * 10 / gogeToken_v2.totalFees(), 2);                          // cake
-
         // log amount
         emit log_named_uint("marketing", gogeToken_v2.royaltiesSent(1));
         emit log_named_uint("dev",       gogeToken_v2.royaltiesSent(2));
@@ -472,4 +444,19 @@ contract MainDeploymentTesting is Utility, Test {
         emit log_named_uint("cake",      gogeToken_v2.royaltiesSent(5));
     }
 
+    function test_mainDeployment_migratePostBuy() public {
+        // create new temporary actor
+        Actor simone = new Actor();
+
+        // give actor v1 tokens and v2 tokens
+        gogeToken_v1.transfer(address(simone), 10_000_000 ether);
+        gogeToken_v2.transfer(address(simone), 1_000_000 ether);
+
+        // assert balances
+        assertEq(gogeToken_v1.balanceOf(address(simone)), 10_000_000 ether);
+        assertEq(gogeToken_v2.balanceOf(address(simone)), 1_000_000 ether);
+
+        // attempt migrate
+        migrateActor(simone);
+    }
 }

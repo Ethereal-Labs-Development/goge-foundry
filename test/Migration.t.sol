@@ -1,16 +1,25 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.6;
 
-import "../lib/forge-std/src/Test.sol";
-import "./Utility.sol";
-
+import { Utility } from "./Utility.sol";
 import "../src/interfaces/Interfaces.sol";
 import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
 
 import { DogeGaySon } from "../src/GogeToken.sol";
 import { DogeGaySon1 } from "../src/TokenV1.sol";
 
-contract MigrationTesting is Utility, Test {
+interface AggregatorInterface {
+    function latestAnswer() external view returns (int256);
+    function latestTimestamp() external view returns (uint256);
+    function latestRound() external view returns (uint256);
+    function getAnswer(uint256 roundId) external view returns (int256);
+    function getTimestamp(uint256 roundId) external view returns (uint256);
+
+    event AnswerUpdated(int256 indexed current, uint256 indexed roundId, uint256 updatedAt);
+    event NewRound(uint256 indexed roundId, address indexed startedBy, uint256 startedAt);
+}
+
+contract MigrationTesting is Utility {
 
     DogeGaySon  gogeToken_v2;
     DogeGaySon1 gogeToken_v1;

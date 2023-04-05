@@ -1359,4 +1359,99 @@ contract DaoTest is Utility {
         assertEq(gogeDao.createPollEnabled(), false);
     }
 
+    /// @notice verify a pollAuthor can add more votes to a poll they have active.
+    function test_gogeDao_pollAuthorAddsVotes() public {
+        uint256 _joeBal = 1_010_000_000 ether;
+        gogeToken.transfer(address(joe), _joeBal);
+        gogeDao.setGateKeeping(false);
+
+        // Verify state
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 0);
+        assertEq(gogeToken.balanceOf(address(joe)), _joeBal);
+
+        address[] memory voters = gogeDao.getVoterLibrary(1);
+        assertEq(voters.length, 0);
+
+        uint256[] memory advocateFor = gogeDao.getAdvocateFor(address(this));
+        assertEq(advocateFor.length, 0);
+
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
+
+        // create poll proposal
+        GogeDAO.Proposal memory proposal;
+        proposal.description = "This is a mock poll, for testing";
+        proposal.endTime = block.timestamp + 5 days;
+
+        // create poll
+        vm.startPrank(address(joe));
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
+        gogeDao.createPoll(GogeDAO.PollType.other, proposal);
+        vm.stopPrank();
+
+        // Verify state
+        assertEq(gogeDao.polls(1, address(joe)), gogeDao.minAuthorBal());
+        assertEq(gogeDao.pollVotes(1), gogeDao.minAuthorBal());
+        assertEq(gogeToken.balanceOf(address(gogeDao)), gogeDao.minAuthorBal());
+        assertEq(gogeToken.balanceOf(address(joe)), _joeBal - gogeDao.minAuthorBal());
+        assertEq(gogeDao.passed(1), false);
+
+        voters = gogeDao.getVoterLibrary(1);
+        assertEq(voters.length, 1);
+        assertEq(voters[0], address(joe));
+
+        advocateFor = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateFor.length, 1);
+        assertEq(advocateFor[0], 1);
+
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
+        assertEq(activePolls[0], 1);
+
+        // add votes
+        vm.startPrank(address(joe));
+        gogeToken.approve(address(gogeDao), 1_000_000_000 ether);
+        gogeDao.addVote(1, 1_000_000_000 ether);
+        vm.stopPrank();
+
+        // Verify state
+        assertEq(gogeDao.polls(1, address(joe)), _joeBal);
+        assertEq(gogeDao.pollVotes(1), _joeBal);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), _joeBal);
+        assertEq(gogeToken.balanceOf(address(joe)), 0);
+        assertEq(gogeDao.passed(1), false);
+
+        voters = gogeDao.getVoterLibrary(1);
+        assertEq(voters.length, 1);
+        assertEq(voters[0], address(joe));
+
+        advocateFor = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateFor.length, 1);
+        assertEq(advocateFor[0], 1);
+
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 1);
+        assertEq(activePolls[0], 1);
+
+        // pass poll
+        gogeDao.passPoll(1);
+
+        // Verify state
+        assertEq(gogeDao.polls(1, address(joe)), _joeBal);
+        assertEq(gogeDao.pollVotes(1), _joeBal);
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 0);
+        assertEq(gogeToken.balanceOf(address(joe)), _joeBal);
+        assertEq(gogeDao.passed(1), true);
+
+        voters = gogeDao.getVoterLibrary(1);
+        assertEq(voters.length, 1);
+        assertEq(voters[0], address(joe));
+
+        advocateFor = gogeDao.getAdvocateFor(address(joe));
+        assertEq(advocateFor.length, 0);
+
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
+    }
+
 }

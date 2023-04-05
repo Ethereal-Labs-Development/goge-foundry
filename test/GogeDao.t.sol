@@ -82,7 +82,7 @@ contract DaoTest is Utility {
         assertEq(gogeToken.balanceOf(address(this)), 95_000_000_000 ether);
     }
 
-    
+
     // ~~ Utility Functions ~~
 
     /// @notice Creates a mock poll
@@ -1174,7 +1174,7 @@ contract DaoTest is Utility {
         assertEq(IERC20(address(gogeToken)).balanceOf(address(joe)), gogeDao.minAuthorBal());
 
         // start prank
-        vm.prank(address(joe));
+        vm.startPrank(address(joe));
 
         // approve transfer of minAuthorBal
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -1455,7 +1455,7 @@ contract DaoTest is Utility {
     }
 
     /// @notice Verify correct state change when setTeamMember is called.
-    function test_gogeDao_setTeamMember() public { // v1: 111689   v2: 111744
+    function test_gogeDao_setTeamMember() public {
         // Pre-state check
         address[] memory teamArr = gogeDao.getTeamMembers();
         assertEq(teamArr.length, 0);
@@ -1500,5 +1500,8 @@ contract DaoTest is Utility {
         assertEq(teamArr[0], address(tim));
         assertEq(teamArr[1], address(jon));
     }
+
+    // TODO: Create mass test where there is a poll with 100+ voters
+    // TODO: Create mass test where there are 100+ polls
 
 }

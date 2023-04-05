@@ -188,24 +188,24 @@ contract GogeDAO is Owned {
 
         uint256 _preBal = IGogeERC20(governanceToken).balanceOf(address(this));
         require(IGogeERC20(governanceToken).balanceOf(msg.sender) >= minAuthorBal, "GogeDao.sol::createPoll() Insufficient balance of tokens");
-        require(IGogeERC20(governanceToken).transferFrom(msg.sender, address(this), minAuthorBal), "GogeDao.sol::createPoll() transferFrom failed");
+        require(IGogeERC20(governanceToken).transferFrom(msg.sender, address(this), minAuthorBal));
         require(IGogeERC20(governanceToken).balanceOf(address(this)) == _preBal + minAuthorBal, "GogeDao.sol::createPoll() Full balance not received");
 
-        pollNum++;
+        uint256 _pollNum = ++pollNum;
 
-        emit ProposalCreated(pollNum, _pollType, _change.endTime);
+        emit ProposalCreated(_pollNum, _pollType, _change.endTime);
 
-        _addToVoterLibrary(pollNum, msg.sender);
-        _addToAdvocateFor(pollNum, msg.sender);
+        _addToVoterLibrary(_pollNum, msg.sender);
+        _addToAdvocateFor(_pollNum, msg.sender);
 
-        polls[pollNum][msg.sender] += minAuthorBal;
-        pollVotes[pollNum]         += minAuthorBal;
+        polls[_pollNum][msg.sender] += minAuthorBal;
+        pollVotes[_pollNum]         += minAuthorBal;
 
-        pollTypes[pollNum]  = _pollType;
-        proposals[pollNum]  = _change;
-        pollAuthor[pollNum] = msg.sender;
+        pollTypes[_pollNum]  = _pollType;
+        proposals[_pollNum]  = _change;
+        pollAuthor[_pollNum] = msg.sender;
 
-        activePolls.push(pollNum);
+        activePolls.push(_pollNum);
     }
 
     /// @notice A method for a voter to add a vote to an existing poll.
@@ -217,7 +217,7 @@ contract GogeDAO is Owned {
         
         uint256 _preBal = IGogeERC20(governanceToken).balanceOf(address(this));
         require(IGogeERC20(governanceToken).balanceOf(msg.sender) >= _numVotes, "GogeDao.sol::addVote() Exceeds Balance");
-        require(IGogeERC20(governanceToken).transferFrom(msg.sender, address(this), _numVotes), "GogeDao.sol::addVote() transferFrom failed");
+        require(IGogeERC20(governanceToken).transferFrom(msg.sender, address(this), _numVotes));
         require(IGogeERC20(governanceToken).balanceOf(address(this)) == _preBal + _numVotes, "GogeDao.sol::addVote() Full balance not received");
 
         _addToVoterLibrary(_pollNum, msg.sender);
@@ -237,7 +237,7 @@ contract GogeDAO is Owned {
         for (uint256 i; i < len;) {
             _removeVote(activePolls[i]);
             unchecked {
-                i = i + 1;
+                ++i;
             }
         }
     }
@@ -291,7 +291,7 @@ contract GogeDAO is Owned {
                 activePolls.pop();                
             }
             unchecked {
-                i = i + 1;
+                ++i;
             }
         }
     }
@@ -563,7 +563,7 @@ contract GogeDAO is Owned {
                 return;
             }
             unchecked {
-                i = i + 1;
+                ++i;
             }
         }
         voterLibrary[_pollNum].push(_voter);
@@ -579,7 +579,7 @@ contract GogeDAO is Owned {
                 return;
             }
             unchecked {
-                i = i + 1;
+                ++i;
             }
         }
         advocateFor[_advocate].push(_pollNum);
@@ -635,7 +635,7 @@ contract GogeDAO is Owned {
                 return;
             }
             unchecked {
-                i = i + 1;
+                ++i;
             }
         }
     }
@@ -653,8 +653,8 @@ contract GogeDAO is Owned {
     /// @param  _value is a team member.
     function _setTeamMember(address _addr, bool _value) internal {
         if (_value) {
-            (bool _isTeamMember, ) = isTeamMember(_addr);
-            if(!_isTeamMember) teamMembers.push(_addr);        
+            (bool _isTeamMember,) = isTeamMember(_addr);
+            if(!_isTeamMember) teamMembers.push(_addr);
         } else {
             (bool _isTeamMember, uint8 s) = isTeamMember(_addr);
             if(_isTeamMember) {
@@ -662,20 +662,6 @@ contract GogeDAO is Owned {
                 teamMembers.pop();
             }
         }
-
-        // (bool _isTeamMember, uint8 index) = isTeamMember(_addr);
-        // if (_isTeamMember) {
-        //     if (!_value) {
-        //         teamMembers[index] = teamMembers[teamMembers.length - 1];
-        //         teamMembers.pop();
-        //     }
-        //     return;
-        // } else {
-        //     if (_value) {
-        //         teamMembers.push(_addr);
-        //     }
-        //     return;
-        // }
     }
 
     /// @notice An internal method for removing a poll from activePolls array.
@@ -689,7 +675,7 @@ contract GogeDAO is Owned {
                 return;
             }
             unchecked {
-                i = i + 1;
+                ++i;
             }
         }
     }
@@ -754,7 +740,7 @@ contract GogeDAO is Owned {
                 return true;
             }
             unchecked {
-                i = i + 1;
+                ++i;
             }
         }
         return false;
@@ -772,7 +758,7 @@ contract GogeDAO is Owned {
                 }
             }
             unchecked {
-                i = i + 1;
+                ++i;
             }
         }
     }
@@ -788,7 +774,7 @@ contract GogeDAO is Owned {
                 return (true, i);
             }
             unchecked {
-                i = i + 1;
+                ++i;
             }
         }
         return (false, 0);

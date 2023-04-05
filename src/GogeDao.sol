@@ -186,8 +186,10 @@ contract GogeDAO is Owned {
         require(_change.endTime - block.timestamp >= minPeriod, "GogeDao.sol::createPoll() Polling period must be greater than or equal to minPeriod");
         require(_change.endTime - block.timestamp <= maxPeriod, "GogeDao.sol::createPoll() Polling period must be less than or equal to maxPeriod");
 
+        uint256 _preBal = IGogeERC20(governanceToken).balanceOf(address(this));
         require(IGogeERC20(governanceToken).balanceOf(msg.sender) >= minAuthorBal, "GogeDao.sol::createPoll() Insufficient balance of tokens");
-        require(IGogeERC20(governanceToken).transferFrom(msg.sender, address(this), minAuthorBal));
+        require(IGogeERC20(governanceToken).transferFrom(msg.sender, address(this), minAuthorBal), "GogeDao.sol::createPoll() transferFrom failed");
+        require(IGogeERC20(governanceToken).balanceOf(address(this)) == _preBal + minAuthorBal, "GogeDao.sol::createPoll() Full balance not received");
 
         pollNum++;
 
@@ -212,8 +214,11 @@ contract GogeDAO is Owned {
     function addVote(uint256 _pollNum, uint256 _numVotes) external {
         require(block.timestamp < proposals[_pollNum].endTime, "GogeDao.sol::addVote() Poll Closed");
         require(block.timestamp - IGogeERC20(governanceToken).getLastReceived(msg.sender) >= (5 minutes), "GogeDao.sol::addVote() Must wait 5 minutes after purchasing tokens to place any votes.");
+        
+        uint256 _preBal = IGogeERC20(governanceToken).balanceOf(address(this));
         require(IGogeERC20(governanceToken).balanceOf(msg.sender) >= _numVotes, "GogeDao.sol::addVote() Exceeds Balance");
-        require(IGogeERC20(governanceToken).transferFrom(msg.sender, address(this), _numVotes));
+        require(IGogeERC20(governanceToken).transferFrom(msg.sender, address(this), _numVotes), "GogeDao.sol::addVote() transferFrom failed");
+        require(IGogeERC20(governanceToken).balanceOf(address(this)) == _preBal + _numVotes, "GogeDao.sol::addVote() Full balance not received");
 
         _addToVoterLibrary(_pollNum, msg.sender);
         _addToAdvocateFor(_pollNum, msg.sender);
@@ -647,19 +652,30 @@ contract GogeDAO is Owned {
     /// @param  _addr address of team member.
     /// @param  _value is a team member.
     function _setTeamMember(address _addr, bool _value) internal {
-        (bool _isTeamMember, uint8 index) = isTeamMember(_addr);
-        if (_isTeamMember) {
-            if (!_value) {
-                teamMembers[index] = teamMembers[teamMembers.length - 1];
+        if (_value) {
+            (bool _isTeamMember, ) = isTeamMember(_addr);
+            if(!_isTeamMember) teamMembers.push(_addr);        
+        } else {
+            (bool _isTeamMember, uint8 s) = isTeamMember(_addr);
+            if(_isTeamMember) {
+                teamMembers[s] = teamMembers[teamMembers.length - 1];
                 teamMembers.pop();
             }
-            return;
-        } else {
-            if (_value) {
-                teamMembers.push(_addr);
-            }
-            return;
         }
+
+        // (bool _isTeamMember, uint8 index) = isTeamMember(_addr);
+        // if (_isTeamMember) {
+        //     if (!_value) {
+        //         teamMembers[index] = teamMembers[teamMembers.length - 1];
+        //         teamMembers.pop();
+        //     }
+        //     return;
+        // } else {
+        //     if (_value) {
+        //         teamMembers.push(_addr);
+        //     }
+        //     return;
+        // }
     }
 
     /// @notice An internal method for removing a poll from activePolls array.

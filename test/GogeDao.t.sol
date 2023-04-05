@@ -212,14 +212,14 @@ contract DaoTest is Utility {
         proposal.endTime = block.timestamp + 1 seconds;
 
         // try to create poll while endTime is below minPeriod
-        vm.expectRevert("GogeDao.sol::createPoll() Polling period must be greater than minPeriod");
+        vm.expectRevert("GogeDao.sol::createPoll() Polling period must be greater than or equal to minPeriod");
         gogeDao.createPoll(GogeDAO.PollType.other, proposal);
 
         // endTime is greater than maxPeriod
         proposal.endTime = block.timestamp + 61 days;
 
         // try to create poll while endTime to exceed maxPeriod
-        vm.expectRevert("GogeDao.sol::createPoll() Polling period must be less than maxPeriod");
+        vm.expectRevert("GogeDao.sol::createPoll() Polling period must be less than or equal to maxPeriod");
         gogeDao.createPoll(GogeDAO.PollType.other, proposal);
 
         // update to proper end time
@@ -1454,7 +1454,8 @@ contract DaoTest is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    function test_gogeDao_setTeamMember() public {
+    /// @notice Verify correct state change when setTeamMember is called.
+    function test_gogeDao_setTeamMember() public { // v1: 111689   v2: 111744
         // Pre-state check
         address[] memory teamArr = gogeDao.getTeamMembers();
         assertEq(teamArr.length, 0);

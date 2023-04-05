@@ -1,6 +1,7 @@
 # Compiler files
 cache/
 out/
+.env
 
 .env
 Notes.txt
@@ -13,3 +14,6 @@ tokenTestArgs.txt
 !/broadcast
 /broadcast/*
 /broadcast/*/31337/
+
+# Notes
+Notes.txt

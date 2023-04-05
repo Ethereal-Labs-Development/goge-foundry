@@ -879,7 +879,7 @@ contract DogeGaySon is ERC20, Ownable {
     }
     
     function updateMinimumBalanceForDividends(uint256 newMinimumBalance) external {
-        require(_msgSender() == gogeDao || _msgSender() == owner(), "GogeToken.sol::updateMinimumBalanceForDividends() not authorized");
+        require(_msgSender() == owner(), "GogeToken.sol::updateMinimumBalanceForDividends() not authorized");
         cakeDividendTracker.updateMinimumTokenBalanceForDividends(newMinimumBalance);
     }
 

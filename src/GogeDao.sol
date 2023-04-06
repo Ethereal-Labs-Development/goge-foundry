@@ -290,8 +290,10 @@ contract GogeDAO is Owned {
                 activePolls[i] = activePolls[--length];
                 activePolls.pop();                
             }
-            unchecked {
-                ++i;
+            else {
+                unchecked {
+                    ++i;
+                }
             }
         }
     }

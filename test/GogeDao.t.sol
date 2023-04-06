@@ -2,6 +2,7 @@
 pragma solidity ^0.8.6;
 
 import { Utility } from "./Utility.sol";
+import { Actor } from "../src/users/Actor.sol";
 import { GogeDAO } from "../src/GogeDao.sol";
 import { DogeGaySonFlat } from "../src/DeployedV2Token.sol";
 
@@ -125,6 +126,19 @@ contract DaoTest is Utility {
             _receiver,
             block.timestamp + 10
         );
+    }
+
+    /// @notice Helper function to create an array of actors and deals them gogeTokens
+    function createActors(uint256 _amount) internal returns (Actor[] memory actors) {
+        actors = new Actor[](_amount);
+
+        // Create an actor amount times and provide actors with ETH to mint
+        for(uint256 i = 0; i < _amount; ++i) {
+            Actor actor = new Actor();
+            deal(address(gogeToken), address(actor), 1_000 ether);
+            //gogeToken.transfer(address(actor), 1_000 ether);
+            actors[i] = actor;
+        }
     }
 
 
@@ -1501,7 +1515,109 @@ contract DaoTest is Utility {
         assertEq(teamArr[1], address(jon));
     }
 
-    // TODO: Create mass test where there is a poll with 100+ voters
-    // TODO: Create mass test where there are 100+ polls
+
+    // ~~ Stress Tests ~~
+
+    /// @notice Verifies state when there are a massive amount of voters in a poll
+    function test_gogeDao_stress_passPoll() public {
+        uint256 _numActors = 100;
+
+        // Create poll
+        uint256 _pollNum = gogeDao.pollNum();
+
+        // create poll proposal
+        GogeDAO.Proposal memory proposal;
+        proposal.description = "I want to add Joe to the naughty list";
+        proposal.endTime = block.timestamp + 2 days;
+        proposal.addr1 = address(joe);
+        proposal.boolVar = true;
+
+        // create poll
+        gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
+        gogeDao.createPoll(GogeDAO.PollType.modifyBlacklist, proposal);
+        assertEq(gogeDao.pollNum(), _pollNum + 1);
+
+        // Create array of actors
+        Actor[] memory actors = createActors(_numActors);
+
+        // have actors add votes
+        for (uint256 i; i < _numActors;) {
+            // approve
+            assert(actors[i].try_approveToken(address(gogeToken), address(gogeDao), 1_000 ether));
+            // add vote
+            assert(actors[i].try_addVote(address(gogeDao), 1, 1_000 ether));
+            // verify balance
+            assertEq(gogeToken.balanceOf(address(actors[i])), 0);
+            unchecked {
+                ++i;
+            }
+        }
+
+        // pass poll
+        gogeDao.passPoll(1);
+
+        // Verify state
+        assertEq(gogeToken.balanceOf(address(gogeDao)), 0);
+        assertEq(gogeDao.passed(1), true);
+
+        address[] memory voters = gogeDao.getVoterLibrary(1);
+        assertEq(voters.length, _numActors + 1);
+
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
+
+        // have actors add votes
+        for (uint256 i; i < _numActors;) {
+            // verify balance
+            assertEq(gogeToken.balanceOf(address(actors[i])), 1_000 ether);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    /// @notice Verify the absolute most worst case scenario for a queryEndTime
+    function test_gogeDao_stress_queryEndTime() public {
+        uint256 _numPolls = 20;
+        uint256 _numActors = 40;
+
+        Actor[] memory actors = createActors(_numActors);
+
+        // 10 expired polls
+        for (uint256 i; i < _numPolls;) {
+            // create poll
+            create_mock_poll();
+
+            for (uint256 i; i < _numActors;) {
+                // approve
+                assert(actors[i].try_approveToken(address(gogeToken), address(gogeDao), 1 ether));
+                // add vote
+                assert(actors[i].try_addVote(address(gogeDao), gogeDao.pollNum(), 1 ether));
+
+                unchecked {
+                    ++i;
+                }
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        // verify state
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, _numPolls);
+
+        // warp past expiration date
+        vm.warp(block.timestamp + 6 days);
+
+        // queryEndTime -> OOOOOOF
+        gogeDao.queryEndTime();
+
+        // verify state
+        activePolls = gogeDao.getActivePolls();
+        assertEq(activePolls.length, 0);
+
+    }
 
 }

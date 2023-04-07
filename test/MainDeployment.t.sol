@@ -111,6 +111,8 @@ contract MainDeploymentTesting is Utility {
         // TODO: (3) exclude any locks from circulating supply
 
         // TODO: (4) enable createPoll
+
+        // TODO: (5) setup automation for GogeDao.sol::queryEndTime
     }
 
     // ~~ Utility Functions ~~
@@ -458,5 +460,13 @@ contract MainDeploymentTesting is Utility {
 
         // attempt migrate
         migrateActor(simone);
+    }
+
+    function test_mainDeployment_dao_updateTeamBalance() public {
+        // TODO
+    }
+
+    function test_mainDeployment_dao_updateMarketingBalance() public {
+        // TODO
     }
 }

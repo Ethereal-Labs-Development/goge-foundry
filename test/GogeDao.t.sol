@@ -966,9 +966,15 @@ contract DaoTest is Utility {
         gogeDao.setTeamMember(address(jon), true);
         gogeDao.setTeamMember(address(tim), true);
 
-        // update team balance on dao
+        // expect revert when we update teamBalance without sending bnb to contract
+        vm.prank(address(gogeToken));
+        vm.expectRevert("GogeDao.sol::updateTeamBalance() Insufficient BNB balance in GogeDAO");
+        gogeDao.updateTeamBalance(1 ether);
+
+        // transfer 1 eth to contract
         payable(address(gogeDao)).transfer(1 ether);
 
+        // update team balance on dao
         vm.prank(address(gogeToken));
         gogeDao.updateTeamBalance(1 ether);
 
@@ -987,6 +993,12 @@ contract DaoTest is Utility {
         assertEq(address(jon).balance, 0.5 ether);
         assertEq(address(tim).balance, 0.5 ether);
 
+        // transfer 1 eth to contract again to update balance
+        payable(address(gogeDao)).transfer(1 ether);
+
+        // update team balance on dao
+        vm.prank(address(gogeToken));
+        gogeDao.updateTeamBalance(1 ether);
     }
 
     /// @notice Verify correct logic when payTeam is called with a range of amounts using fuzzing.

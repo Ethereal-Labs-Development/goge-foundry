@@ -411,14 +411,20 @@ contract GogeDAO is Owned {
     /// @param  _amount amount of BNB to add to teamBalance.
     /// @dev    Only callable by governanceToken
     function updateTeamBalance(uint256 _amount) external onlyGovernanceToken {
-        teamBalance += _amount;
+        unchecked {
+            teamBalance += _amount;
+        }
+        require(address(this).balance >= (teamBalance + marketingBalance), "GogeDao.sol::updateTeamBalance() Insufficient BNB balance in GogeDAO");
     }
 
     /// @notice A method for updating marketing balance.
     /// @param  _amount amount of BNB to add to marketingBalanace.
     /// @dev    Only callable by governanceToken
     function updateMarketingBalance(uint256 _amount) external onlyGovernanceToken {
-        marketingBalance += _amount;
+        unchecked {
+            marketingBalance += _amount;
+        }
+        require(address(this).balance >= (teamBalance + marketingBalance), "GogeDao.sol::updateMarketingBalance() Insufficient BNB balance in GogeDAO");
     }
 
     // NOTE: gatekeeper

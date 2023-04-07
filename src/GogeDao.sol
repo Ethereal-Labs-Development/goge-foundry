@@ -442,6 +442,7 @@ contract GogeDAO is Owned {
         _executeProposal(_pollNum);
     }
 
+
     // --------
     // Internal
     // --------

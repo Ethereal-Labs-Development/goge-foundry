@@ -109,6 +109,7 @@ contract MainDeploymentTesting is Utility {
         // TODO: (2) SetDao on Token contract
 
         // TODO: (3) exclude any locks from circulating supply
+            // - already excluded address(dead), pair, and pinkLock
 
         // TODO: (4) enable createPoll
 

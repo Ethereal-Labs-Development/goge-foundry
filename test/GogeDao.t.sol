@@ -1629,7 +1629,5 @@ contract DaoTest is Utility {
         // verify state
         activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 0);
-
     }
-
 }

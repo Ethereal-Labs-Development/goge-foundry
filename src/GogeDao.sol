@@ -118,6 +118,10 @@ contract GogeDAO is Owned {
         transferOwnership,
         setQuorum,
         updateGovernanceToken,
+        updateMinPeriod,
+        updateMaxPeriod,
+        updateMinAuthorBal,
+        updateMaxPollsPerAuthor,
         other
     }
     
@@ -542,6 +546,22 @@ contract GogeDAO is Owned {
         else if (_pollType == PollType.setQuorum) {
             Proposal memory setQuorum = proposals[_pollNum];
             _updateQuorum(uint8(setQuorum.amount));
+        }
+        else if (_pollType == PollType.updateMinPeriod) {
+            Proposal memory _updateMinPeriod = proposals[_pollNum];
+            minPeriod = _updateMinPeriod.amount * 1 days;
+        }
+        else if (_pollType == PollType.updateMaxPeriod) {
+            Proposal memory _updateMaxPeriod = proposals[_pollNum];
+            maxPeriod = _updateMaxPeriod.amount * 1 days;
+        }
+        else if (_pollType == PollType.updateMinAuthorBal) {
+            Proposal memory _updateMinAuthorBal = proposals[_pollNum];
+            minAuthorBal = _updateMinAuthorBal.amount * 10**18;
+        }
+        else if (_pollType == PollType.updateMaxPollsPerAuthor) {
+            Proposal memory _updateMaxPollsPerAuthor = proposals[_pollNum];
+            maxPollsPerAuthor = _updateMaxPollsPerAuthor.amount;
         }
         else if (_pollType == PollType.updateGovernanceToken) {
             Proposal memory updateGovernanceToken = proposals[_pollNum];

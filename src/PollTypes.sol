@@ -291,6 +291,30 @@ contract PollTypes {
         address addr;
     }
 
+    struct UpdateMinPeriod {
+        string description;
+        uint256 endTime;
+        uint256 amount;
+    }
+
+    struct UpdateMaxPeriod {
+        string description;
+        uint256 endTime;
+        uint256 amount;
+    }
+
+    struct UpdateMinAuthorBal {
+        string description;
+        uint256 endTime;
+        uint256 amount;
+    }
+
+    struct UpdateMaxPollsPerAuthor {
+        string description;
+        uint256 endTime;
+        uint256 amount;
+    }
+
     /// @notice Poll type to propose an arbitrary proposal.
     /// @param  description proposal description.
     /// @param  endTime unix timestamp of poll expiration date.
@@ -324,6 +348,10 @@ contract PollTypes {
             "migrateTreasury",
             "setQuorum",
             "updateGovernanceToken",
+            "updateMinPeriod",
+            "updateMaxPeriod",
+            "updateMinAuthorBal",
+            "updateMaxPollsPerAuthor",
             "other"
         ];
     }

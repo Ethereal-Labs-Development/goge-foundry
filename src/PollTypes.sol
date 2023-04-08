@@ -291,12 +291,6 @@ contract PollTypes {
         address addr;
     }
 
-    struct UpdateMinPeriod {
-        string description;
-        uint256 endTime;
-        uint256 amount;
-    }
-
     struct UpdateMaxPeriod {
         string description;
         uint256 endTime;
@@ -304,12 +298,6 @@ contract PollTypes {
     }
 
     struct UpdateMinAuthorBal {
-        string description;
-        uint256 endTime;
-        uint256 amount;
-    }
-
-    struct UpdateMaxPollsPerAuthor {
         string description;
         uint256 endTime;
         uint256 amount;

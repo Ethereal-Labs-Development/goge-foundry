@@ -141,6 +141,21 @@ contract DaoTest is Utility {
         }
     }
 
+    /// @notice A view method for returning whether a given poll is active.
+    function isActivePoll(uint256 _pollNum) public view returns (bool active) {
+        uint256[] memory activePolls = gogeDao.getActivePolls();
+        uint256 length = activePolls.length;
+        for (uint256 i; i < length;){
+            if (_pollNum == activePolls[i]) {
+                return true;
+            }
+            unchecked {
+                ++i;
+            }
+        }
+        return false;
+    }
+
 
     // ~~ Unit Tests ~~
 
@@ -736,7 +751,7 @@ contract DaoTest is Utility {
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.isActivePoll(1), true);
+        assertEq(isActivePoll(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 5 days);
 
         // verify a non-owner cannot call passPoll
@@ -747,7 +762,7 @@ contract DaoTest is Utility {
 
         // Post-state check.
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeDao.isActivePoll(1), false);
+        assertEq(isActivePoll(1), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         // dev tries to call passPoll -> fails
@@ -782,7 +797,7 @@ contract DaoTest is Utility {
         assertEq(advocateArr.length, 1);
         assertEq(advocateArr[0], 1);
 
-        assertEq(gogeDao.isActivePoll(1), true);
+        assertEq(isActivePoll(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 5 days);
 
         // passPoll
@@ -797,7 +812,7 @@ contract DaoTest is Utility {
         advocateArr = gogeDao.getAdvocateFor(address(joe));
         assertEq(advocateArr.length, 0);
 
-        assertEq(gogeDao.isActivePoll(1), false);
+        assertEq(isActivePoll(1), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         // dev tries to call passPoll -> fails
@@ -816,7 +831,7 @@ contract DaoTest is Utility {
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.isActivePoll(1), true);
+        assertEq(isActivePoll(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 5 days);
 
         // endPoll
@@ -824,7 +839,7 @@ contract DaoTest is Utility {
 
         // Post-state check.
         assertEq(gogeDao.passed(1), false);
-        assertEq(gogeDao.isActivePoll(1), false);
+        assertEq(isActivePoll(1), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         // dev tries to call endPoll -> fails
@@ -837,7 +852,7 @@ contract DaoTest is Utility {
 
         // Pre-state check.
         assertEq(gogeDao.passed(2), false);
-        assertEq(gogeDao.isActivePoll(2), true);
+        assertEq(isActivePoll(2), true);
         assertEq(gogeDao.getProposal(2).endTime, block.timestamp + 5 days);
 
         // endPoll
@@ -845,7 +860,7 @@ contract DaoTest is Utility {
 
         // Post-state check.
         assertEq(gogeDao.passed(2), false);
-        assertEq(gogeDao.isActivePoll(2), false);
+        assertEq(isActivePoll(2), false);
         assertEq(gogeDao.getProposal(2).endTime, block.timestamp);
     }
 
@@ -880,7 +895,7 @@ contract DaoTest is Utility {
         assertEq(advocateArr.length, 1);
         assertEq(advocateArr[0], 1);
 
-        assertEq(gogeDao.isActivePoll(1), true);
+        assertEq(isActivePoll(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 5 days);
 
         uint256 author_bal = gogeToken.balanceOf(address(this));
@@ -901,7 +916,7 @@ contract DaoTest is Utility {
         advocateArr = gogeDao.getAdvocateFor(address(this));
         assertEq(advocateArr.length, 0);
 
-        assertEq(gogeDao.isActivePoll(1), false);
+        assertEq(isActivePoll(1), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         // dev tries to call endPoll -> fails

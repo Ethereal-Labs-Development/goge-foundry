@@ -280,7 +280,7 @@ contract PollTypes {
         uint256 amount;
     }
 
-    /// @notice Poll type to propose updating the governanceTokenAddr.
+    /// @notice Poll type to propose updating the governanceToken.
     /// @param  description proposal description.
     /// @param  endTime unix timestamp of poll expiration date.
     /// @param  addr new governance token.
@@ -291,12 +291,22 @@ contract PollTypes {
         address addr;
     }
 
+    /// @notice Poll type to propose updating the maxPeriod variable.
+    /// @param  description proposal description.
+    /// @param  endTime unix timestamp of poll expiration date.
+    /// @param  amount new maxPeriod amount.
+    /// @dev    amount needs to be in seconds.
     struct UpdateMaxPeriod {
         string description;
         uint256 endTime;
         uint256 amount;
     }
 
+    /// @notice Poll type to propose updating the minAuthorBal variable.
+    /// @param  description proposal description.
+    /// @param  endTime unix timestamp of poll expiration date.
+    /// @param  amount new amount of tokens needed for an author to create a poll.
+    /// @dev    The contract will add the leading 0's. Input should be truncated.
     struct UpdateMinAuthorBal {
         string description;
         uint256 endTime;

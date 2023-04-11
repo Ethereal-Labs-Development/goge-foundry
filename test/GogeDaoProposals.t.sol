@@ -1135,51 +1135,6 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType updateMinPeriod is created and executed.
-    // function test_gogeDao_proposal_updateMinPeriod() public {
-
-    //     // NOTE create poll
-
-    //     // create poll proposal
-    //     GogeDAO.Proposal memory proposal;
-    //     proposal.description = "I want to propose we update the min poll period to 2 days";
-    //     proposal.endTime = block.timestamp + 2 days;
-    //     proposal.amount = 2;
-
-    //     // create poll
-    //     gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
-    //     gogeDao.createPoll(GogeDAO.PollType.updateMinPeriod, proposal);
-
-    //     // Verify state change
-    //     assertEq(gogeDao.pollNum(), 1);
-    //     assert(gogeDao.pollTypes(1) == GogeDAO.PollType.updateMinPeriod);
-
-    //     // Verify poll proposal
-    //     assertEq(gogeDao.getProposal(1).description, "I want to propose we update the min poll period to 2 days");
-    //     assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-    //     assertEq(gogeDao.getProposal(1).amount, 2);
-
-    //     // Pre-state check
-    //     assertEq(gogeDao.passed(1), false);
-    //     assertEq(gogeDao.minPeriod(), 1 days);
-
-    //     uint256[] memory activePolls = gogeDao.getActivePolls();
-    //     assertEq(activePolls.length, 1);
-    //     assertEq(activePolls[0], 1);
-
-    //     // NOTE pass poll
-
-    //     // pass poll
-    //     gogeDao.passPoll(1);
-
-    //     // Post-state check
-    //     assertEq(gogeDao.passed(1), true);
-    //     assertEq(gogeDao.minPeriod(), 2 days);
-
-    //     activePolls = gogeDao.getActivePolls();
-    //     assertEq(activePolls.length, 0);
-    // }
-
     /// @notice Verifies correct state changes when a poll of pollType updateMaxPeriod is created and executed.
     function test_gogeDao_proposal_updateMaxPeriod() public {
 
@@ -1269,49 +1224,4 @@ contract DaoTestProposals is Utility {
         activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 0);
     }
-
-    /// @notice Verifies correct state changes when a poll of pollType updateMaxPollsPerAuthor is created and executed.
-    // function test_gogeDao_proposal_updateMaxPollsPerAuthor() public {
-
-    //     // NOTE create poll
-
-    //     // create poll proposal
-    //     GogeDAO.Proposal memory proposal;
-    //     proposal.description = "I want to propose we update the minimum author balance to 420M tokens";
-    //     proposal.endTime = block.timestamp + 2 days;
-    //     proposal.amount = 4;
-
-    //     // create poll
-    //     gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
-    //     gogeDao.createPoll(GogeDAO.PollType.updateMaxPollsPerAuthor, proposal);
-
-    //     // Verify state change
-    //     assertEq(gogeDao.pollNum(), 1);
-    //     assert(gogeDao.pollTypes(1) == GogeDAO.PollType.updateMaxPollsPerAuthor);
-
-    //     // Verify poll proposal
-    //     assertEq(gogeDao.getProposal(1).description, "I want to propose we update the minimum author balance to 420M tokens");
-    //     assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-    //     assertEq(gogeDao.getProposal(1).amount, 4);
-
-    //     // Pre-state check
-    //     assertEq(gogeDao.passed(1), false);
-    //     assertEq(gogeDao.maxPollsPerAuthor(), 1);
-
-    //     uint256[] memory activePolls = gogeDao.getActivePolls();
-    //     assertEq(activePolls.length, 1);
-    //     assertEq(activePolls[0], 1);
-
-    //     // NOTE pass poll
-
-    //     // pass poll
-    //     gogeDao.passPoll(1);
-
-    //     // Post-state check
-    //     assertEq(gogeDao.passed(1), true);
-    //     assertEq(gogeDao.maxPollsPerAuthor(), 4);
-
-    //     activePolls = gogeDao.getActivePolls();
-    //     assertEq(activePolls.length, 0);
-    // }
 }

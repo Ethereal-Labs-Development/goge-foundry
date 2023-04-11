@@ -159,6 +159,7 @@ contract GogeDAO is Owned {
 
     /// @notice Emitted when a new poll is created.
     event ProposalCreated(uint256 pollNum, PollType pollType, uint256 endTime);
+    
     /// @notice Emitted when a poll has been passed.
     event ProposalPassed(uint256 pollNum);
 
@@ -174,16 +175,16 @@ contract GogeDAO is Owned {
     /// @param  _pollType enum type of poll being created.
     /// @param  _change the matching metadata that will result in the execution of the poll.
     function createPoll(PollType _pollType, Proposal memory _change) external {        
-        require(createPollEnabled, "GogeDao.sol::createPoll Ability to create poll is disabled");
-        if (msg.sender != owner) require(getActivePollsFromAuthor(msg.sender) < maxPollsPerAuthor, "GogeDao.sol::createPoll Exceeds maxPollsPerAuthor");
-        require(block.timestamp < _change.endTime, "GogeDao.sol::createPoll End time must be later than start time");
-        require(_change.endTime - block.timestamp >= minPeriod, "GogeDao.sol::createPoll Polling period must be greater than or equal to minPeriod");
-        require(_change.endTime - block.timestamp <= maxPeriod, "GogeDao.sol::createPoll Polling period must be less than or equal to maxPeriod");
+        require(createPollEnabled, "GogeDao.sol::createPoll() Ability to create poll is disabled");
+        if (msg.sender != owner) require(getActivePollsFromAuthor(msg.sender) < maxPollsPerAuthor, "GogeDao.sol::createPoll() Exceeds maxPollsPerAuthor");
+        require(block.timestamp < _change.endTime, "GogeDao.sol::createPoll() End time must be later than start time");
+        require(_change.endTime - block.timestamp >= minPeriod, "GogeDao.sol::createPoll() Polling period must be greater than or equal to minPeriod");
+        require(_change.endTime - block.timestamp <= maxPeriod, "GogeDao.sol::createPoll() Polling period must be less than or equal to maxPeriod");
 
         uint256 _preBal = IGogeERC20(governanceToken).balanceOf(address(this));
-        require(IGogeERC20(governanceToken).balanceOf(msg.sender) >= minAuthorBal, "GogeDao.sol::createPoll Insufficient balance of tokens");
+        require(IGogeERC20(governanceToken).balanceOf(msg.sender) >= minAuthorBal, "GogeDao.sol::createPoll() Insufficient balance of tokens");
         require(IGogeERC20(governanceToken).transferFrom(msg.sender, address(this), minAuthorBal));
-        require(IGogeERC20(governanceToken).balanceOf(address(this)) == _preBal + minAuthorBal, "GogeDao.sol::createPoll Full balance not received");
+        require(IGogeERC20(governanceToken).balanceOf(address(this)) == _preBal + minAuthorBal, "GogeDao.sol::createPoll() Full balance not received");
 
         uint256 _pollNum = ++pollNum;
 
@@ -206,13 +207,13 @@ contract GogeDAO is Owned {
     /// @param  _pollNum The poll number.
     /// @param  _numVotes The size of the vote to be created.
     function addVote(uint256 _pollNum, uint256 _numVotes) external {
-        require(block.timestamp < proposals[_pollNum].endTime, "GogeDao.sol::addVote Poll Closed");
-        require(block.timestamp - IGogeERC20(governanceToken).getLastReceived(msg.sender) >= (5 minutes), "GogeDao.sol::addVote Must wait 5 minutes after purchasing tokens to place any votes.");
+        require(block.timestamp < proposals[_pollNum].endTime, "GogeDao.sol::addVote() Poll Closed");
+        require(block.timestamp - IGogeERC20(governanceToken).getLastReceived(msg.sender) >= (5 minutes), "GogeDao.sol::addVote() Must wait 5 minutes after purchasing tokens to place any votes.");
         
         uint256 _preBal = IGogeERC20(governanceToken).balanceOf(address(this));
-        require(IGogeERC20(governanceToken).balanceOf(msg.sender) >= _numVotes, "GogeDao.sol::addVote Exceeds Balance");
+        require(IGogeERC20(governanceToken).balanceOf(msg.sender) >= _numVotes, "GogeDao.sol::addVote() Exceeds Balance");
         require(IGogeERC20(governanceToken).transferFrom(msg.sender, address(this), _numVotes));
-        require(IGogeERC20(governanceToken).balanceOf(address(this)) == _preBal + _numVotes, "GogeDao.sol::addVote Full balance not received");
+        require(IGogeERC20(governanceToken).balanceOf(address(this)) == _preBal + _numVotes, "GogeDao.sol::addVote() Full balance not received");
 
         _addToVoterLibrary(_pollNum, msg.sender);
         _addToAdvocateFor(_pollNum, msg.sender);
@@ -239,7 +240,7 @@ contract GogeDAO is Owned {
     /// @notice A method for a voter to remove their votes from a single poll.
     /// @param _pollNum unique poll identifier.
     function removeVotesFromPoll(uint256 _pollNum) external {
-        require(block.timestamp < proposals[_pollNum].endTime, "GogeDao.sol::removeVotesFromPoll Poll Closed");
+        require(block.timestamp < proposals[_pollNum].endTime, "GogeDao.sol::removeVotesFromPoll() Poll Closed");
         _removeVote(_pollNum);
     }
 
@@ -247,19 +248,19 @@ contract GogeDAO is Owned {
     function payTeam() public {
         // ensures contract balance can support team balance
         uint256 balance = teamBalance;
-        require(balance <= address(this).balance, "GogeDao.sol::payTeam Insufficient balance!");
+        require(balance <= address(this).balance, "GogeDao.sol::payTeam() Insufficient balance!");
 
         // ensures no division by zero.
         uint256 length = teamMembers.length;
-        require(length > 0, "GogeDao.sol::payTeam No team members!");
+        require(length > 0, "GogeDao.sol::payTeam() No team members!");
 
         // ensures no payments are made if payment is not greater than zero
         uint256 payment = balance / length;
-        require(payment > 0, "GogeDao.sol::payTeam Insufficient balance!");
+        require(payment > 0, "GogeDao.sol::payTeam() Insufficient balance!");
 
         for(uint256 i; i < length;) {
             (bool sent,) = teamMembers[i].call{value: payment}("");
-            require(sent, "GogeDao.sol::payTeam Failed to send payment");
+            require(sent, "GogeDao.sol::payTeam() Failed to send payment");
             unchecked {
                 ++i;
             }
@@ -322,13 +323,13 @@ contract GogeDAO is Owned {
     /// @param  _pollNum unique poll identifier.
     /// @dev    poll must be an active poll
     function passPoll(uint256 _pollNum) external onlyOwner {
-        require(block.timestamp < proposals[_pollNum].endTime, "GogeDao.sol::passPoll Poll Closed");
+        require(block.timestamp < proposals[_pollNum].endTime, "Poll Closed");
         _executeProposal(_pollNum);
     }
 
     /// @notice An owner method for updating status of createPoll.
     function toggleCreatePollEnabled() external onlyOwner {
-        require(IGogeERC20(governanceToken).isExcludedFromFees(address(this)), "GogeDao.sol::toggleCreatePollEnabled !isExcludedFromFees(address(this))");
+        require(IGogeERC20(governanceToken).isExcludedFromFees(address(this)), "GogeDao.sol::toggleCreatePollEnabled() !isExcludedFromFees(address(this))");
         createPollEnabled = !createPollEnabled;
     }
 
@@ -718,16 +719,10 @@ contract GogeDAO is Owned {
         governanceToken = _addr;
     }
 
+
     // ----
     // View
     // ----
-
-    /// @notice A view method for returning the amount of votes of a voter in a poll.
-    /// @param  _addr address of voter.
-    /// @param _pollNum unique poll identifier.
-    function getVotes(address _addr, uint256 _pollNum) external view returns (uint256) {
-        return polls[_pollNum][_addr];
-    }
 
     /// @notice A view method for returning a poll's unique metadata.
     /// @param _pollNum unique poll identifier.

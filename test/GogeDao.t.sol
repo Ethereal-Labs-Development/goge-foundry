@@ -767,7 +767,7 @@ contract DaoTest is Utility {
 
         // dev tries to call passPoll -> fails
         vm.prank(address(dev));
-        vm.expectRevert("GogeDao.sol::passPoll() Poll Closed");
+        vm.expectRevert("Poll Closed");
         gogeDao.passPoll(1);
     }
 
@@ -817,7 +817,7 @@ contract DaoTest is Utility {
 
         // dev tries to call passPoll -> fails
         vm.prank(address(dev));
-        vm.expectRevert("GogeDao.sol::passPoll() Poll Closed");
+        vm.expectRevert("Poll Closed");
         gogeDao.passPoll(1);
     }
 
@@ -844,7 +844,7 @@ contract DaoTest is Utility {
 
         // dev tries to call endPoll -> fails
         vm.prank(address(dev));
-        vm.expectRevert("GogeDao.sol::endPoll() Poll Closed");
+        vm.expectRevert("Poll Closed");
         gogeDao.endPoll(1);
 
         // NOTE: Author ends poll
@@ -921,7 +921,7 @@ contract DaoTest is Utility {
 
         // dev tries to call endPoll -> fails
         vm.prank(address(dev));
-        vm.expectRevert("GogeDao.sol::endPoll() Poll Closed");
+        vm.expectRevert("Poll Closed");
         gogeDao.endPoll(1);
     }
 
@@ -983,7 +983,7 @@ contract DaoTest is Utility {
 
         // expect revert when we update teamBalance without sending bnb to contract
         vm.prank(address(gogeToken));
-        vm.expectRevert("GogeDao.sol::updateTeamBalance() Insufficient BNB balance in GogeDAO");
+        vm.expectRevert("Insufficient BNB balance in GogeDAO");
         gogeDao.updateTeamBalance(1 ether);
 
         // transfer 1 eth to contract
@@ -1350,7 +1350,7 @@ contract DaoTest is Utility {
 
         // withdraw AGAIN but this time expect insufficient reversion
         vm.prank(address(joe));
-        vm.expectRevert("GogeDao.sol::withdraw() Insufficient BNB balance");
+        vm.expectRevert("Insufficient BNB balance");
         gogeDao.withdraw();
     }
 
@@ -1373,11 +1373,11 @@ contract DaoTest is Utility {
         assertEq(token.balanceOf(address(this)), _amount);
 
         // Owner cannot withdraw from token balance when the balance is zero
-        vm.expectRevert("GogeDao.sol::withdrawERC20() Insufficient token balance");
+        vm.expectRevert("Insufficient token balance");
         gogeDao.withdrawERC20(BUSD);
 
         // Owner cannot withdraw from the governance token address
-        vm.expectRevert("GogeDao.sol::withdrawERC20() Address cannot be governance token");
+        vm.expectRevert("Address cannot be governance token");
         gogeDao.withdrawERC20(address(gogeToken));
     }
 

@@ -13,5 +13,4 @@ This repository contains all backend code for the v2 backend protocol; v2 ERC20 
 **NOTE:** This testing and development framework uses [foundry](https://github.com/dapphub/dapptools), a blazing fast, portable and modular toolkit for Ethereum application development written in Rust, built on top of dapp tools.
 
 [![Homepage](https://img.shields.io/badge/Elevate%20Software-Homepage-brightgreen)](https://www.elevatesoftware.io/)
-
 [![test](https://github.com/Elevate-Software/goge-foundry/actions/workflows/test.yml/badge.svg)](https://github.com/Elevate-Software/goge-foundry/actions/workflows/test.yml)

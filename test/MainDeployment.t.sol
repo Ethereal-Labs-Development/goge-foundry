@@ -119,7 +119,7 @@ contract MainDeploymentTesting is Utility {
     // ~~ Utility Functions ~~
 
     /// @notice Returns the price of 1 token in USD
-    function getPrice(address token) internal returns (uint256) {
+    function getPrice(address token) internal view returns (uint256) {
         address[] memory path = new address[](3);
 
         path[0] = token;
@@ -415,7 +415,6 @@ contract MainDeploymentTesting is Utility {
         uint256 marketingReceived = postBalMarketing - preBalMarketing;
         uint256 teamReceived      = postBalTeam - preBalTeam;
         uint256 devReceived       = postBalDev - preBalDev;
-        uint256 deadReceived      = postBalDead - preBalDead;
 
         // Verify amount received is amount sent.
         assertEq(marketingReceived, gogeToken_v2.royaltiesSent(1));
@@ -477,7 +476,6 @@ contract MainDeploymentTesting is Utility {
         uint256 marketingReceived = postBalMarketing - preBalMarketing;
         uint256 teamReceived      = postBalTeam - preBalTeam;
         uint256 devReceived       = postBalDev - preBalDev;
-        uint256 deadReceived      = postBalDead - preBalDead;
 
         // Verify amount received is amount sent.
         assertEq(marketingReceived, gogeToken_v2.royaltiesSent(1));

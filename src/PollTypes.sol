@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.6;
 
-contract PollTypes {
-
-    /// @notice Array of poll types as strings.
-    string  [] public actions;
+abstract contract PollTypes {
 
     /// @notice Proposal block. All combinations.
     /// @param amount uint256 amount input.                     
@@ -320,36 +317,4 @@ contract PollTypes {
         string description;
         uint256 endTime;
     }
-
-    constructor () public {
-        actions = [
-            "taxChange",
-            "funding",
-            "setGogeDao",
-            "setCex",
-            "setDex",
-            "excludeFromCirculatingSupply",
-            "updateDividendToken",
-            "updateMarketingWallet",
-            "updateTeamWallet",
-            "updateTeamMember",
-            "updateGateKeeper",
-            "setGateKeeping",
-            "setBuyBackEnabled",
-            "setCakeDividendEnabled",
-            "setMarketingEnabled",
-            "setTeamEnabled",
-            "excludeFromFees",
-            "excludeFromDividends",
-            "modifyBlacklist",
-            "transferOwnership",
-            "migrateTreasury",
-            "setQuorum",
-            "updateGovernanceToken",
-            "updateMaxPeriod",
-            "updateMinAuthorBal",
-            "other"
-        ];
-    }
-    
 }

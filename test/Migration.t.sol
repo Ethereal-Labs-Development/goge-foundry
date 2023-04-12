@@ -80,7 +80,7 @@ contract MigrationTesting is Utility {
     // ~~ Utility Functions ~~
 
     /// @notice Returns the price of 1 token in USD
-    function getPrice(address token) internal returns (uint256) {
+    function getPrice(address token) internal view returns (uint256) {
 
         address[] memory path = new address[](3);
 

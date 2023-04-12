@@ -1622,14 +1622,14 @@ contract DaoTest is Utility {
             create_mock_poll();
 
             // Cast one vote on the current poll for 40 actors
-            for (uint256 i; i < _numActors;) {
+            for (uint256 j; j < _numActors;) {
                 // approve
-                assert(actors[i].try_approveToken(address(gogeToken), address(gogeDao), 1 ether));
+                assert(actors[j].try_approveToken(address(gogeToken), address(gogeDao), 1 ether));
                 // add vote
-                assert(actors[i].try_addVote(address(gogeDao), gogeDao.pollNum(), 1 ether));
+                assert(actors[j].try_addVote(address(gogeDao), gogeDao.pollNum(), 1 ether));
 
                 unchecked {
-                    ++i;
+                    ++j;
                 }
             }
 

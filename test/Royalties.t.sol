@@ -628,7 +628,6 @@ contract Royalties is Utility {
         uint256 marketingReceived = postBalMarketing - preBalMarketing;
         uint256 teamReceived      = postBalTeam - preBalTeam;
         uint256 devReceived       = postBalDev - preBalDev;
-        uint256 deadReceived      = postBalDead - preBalDead;
 
         // Verify amount received is amount sent.
         assertEq(marketingReceived, gogeToken.royaltiesSent(1));
@@ -691,7 +690,6 @@ contract Royalties is Utility {
         uint256 marketingReceived = postBalMarketing - preBalMarketing;
         uint256 teamReceived      = postBalTeam - preBalTeam;
         uint256 devReceived       = postBalDev - preBalDev;
-        uint256 deadReceived      = postBalDead - preBalDead;
 
         // Verify amount received is amount sent.
         assertEq(marketingReceived, gogeToken.royaltiesSent(1));

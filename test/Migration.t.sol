@@ -199,8 +199,8 @@ contract MigrationTesting is Utility {
         emit log_named_uint("v2 LP BNB balance",  v2_reserveBnb);
 
         // Verify reserves of v1 LP
-        assertEq(v1_reserveTokens, 22_345_616_917 ether);
-        assertEq(v1_reserveBnb,    220 ether);
+        assertEq(v1_reserveBnb, 22_345_616_917 ether);
+        assertEq(v1_reserveTokens,    220 ether);
 
         // Verify reserves of v2 LP
         assertEq(v2_reserveTokens, 0);
@@ -356,9 +356,14 @@ contract MigrationTesting is Utility {
         assertEq(gogeToken_v2.balanceOf(address(joe)), 0);
 
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
-        (uint112 preReserveTokens_v1, uint112 preReserveBnb_v1,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
-        (uint112 preReserveTokens_v2, uint112 preReserveBnb_v2,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves(); // swapped for some reason
+        //(uint112 preReserveTokens_v1, uint112 preReserveBnb_v1,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
+        //(uint112 preReserveTokens_v2, uint112 preReserveBnb_v2,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves(); // swapped for some reason
 
+        uint256 preReserveTokens_v1 = gogeToken_v1.balanceOf(gogeToken_v1.uniswapV2Pair());
+        uint256 preReserveBnb_v1    = wbnb.balanceOf(gogeToken_v1.uniswapV2Pair());
+        uint256 preReserveTokens_v2 = gogeToken_v2.balanceOf(gogeToken_v2.uniswapV2Pair());
+        uint256 preReserveBnb_v2    = wbnb.balanceOf(gogeToken_v2.uniswapV2Pair());
+        
         emit log_named_uint("v1 LP GOGE balance", preReserveTokens_v1);
         emit log_named_uint("v1 LP BNB balance",  preReserveBnb_v1);
         emit log_named_uint("v2 LP GOGE balance", preReserveTokens_v2);
@@ -369,8 +374,8 @@ contract MigrationTesting is Utility {
         assertEq(preReserveBnb_v1,    220 ether);
 
         // Verify reserves of v2 LP
-        assertEq(preReserveBnb_v2,    0);
         assertEq(preReserveTokens_v2, 0);
+        assertEq(preReserveBnb_v2,    0);
 
         // Disable trading on v1
         gogeToken_v1.setTradingIsEnabled(false, 0);
@@ -382,14 +387,6 @@ contract MigrationTesting is Utility {
         // Retreive and emit price of 1 v1 token. Should be close to 0.000003179290557335831
         uint256 price = getPrice(address(gogeToken_v1));
         emit log_named_uint("cost of 1 v1 token", price); // 0.000002844106843617
-
-        // Get amount of BNB
-        address[] memory path = new address[](2);
-
-        path[0] = address(gogeToken_v1);
-        path[1] = WBNB;
-
-        uint256[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( amountTokens, path );
 
         // -------------------- MIGRATE --------------------
 
@@ -408,16 +405,21 @@ contract MigrationTesting is Utility {
         emit log_named_uint("cost of 1 v2 token", price); // 0.000002836947746805
 
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
-        (uint112 postReserveTokens_v1, uint112 postReserveBnb_v1,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
-        (uint112 postReserveTokens_v2, uint112 postReserveBnb_v2,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves(); // swapped for some reason
+        //(uint112 postReserveTokens_v1, uint112 postReserveBnb_v1,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
+        //(uint112 postReserveTokens_v2, uint112 postReserveBnb_v2,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves(); // swapped for some reason
 
-        emit log_named_uint("v1 LP GOGE balance", preReserveTokens_v1);
-        emit log_named_uint("v1 LP BNB balance",  preReserveBnb_v1);
-        emit log_named_uint("v2 LP GOGE balance", preReserveTokens_v2);
-        emit log_named_uint("v2 LP BNB balance",  preReserveBnb_v2);
+        uint256 postReserveTokens_v1 = gogeToken_v1.balanceOf(gogeToken_v1.uniswapV2Pair());
+        uint256 postReserveBnb_v1    = wbnb.balanceOf(gogeToken_v1.uniswapV2Pair());
+        uint256 postReserveTokens_v2 = gogeToken_v2.balanceOf(gogeToken_v2.uniswapV2Pair());
+        uint256 postReserveBnb_v2    = wbnb.balanceOf(gogeToken_v2.uniswapV2Pair());
+
+        emit log_named_uint("v1 LP GOGE balance", postReserveTokens_v1);
+        emit log_named_uint("v1 LP BNB balance",  postReserveBnb_v1);
+        emit log_named_uint("v2 LP GOGE balance", postReserveTokens_v2);
+        emit log_named_uint("v2 LP BNB balance",  postReserveBnb_v2);
 
         // Verify amountTokens was taken from v1 LP and added to v2 LP
-        assertEq(amounts[1], postReserveTokens_v2);
+        assertEq(amountTokens, postReserveTokens_v2);
 
         assertGt(postReserveBnb_v2,    preReserveBnb_v2);     // Verify post migration, v2 LP has more BNB than pre migration
         assertGt(postReserveTokens_v2, preReserveTokens_v2);  // Verify post migration, v2 LP has more tokens than pre migration

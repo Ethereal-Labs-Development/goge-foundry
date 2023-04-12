@@ -77,8 +77,7 @@ contract GogeDAO is Owned {
     /// @param fee3 uint8 buyBackFee.
     /// @param fee4 uint8 teamFee.
     /// @param boolVar boolean input.
-    /// @param addr1 first address input.                       
-    /// @param addr2 second address input.
+    /// @param addr first address input.
     /// @param description proposal description.
     struct Proposal {
         uint256 amount;      // Slot 0 -> 32 bytes
@@ -89,9 +88,8 @@ contract GogeDAO is Owned {
         uint8 fee3;
         uint8 fee4;
         bool boolVar;
-        address addr1;       // Slot 3 -> 25 bytes
-        address addr2;       // Slot 4 -> 20 bytes
-        string description;  // Slot 5+ -> 32 bytes+
+        address addr;        // Slot 3 -> 25 bytes
+        string description;  // Slot 4+ -> 32 bytes+
     }
 
     /// @notice enum of all pollTypes which correspond with it's index in the actions array.
@@ -465,45 +463,45 @@ contract GogeDAO is Owned {
         else if (_pollType == PollType.funding) {
             Proposal memory funding = proposals[_pollNum];
             require(funding.amount <= marketingBalance, "Insufficient funds");
-            (bool success,) = funding.addr1.call{value: funding.amount}("");
+            (bool success,) = funding.addr.call{value: funding.amount}("");
             require(success, "Funding unsuccessful");
             marketingBalance -= funding.amount;
         }
         else if (_pollType == PollType.setGogeDao) {
             Proposal memory setGogeDao = proposals[_pollNum];
-            IGogeERC20(governanceToken).setGogeDao(setGogeDao.addr1);
+            IGogeERC20(governanceToken).setGogeDao(setGogeDao.addr);
         }
         else if (_pollType == PollType.setCex) {
             Proposal memory setCex = proposals[_pollNum];
-            IGogeERC20(governanceToken).addPartnerOrExchange(setCex.addr1);
+            IGogeERC20(governanceToken).addPartnerOrExchange(setCex.addr);
         }
         else if (_pollType == PollType.setDex) {
             Proposal memory setDex = proposals[_pollNum];
-            IGogeERC20(governanceToken).setAutomatedMarketMakerPair(setDex.addr1, setDex.boolVar);
+            IGogeERC20(governanceToken).setAutomatedMarketMakerPair(setDex.addr, setDex.boolVar);
         }
         else if (_pollType == PollType.excludeFromCirculatingSupply) {
             Proposal memory excludeFromCirculatingSupply = proposals[_pollNum];
-            IGogeERC20(governanceToken).excludeFromCirculatingSupply(excludeFromCirculatingSupply.addr1, excludeFromCirculatingSupply.boolVar);
+            IGogeERC20(governanceToken).excludeFromCirculatingSupply(excludeFromCirculatingSupply.addr, excludeFromCirculatingSupply.boolVar);
         }
         else if (_pollType == PollType.updateDividendToken) {
             Proposal memory updateDividendToken = proposals[_pollNum];
-            IGogeERC20(governanceToken).updateCakeDividendToken(updateDividendToken.addr1);
+            IGogeERC20(governanceToken).updateCakeDividendToken(updateDividendToken.addr);
         }
         else if (_pollType == PollType.updateMarketingWallet) {
             Proposal memory updateMarketingWallet = proposals[_pollNum];
-            IGogeERC20(governanceToken).updateMarketingWallet(updateMarketingWallet.addr1);
+            IGogeERC20(governanceToken).updateMarketingWallet(updateMarketingWallet.addr);
         }
         else if (_pollType == PollType.updateTeamWallet) {
             Proposal memory updateTeamWallet = proposals[_pollNum];
-            IGogeERC20(governanceToken).updateTeamWallet(updateTeamWallet.addr1);
+            IGogeERC20(governanceToken).updateTeamWallet(updateTeamWallet.addr);
         }
         else if (_pollType == PollType.updateTeamMember) {
             Proposal memory updateTeamMember = proposals[_pollNum];
-            _setTeamMember(updateTeamMember.addr1, updateTeamMember.boolVar);
+            _setTeamMember(updateTeamMember.addr, updateTeamMember.boolVar);
         }
         else if (_pollType == PollType.updateGatekeeper) {
             Proposal memory modifyGateKeeper = proposals[_pollNum];
-            _setGatekeeper(modifyGateKeeper.addr1, modifyGateKeeper.boolVar);
+            _setGatekeeper(modifyGateKeeper.addr, modifyGateKeeper.boolVar);
         }
         else if (_pollType == PollType.setGatekeeping) {
             Proposal memory modifyGateKeeping = proposals[_pollNum];
@@ -527,19 +525,19 @@ contract GogeDAO is Owned {
         }
         else if (_pollType == PollType.excludeFromFees) {
             Proposal memory excludeFromFees = proposals[_pollNum];
-            IGogeERC20(governanceToken).excludeFromFees(excludeFromFees.addr1, excludeFromFees.boolVar);
+            IGogeERC20(governanceToken).excludeFromFees(excludeFromFees.addr, excludeFromFees.boolVar);
         }
         else if (_pollType == PollType.excludeFromDividends) {
             Proposal memory excludeFromDividends = proposals[_pollNum];
-            IGogeERC20(governanceToken).excludeFromDividend(excludeFromDividends.addr1);
+            IGogeERC20(governanceToken).excludeFromDividend(excludeFromDividends.addr);
         }
         else if (_pollType == PollType.modifyBlacklist) {
             Proposal memory modifyBlacklist = proposals[_pollNum];
-            IGogeERC20(governanceToken).modifyBlacklist(modifyBlacklist.addr1, modifyBlacklist.boolVar);
+            IGogeERC20(governanceToken).modifyBlacklist(modifyBlacklist.addr, modifyBlacklist.boolVar);
         }
         else if (_pollType == PollType.transferOwnership) {
             Proposal memory transferOwnership = proposals[_pollNum];
-            IGogeERC20(governanceToken)._transferOwnership(transferOwnership.addr1);
+            IGogeERC20(governanceToken)._transferOwnership(transferOwnership.addr);
         }
         else if (_pollType == PollType.setQuorum) {
             Proposal memory setQuorum = proposals[_pollNum];
@@ -559,7 +557,7 @@ contract GogeDAO is Owned {
             _removePoll(_pollNum);
             _refundVoters(_pollNum);
 
-            _setGovernanceToken(updateGovernanceToken.addr1);
+            _setGovernanceToken(updateGovernanceToken.addr);
             emit ProposalPassed(_pollNum);
 
             return;

@@ -541,7 +541,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to add Joe to the naughty list";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(joe);
+        proposal.addr = address(joe);
         proposal.boolVar = true;
 
         // create poll
@@ -557,7 +557,7 @@ contract MainDeploymentTesting is Utility {
 
         assertEq(gogeDao.getProposal(gogeDao.pollNum()).description, "I want to add Joe to the naughty list");
         assertEq(gogeDao.getProposal(gogeDao.pollNum()).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(gogeDao.pollNum()).addr1, address(joe));
+        assertEq(gogeDao.getProposal(gogeDao.pollNum()).addr, address(joe));
         assertEq(gogeDao.getProposal(gogeDao.pollNum()).boolVar, true);
 
         assertEq(gogeDao.polls(gogeDao.pollNum(), address(joe)), gogeDao.minAuthorBal());
@@ -712,7 +712,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose a funding";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(joe);
+        proposal.addr = address(joe);
         proposal.amount = 1_000 ether;
 
         // create poll
@@ -726,7 +726,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose a funding");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(joe));
+        assertEq(gogeDao.getProposal(1).addr, address(joe));
         assertEq(gogeDao.getProposal(1).amount, 1_000 ether);
 
         assertEq(address(joe).balance, 0);
@@ -761,7 +761,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose setGogeDao";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(222);
+        proposal.addr = address(222);
 
         // create poll
         gogeToken_v2.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -774,7 +774,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose setGogeDao");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(222));
+        assertEq(gogeDao.getProposal(1).addr, address(222));
 
         // NOTE pass poll
 
@@ -802,7 +802,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose setCex";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(222);
+        proposal.addr = address(222);
 
         // create poll
         gogeToken_v2.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -815,7 +815,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose setCex");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(222));
+        assertEq(gogeDao.getProposal(1).addr, address(222));
 
         // NOTE pass poll
 
@@ -842,7 +842,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose setDex";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(222);
+        proposal.addr = address(222);
         proposal.boolVar = true;
 
         // create poll
@@ -856,7 +856,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose setDex");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(222));
+        assertEq(gogeDao.getProposal(1).addr, address(222));
         assertEq(gogeDao.getProposal(1).boolVar, true);
 
         // NOTE pass poll
@@ -884,7 +884,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose excludeFromCirculatingSupply";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(222);
+        proposal.addr = address(222);
         proposal.boolVar = true;
 
         // create poll
@@ -898,7 +898,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose excludeFromCirculatingSupply");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(222));
+        assertEq(gogeDao.getProposal(1).addr, address(222));
         assertEq(gogeDao.getProposal(1).boolVar, true);
 
         // NOTE pass poll
@@ -928,7 +928,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we update the dividend token to this address";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = BUNY;
+        proposal.addr = BUNY;
 
         // create poll
         gogeToken_v2.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -941,7 +941,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we update the dividend token to this address");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, BUNY);
+        assertEq(gogeDao.getProposal(1).addr, BUNY);
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -973,7 +973,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we update the marketing wallet to this address";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(this);
+        proposal.addr = address(this);
 
         // create poll
         gogeToken_v2.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -986,7 +986,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we update the marketing wallet to this address");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(this));
+        assertEq(gogeDao.getProposal(1).addr, address(this));
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -1018,7 +1018,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we update the team wallet to this address";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(this);
+        proposal.addr = address(this);
 
         // create poll
         gogeToken_v2.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -1031,7 +1031,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we update the team wallet to this address");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(this));
+        assertEq(gogeDao.getProposal(1).addr, address(this));
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -1063,7 +1063,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we add an address as a team member";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(sal);
+        proposal.addr = address(sal);
         proposal.boolVar = true;
 
         // create poll
@@ -1077,7 +1077,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we add an address as a team member");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(sal));
+        assertEq(gogeDao.getProposal(1).addr, address(sal));
         assertEq(gogeDao.getProposal(1).boolVar, true);
 
         // Pre-state check
@@ -1112,7 +1112,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we add an address as a gate keeper";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(sal);
+        proposal.addr = address(sal);
         proposal.boolVar = true;
 
         // create poll
@@ -1126,7 +1126,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we add an address as a gate keeper");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(sal));
+        assertEq(gogeDao.getProposal(1).addr, address(sal));
         assertEq(gogeDao.getProposal(1).boolVar, true);
 
         // Pre-state check
@@ -1384,7 +1384,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we exclude this address from fees";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(sal);
+        proposal.addr = address(sal);
         proposal.boolVar = true;
 
         // create poll
@@ -1398,7 +1398,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we exclude this address from fees");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(sal));
+        assertEq(gogeDao.getProposal(1).addr, address(sal));
         assertEq(gogeDao.getProposal(1).boolVar, true);
 
         // Pre-state check
@@ -1431,7 +1431,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we blacklist this address";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(sal);
+        proposal.addr = address(sal);
         proposal.boolVar = true;
 
         // create poll
@@ -1445,7 +1445,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we blacklist this address");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(sal));
+        assertEq(gogeDao.getProposal(1).addr, address(sal));
         assertEq(gogeDao.getProposal(1).boolVar, true);
 
         // Pre-state check
@@ -1479,7 +1479,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we transfer ownership to this address";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(sal);
+        proposal.addr = address(sal);
 
         // create poll
         gogeToken_v2.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -1492,7 +1492,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we transfer ownership to this address");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(sal));
+        assertEq(gogeDao.getProposal(1).addr, address(sal));
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -1569,7 +1569,7 @@ contract MainDeploymentTesting is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we update the governance token to this address";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(this);
+        proposal.addr = address(this);
 
         // create poll
         gogeToken_v2.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -1582,7 +1582,7 @@ contract MainDeploymentTesting is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we update the governance token to this address");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr1, address(this));
+        assertEq(gogeDao.getProposal(1).addr, address(this));
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);

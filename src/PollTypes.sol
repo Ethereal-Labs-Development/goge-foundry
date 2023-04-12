@@ -6,28 +6,28 @@ contract PollTypes {
     /// @notice Array of poll types as strings.
     string  [] public actions;
 
-    /// @notice Metadata block. All combinations.
-    /// @param description proposal description.
+    /// @notice Proposal block. All combinations.
+    /// @param amount uint256 amount input.                     
+    /// @param startTime unix timestamp of poll creation date.
     /// @param endTime unix timestamp of poll expiration date.
     /// @param fee1 uint8 rewardFee.
     /// @param fee2 uint8 marketingFee.
     /// @param fee3 uint8 buyBackFee.
     /// @param fee4 uint8 teamFee.
-    /// @param addr1 first address input.
-    /// @param addr2 second address input.
-    /// @param amount uint256 amount input.
     /// @param boolVar boolean input.
-    struct Metadata {
-        string description;
-        uint256 endTime;
+    /// @param addr first address input.
+    /// @param description proposal description.
+    struct Proposal {
+        uint256 amount;      // Slot 0 -> 32 bytes
+        uint256 startTime;   // Slot 1 -> 32 bytes
+        uint256 endTime;     // Slot 2 -> 32 bytes
         uint8 fee1;
         uint8 fee2;
         uint8 fee3;
         uint8 fee4;
-        address addr1;
-        address addr2;
-        uint256 amount;
         bool boolVar;
+        address addr;        // Slot 3 -> 25 bytes
+        string description;  // Slot 4+ -> 32 bytes+
     }
 
     /// @notice Poll type to propose a tax change.

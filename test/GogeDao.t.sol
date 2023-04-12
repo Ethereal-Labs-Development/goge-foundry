@@ -181,7 +181,7 @@ contract DaoTest is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to add Joe to the naughty list";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(joe);
+        proposal.addr = address(joe);
         proposal.boolVar = true;
 
         // create poll
@@ -195,7 +195,7 @@ contract DaoTest is Utility {
 
         assertEq(gogeDao.getProposal(gogeDao.pollNum()).description, "I want to add Joe to the naughty list");
         assertEq(gogeDao.getProposal(gogeDao.pollNum()).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(gogeDao.pollNum()).addr1, address(joe));
+        assertEq(gogeDao.getProposal(gogeDao.pollNum()).addr, address(joe));
         assertEq(gogeDao.getProposal(gogeDao.pollNum()).boolVar, true);
 
         assertEq(gogeDao.polls(gogeDao.pollNum(), address(this)), gogeDao.minAuthorBal());
@@ -1542,6 +1542,17 @@ contract DaoTest is Utility {
         assertEq(teamArr[1], address(jon));
     }
 
+    /// @notice Verify correct state change when setTeamMember is called.
+    function test_gogeDao_setGovernanceToken() public {
+        assertEq(gogeDao.governanceToken(), address(gogeToken));
+        gogeDao.setGovernanceToken(BUSD);
+        assertEq(gogeDao.governanceToken(), BUSD);
+
+        vm.prank(address(joe));
+        vm.expectRevert("UNAUTHORIZED");
+        gogeDao.setGovernanceToken(address(2));
+    }
+
 
     // ~~ Stress Tests ~~
 
@@ -1554,7 +1565,7 @@ contract DaoTest is Utility {
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to add Joe to the naughty list";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr1 = address(joe);
+        proposal.addr = address(joe);
         proposal.boolVar = true;
 
         // Create poll

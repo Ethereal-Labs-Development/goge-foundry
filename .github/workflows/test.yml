@@ -25,10 +25,9 @@ jobs:
       - name: Run Forge build
         run: |
           forge --version
-          forge build --sizes --optimizer-runs 200
         id: build
 
       - name: Run Forge tests
         run: |
-          forge test -vvv
+          forge test --rpc-url https://bsc-dataseed1.defibit.io -vvv
         id: test

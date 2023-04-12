@@ -5,7 +5,7 @@ import { Utility } from "./Utility.sol";
 import { DogeGaySon, CakeDividendTracker } from "../src/GogeToken.sol";
 
 import { IUniswapV2Router02, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
-import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
+import { IGogeERC20 } from "../src/interfaces/IGogeERC20.sol";
 
 contract Royalties is Utility {
     DogeGaySon gogeToken;

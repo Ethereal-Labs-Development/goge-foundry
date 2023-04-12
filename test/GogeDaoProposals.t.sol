@@ -6,7 +6,7 @@ import { GogeDAO } from "../src/GogeDao.sol";
 import { DogeGaySonFlat } from "../src/DeployedV2Token.sol";
 
 import { IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
-import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
+import { IGogeERC20 } from "../src/interfaces/IGogeERC20.sol";
 
 contract DaoTestProposals is Utility {
     GogeDAO gogeDao;
@@ -118,7 +118,7 @@ contract DaoTestProposals is Utility {
         /// NOTE pass poll
 
         uint256 joe_votes = 50_000_000_000 ether;
-        gogeDao.setGateKeeping(false);
+        gogeDao.setGatekeeping(false);
 
         // Pre-state check.
         assertEq(gogeToken.cakeDividendRewardsFee(), 10);
@@ -157,7 +157,7 @@ contract DaoTestProposals is Utility {
 
     /// @notice initiates a funding poll and verifies correct state change when poll is passed.
     function test_gogeDao_proposal_funding() public {
-        gogeDao.setGateKeeping(false);
+        gogeDao.setGatekeeping(false);
 
         payable(address(gogeDao)).transfer(1_000 ether);
 
@@ -250,7 +250,7 @@ contract DaoTestProposals is Utility {
         // NOTE pass poll
         
         uint256 joe_votes = 50_000_000_000 ether;
-        gogeDao.setGateKeeping(false);
+        gogeDao.setGatekeeping(false);
 
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), joe_votes);
@@ -305,7 +305,7 @@ contract DaoTestProposals is Utility {
         // NOTE pass poll
         
         uint256 joe_votes = 50_000_000_000 ether;
-        gogeDao.setGateKeeping(false);
+        gogeDao.setGatekeeping(false);
 
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), joe_votes);
@@ -362,7 +362,7 @@ contract DaoTestProposals is Utility {
         // NOTE pass poll
         
         uint256 joe_votes = 50_000_000_000 ether;
-        gogeDao.setGateKeeping(false);
+        gogeDao.setGatekeeping(false);
 
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), joe_votes);
@@ -419,7 +419,7 @@ contract DaoTestProposals is Utility {
         // NOTE pass poll
         
         uint256 joe_votes = 50_000_000_000 ether;
-        gogeDao.setGateKeeping(false);
+        gogeDao.setGatekeeping(false);
 
         // Transfer Joe tokens so he can vote on a poll.
         gogeToken.transfer(address(joe), joe_votes);

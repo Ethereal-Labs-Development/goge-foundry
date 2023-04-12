@@ -2,8 +2,9 @@
 pragma solidity ^0.8.6;
 
 import { Utility } from "./Utility.sol";
-import "../src/interfaces/Interfaces.sol";
-import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
+
+import { IUniswapV2Router01, IUniswapV2Router02, IUniswapV2Factory, IUniswapV2Pair, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
+import { IGogeERC20 } from "../src/interfaces/IGogeERC20.sol";
 
 import { DogeGaySon } from "../src/GogeToken.sol";
 import { DogeGaySon1 } from "../src/TokenV1.sol";

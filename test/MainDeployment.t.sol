@@ -4,8 +4,8 @@ pragma solidity ^0.8.6;
 import { Utility } from "./Utility.sol";
 import { Actor } from "../src/users/Actor.sol";
 
-import { IUniswapV2Router02, IUniswapV2Pair, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
-import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
+import { IUniswapV2Router01, IUniswapV2Router02, IUniswapV2Pair, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
+import { IGogeERC20 } from "../src/interfaces/IGogeERC20.sol";
 
 import { DogeGaySon, CakeDividendTracker } from "../src/GogeToken.sol";
 import { DogeGaySonFlat } from "src/DeployedV2Token.sol";
@@ -607,7 +607,7 @@ contract MainDeploymentTesting is Utility {
         create_mock_poll();
         uint256 joe_votes = 50_000_000_000 ether;
         uint256 _preBal = gogeToken_v2.balanceOf(address(joe));
-        gogeDao.setGateKeeping(false);
+        gogeDao.setGatekeeping(false);
         gogeDao.updateQuorum(30);
 
         // Pre-state check.
@@ -697,7 +697,7 @@ contract MainDeploymentTesting is Utility {
 
     /// @notice initiates a funding poll and verifies correct state change when poll is passed.
     function test_mainDeployment_dao_proposal_funding() public {
-        gogeDao.setGateKeeping(false);
+        gogeDao.setGatekeeping(false);
         gogeDao.updateQuorum(30);
 
         payable(address(gogeDao)).transfer(1_000 ether);

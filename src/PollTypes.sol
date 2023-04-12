@@ -346,10 +346,8 @@ contract PollTypes {
             "migrateTreasury",
             "setQuorum",
             "updateGovernanceToken",
-            "updateMinPeriod",
             "updateMaxPeriod",
             "updateMinAuthorBal",
-            "updateMaxPollsPerAuthor",
             "other"
         ];
     }

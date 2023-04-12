@@ -190,8 +190,10 @@ contract MigrationTesting is Utility {
         assertEq(gogeToken_v2.balanceOf(address(tim)), 0);
 
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
-        (uint112 v1_reserveTokens, uint112 v1_reserveBnb,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
-        (uint112 v2_reserveTokens, uint112 v2_reserveBnb,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves();
+        uint256 v1_reserveTokens = gogeToken_v1.balanceOf(gogeToken_v1.uniswapV2Pair());
+        uint256 v1_reserveBnb    = wbnb.balanceOf(gogeToken_v1.uniswapV2Pair());
+        uint256 v2_reserveTokens = gogeToken_v2.balanceOf(gogeToken_v2.uniswapV2Pair());
+        uint256 v2_reserveBnb    = wbnb.balanceOf(gogeToken_v2.uniswapV2Pair());
 
         emit log_named_uint("v1 LP GOGE balance", v1_reserveTokens);
         emit log_named_uint("v1 LP BNB balance",  v1_reserveBnb);
@@ -199,8 +201,8 @@ contract MigrationTesting is Utility {
         emit log_named_uint("v2 LP BNB balance",  v2_reserveBnb);
 
         // Verify reserves of v1 LP
-        assertEq(v1_reserveBnb, 22_345_616_917 ether);
-        assertEq(v1_reserveTokens,    220 ether);
+        assertEq(v1_reserveTokens, 22_345_616_917 ether);
+        assertEq(v1_reserveBnb,    220 ether);
 
         // Verify reserves of v2 LP
         assertEq(v2_reserveTokens, 0);
@@ -232,8 +234,10 @@ contract MigrationTesting is Utility {
         emit log_named_uint("cost of 1 v2 token", price); // 0.000002668733643407
 
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
-        (v1_reserveTokens, v1_reserveBnb,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
-        (v2_reserveBnb, v2_reserveTokens,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves();
+        v1_reserveTokens = gogeToken_v1.balanceOf(gogeToken_v1.uniswapV2Pair());
+        v1_reserveBnb    = wbnb.balanceOf(gogeToken_v1.uniswapV2Pair());
+        v2_reserveTokens = gogeToken_v2.balanceOf(gogeToken_v2.uniswapV2Pair());
+        v2_reserveBnb    = wbnb.balanceOf(gogeToken_v2.uniswapV2Pair());
 
         emit log_named_uint("v1 LP GOGE balance", v1_reserveTokens);
         emit log_named_uint("v1 LP BNB balance",  v1_reserveBnb);
@@ -255,8 +259,10 @@ contract MigrationTesting is Utility {
         emit log_named_uint("cost of 1 v2 token", price); // 0.000002645226543690
 
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
-        (v1_reserveTokens, v1_reserveBnb,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
-        (v2_reserveBnb, v2_reserveTokens,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves();
+        v1_reserveTokens = gogeToken_v1.balanceOf(gogeToken_v1.uniswapV2Pair());
+        v1_reserveBnb    = wbnb.balanceOf(gogeToken_v1.uniswapV2Pair());
+        v2_reserveTokens = gogeToken_v2.balanceOf(gogeToken_v2.uniswapV2Pair());
+        v2_reserveBnb    = wbnb.balanceOf(gogeToken_v2.uniswapV2Pair());
 
         emit log_named_uint("v1 LP GOGE balance", v1_reserveTokens);
         emit log_named_uint("v1 LP BNB balance",  v1_reserveBnb);
@@ -278,8 +284,10 @@ contract MigrationTesting is Utility {
         emit log_named_uint("cost of 1 v2 token", price); // 0.000002604572642078
 
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
-        (v1_reserveTokens, v1_reserveBnb,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
-        (v2_reserveBnb, v2_reserveTokens,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves();
+        v1_reserveTokens = gogeToken_v1.balanceOf(gogeToken_v1.uniswapV2Pair());
+        v1_reserveBnb    = wbnb.balanceOf(gogeToken_v1.uniswapV2Pair());
+        v2_reserveTokens = gogeToken_v2.balanceOf(gogeToken_v2.uniswapV2Pair());
+        v2_reserveBnb    = wbnb.balanceOf(gogeToken_v2.uniswapV2Pair());
 
         emit log_named_uint("v1 LP GOGE balance", v1_reserveTokens);
         emit log_named_uint("v1 LP BNB balance",  v1_reserveBnb);
@@ -301,8 +309,10 @@ contract MigrationTesting is Utility {
         emit log_named_uint("cost of 1 v2 token", price); // 0.000002595376689698
 
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
-        (v1_reserveTokens, v1_reserveBnb,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
-        (v2_reserveBnb, v2_reserveTokens,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves();
+        v1_reserveTokens = gogeToken_v1.balanceOf(gogeToken_v1.uniswapV2Pair());
+        v1_reserveBnb    = wbnb.balanceOf(gogeToken_v1.uniswapV2Pair());
+        v2_reserveTokens = gogeToken_v2.balanceOf(gogeToken_v2.uniswapV2Pair());
+        v2_reserveBnb    = wbnb.balanceOf(gogeToken_v2.uniswapV2Pair());
 
         emit log_named_uint("v1 LP GOGE balance", v1_reserveTokens);
         emit log_named_uint("v1 LP BNB balance",  v1_reserveBnb);
@@ -324,8 +334,10 @@ contract MigrationTesting is Utility {
         emit log_named_uint("cost of 1 v2 token", price); // 0.000002595376689698
 
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
-        (v1_reserveTokens, v1_reserveBnb,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
-        (v2_reserveBnb, v2_reserveTokens,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves();
+        v1_reserveTokens = gogeToken_v1.balanceOf(gogeToken_v1.uniswapV2Pair());
+        v1_reserveBnb    = wbnb.balanceOf(gogeToken_v1.uniswapV2Pair());
+        v2_reserveTokens = gogeToken_v2.balanceOf(gogeToken_v2.uniswapV2Pair());
+        v2_reserveBnb    = wbnb.balanceOf(gogeToken_v2.uniswapV2Pair());
 
         emit log_named_uint("v1 LP GOGE balance", v1_reserveTokens);
         emit log_named_uint("v1 LP BNB balance",  v1_reserveBnb);
@@ -356,9 +368,6 @@ contract MigrationTesting is Utility {
         assertEq(gogeToken_v2.balanceOf(address(joe)), 0);
 
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
-        //(uint112 preReserveTokens_v1, uint112 preReserveBnb_v1,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
-        //(uint112 preReserveTokens_v2, uint112 preReserveBnb_v2,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves(); // swapped for some reason
-
         uint256 preReserveTokens_v1 = gogeToken_v1.balanceOf(gogeToken_v1.uniswapV2Pair());
         uint256 preReserveBnb_v1    = wbnb.balanceOf(gogeToken_v1.uniswapV2Pair());
         uint256 preReserveTokens_v2 = gogeToken_v2.balanceOf(gogeToken_v2.uniswapV2Pair());
@@ -405,9 +414,6 @@ contract MigrationTesting is Utility {
         emit log_named_uint("cost of 1 v2 token", price); // 0.000002836947746805
 
         // get LP reserves -> token amount and bnb balance of v1 and v2 LPs
-        //(uint112 postReserveTokens_v1, uint112 postReserveBnb_v1,) = IUniswapV2Pair(gogeToken_v1.uniswapV2Pair()).getReserves();
-        //(uint112 postReserveTokens_v2, uint112 postReserveBnb_v2,) = IUniswapV2Pair(gogeToken_v2.uniswapV2Pair()).getReserves(); // swapped for some reason
-
         uint256 postReserveTokens_v1 = gogeToken_v1.balanceOf(gogeToken_v1.uniswapV2Pair());
         uint256 postReserveBnb_v1    = wbnb.balanceOf(gogeToken_v1.uniswapV2Pair());
         uint256 postReserveTokens_v2 = gogeToken_v2.balanceOf(gogeToken_v2.uniswapV2Pair());

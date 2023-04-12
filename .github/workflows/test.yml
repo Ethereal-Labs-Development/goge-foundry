@@ -29,5 +29,5 @@ jobs:
 
       - name: Run Forge tests
         run: |
-          forge test --rpc-url https://bsc-dataseed1.defibit.io -vvv
+          forge test --rpc-url https://bsc-dataseed1.defibit.io
         id: test

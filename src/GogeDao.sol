@@ -24,16 +24,16 @@ contract GogeDAO is Owned {
     uint256 public minPeriod = 1 days;
     /// @notice The maximum time needed for a new poll -> default is 60 days.
     uint256 public maxPeriod = 60 days;
-    /// @notice The minimum balance of governance token the author of a poll must be holding at the time of creation.
+    /// @notice The minimum balance of governance tokens an author of a poll must be holding at the time of creation.
     uint256 public minAuthorBal = 10_000_000 ether;
-    /// @notice The maximum amount of polls an author can have active at any given time.
+    /// @notice The maximum number of polls an author can have active at any given time.
     uint256 public maxPollsPerAuthor = 1;
-    /// @notice The threshold that must be met to pass a poll
+    /// @notice The threshold that must be met to pass a poll.
     uint256 public quorum = 50;
 
     /// @notice Amount of BNB held for marketing purposes.
     uint256 public marketingBalance;
-    /// @notice Amount of BNB held for team pay
+    /// @notice Amount of BNB held for team pay.
     uint256 public teamBalance;
 
     /// @notice Bool if gatekeeping is enabled.
@@ -48,7 +48,7 @@ contract GogeDAO is Owned {
     
     /// @notice Double mapping of pollNum to amount of votes per voter.
     mapping(uint256 => mapping(address => uint256)) public polls;
-    /// @notice Mapping of pollNum to array of addresses of voters
+    /// @notice Mapping of pollNum to array of addresses of voters.
     mapping(uint256 => address[]) public voterLibrary;
     /// @notice Mapping of pollNum to amount of total votes per poll.
     mapping(uint256 => uint256) public pollVotes;
@@ -63,12 +63,12 @@ contract GogeDAO is Owned {
     /// @notice Mapping of address to array of pollNums it advocated votes for.
     mapping(address => uint256[]) public advocateFor;
 
-    /// @notice Mapping of pollNum to it's specified pollType.
+    /// @notice Mapping of pollNum to its specified PollType.
     mapping(uint256 => PollType) public pollTypes;
-    /// @notice Mapping of pollNum to it's specified metadata.
+    /// @notice Mapping of pollNum to its specified Proposal.
     mapping(uint256 => Proposal) public proposals;
 
-    /// @notice Proposal block. All combinations.
+    /// @notice Proposal struct that supports every poll type.
     /// @param amount uint256 amount input.                     
     /// @param startTime unix timestamp of poll creation date.
     /// @param endTime unix timestamp of poll expiration date.
@@ -76,8 +76,8 @@ contract GogeDAO is Owned {
     /// @param fee2 uint8 marketingFee.
     /// @param fee3 uint8 buyBackFee.
     /// @param fee4 uint8 teamFee.
-    /// @param boolVar boolean input.
-    /// @param addr first address input.
+    /// @param status boolean input.
+    /// @param addr address input.
     /// @param description proposal description.
     struct Proposal {
         uint256 amount;      // Slot 0 -> 32 bytes
@@ -87,12 +87,12 @@ contract GogeDAO is Owned {
         uint8 fee2;
         uint8 fee3;
         uint8 fee4;
-        bool boolVar;
+        bool status;
         address addr;        // Slot 3 -> 25 bytes
         string description;  // Slot 4+ -> 32 bytes+
     }
 
-    /// @notice enum of all pollTypes which correspond with it's index in the actions array.
+    /// @notice Enum containing all possible poll types.
     enum PollType {
         taxChange,
         funding,
@@ -126,7 +126,7 @@ contract GogeDAO is Owned {
     // Constructor
     // -----------
 
-    /// @notice Initializes GogeDao.sol
+    /// @notice Initializes GogeDao.sol.
     /// @param _governanceToken address of governance token.
     constructor(address _governanceToken) Owned(msg.sender) {
         gatekeeper[owner] = true;
@@ -144,7 +144,7 @@ contract GogeDAO is Owned {
         _;
     }
 
-    /// @notice Modifier for permissioned functions excluding wallets except gatekeepers.
+    /// @notice Modifier for permissioned functions where msg.sender must be a gatekeeper.
     modifier onlyGatekeeper() {
         require(gatekeeper[msg.sender], "UNAUTHORIZED");
         _;
@@ -171,7 +171,7 @@ contract GogeDAO is Owned {
 
     /// @notice is used to create a new poll.
     /// @param  _pollType enum type of poll being created.
-    /// @param  _change the matching metadata that will result in the execution of the poll.
+    /// @param  _change proposal information for the given poll type to be executed.
     function createPoll(PollType _pollType, Proposal memory _change) external {        
         require(createPollEnabled, "GogeDao.sol::createPoll() Ability to create poll is disabled");
         if (msg.sender != owner) require(getActivePollsFromAuthor(msg.sender) < maxPollsPerAuthor, "GogeDao.sol::createPoll() Exceeds maxPollsPerAuthor");
@@ -204,8 +204,8 @@ contract GogeDAO is Owned {
     }
 
     /// @notice A method for a voter to add a vote to an existing poll.
-    /// @param  _pollNum The poll number.
-    /// @param  _numVotes The size of the vote to be created.
+    /// @param  _pollNum Unique poll identifier.
+    /// @param  _numVotes The number of the votes to be added.
     function addVote(uint256 _pollNum, uint256 _numVotes) external {
         require(block.timestamp < proposals[_pollNum].endTime, "GogeDao.sol::addVote() Poll Closed");
         require(block.timestamp - IGogeERC20(governanceToken).getLastReceived(msg.sender) >= (5 minutes), "GogeDao.sol::addVote() Must wait 5 minutes after purchasing tokens to place any votes.");
@@ -238,7 +238,7 @@ contract GogeDAO is Owned {
     }
 
     /// @notice A method for a voter to remove their votes from a single poll.
-    /// @param _pollNum unique poll identifier.
+    /// @param _pollNum Unique poll identifier.
     function removeVotesFromPoll(uint256 _pollNum) external {
         _removeVote(_pollNum);
     }
@@ -268,7 +268,7 @@ contract GogeDAO is Owned {
         teamBalance = balance % length;
     }
 
-    /// @notice A method for querying all active poll end times, and if poll is expired, remove from ActivePolls.
+    /// @notice A method for querying all active poll end times, and if poll is expired, remove from activePolls.
     /// @dev Should be called on a regular time interval using an external script.
     ///      Solution: https://automation.chain.link/
     function queryEndTime() external {
@@ -300,27 +300,27 @@ contract GogeDAO is Owned {
     // NOTE: onlyOwner
 
     /// @notice An owner method for updating status of gatekeeping.
-    /// @param  _enabled status of gatekeeping.
+    /// @param  _enabled Status of gatekeeping.
     function setGatekeeping(bool _enabled) external onlyOwner {
         _setGatekeeping(_enabled);
     }
 
     /// @notice An owner method for adding new team member.
-    /// @param  _account new team member.
-    /// @param  _isMember is a team member.
+    /// @param  _account New team member address.
+    /// @param  _isMember Is a team member.
     function setTeamMember(address _account, bool _isMember) external onlyOwner {
         _setTeamMember(_account, _isMember);
     }
 
     /// @notice An owner method for updating quorum.
-    /// @param  _amount new quourum.
+    /// @param  _amount New quourum amount.
     function updateQuorum(uint8 _amount) external onlyOwner {
         _updateQuorum(_amount);
     }
 
     /// @notice An owner method for adding new gatekeeper addresses.
-    /// @param  _gatekeeper new gatekeeper.
-    /// @param  _status is a gatekeeper.
+    /// @param  _gatekeeper New gatekeeper address.
+    /// @param  _status Is a gatekeeper.
     function updateGatekeeper(address _gatekeeper, bool _status) external onlyOwner {
         _setGatekeeper(_gatekeeper, _status);
     }
@@ -332,15 +332,15 @@ contract GogeDAO is Owned {
     }
 
     /// @notice An owner method for manually passing a poll.
-    /// @param  _pollNum unique poll identifier.
-    /// @dev    poll must be an active poll
+    /// @param  _pollNum Unique poll identifier.
+    /// @dev    Poll must be an active poll.
     function passPoll(uint256 _pollNum) external onlyOwner {
         require(block.timestamp < proposals[_pollNum].endTime, "Poll Closed");
         _executeProposal(_pollNum);
     }
 
     /// @notice An owner method for manually ending a poll.
-    /// @param  _pollNum unique poll identifier.
+    /// @param  _pollNum Unique poll identifier.
     /// @dev    Poll must be an active poll.
     ///         This function is also callable by the author of _pollNum.
     function endPoll(uint256 _pollNum) external {
@@ -352,27 +352,27 @@ contract GogeDAO is Owned {
     }
 
     /// @notice An owner method for updating minPeriod.
-    /// @param  _amountOfDays new minPeriod in days.
+    /// @param  _amountOfDays New minPeriod in days.
     function updateMinPeriod(uint8 _amountOfDays) external onlyOwner {
         require(_amountOfDays < maxPeriod, "minPeriod must be less than maxPeriod");
         minPeriod = uint256(_amountOfDays) * 1 days;
     }
 
     /// @notice An owner method for updating maxPeriod.
-    /// @param  _amountOfDays new maxPeriod in days.
+    /// @param  _amountOfDays New maxPeriod in days.
     function updateMaxPeriod(uint8 _amountOfDays) external onlyOwner {
         require(_amountOfDays > minPeriod, "minPeriod must be greater than minPeriod");
         maxPeriod = uint256(_amountOfDays) * 1 days;
     }
 
     /// @notice An owner method for updating minAuthorBal.
-    /// @param  _amount new min balance of a poll author.
+    /// @param  _amount New min balance of a poll author.
     function updateMinAuthorBal(uint256 _amount) external onlyOwner {
         minAuthorBal = _amount;
     }
 
     /// @notice An owner method for updating maxPollsPerAuthor.
-    /// @param  _limit amount of active polls an author can have at any given time.
+    /// @param  _limit Amount of active polls an author can have at any given time.
     function updateMaxPollsPerAuthor(uint8 _limit) external onlyOwner {
         maxPollsPerAuthor = uint256(_limit);
     }
@@ -410,7 +410,7 @@ contract GogeDAO is Owned {
     // NOTE: governanceToken
 
     /// @notice A method for updating team balance.
-    /// @param  _amount amount of BNB to add to teamBalance.
+    /// @param  _amount Amount of BNB to add to teamBalance.
     /// @dev    Only callable by governanceToken
     function updateTeamBalance(uint256 _amount) external onlyGovernanceToken {
         unchecked {
@@ -420,7 +420,7 @@ contract GogeDAO is Owned {
     }
 
     /// @notice A method for updating marketing balance.
-    /// @param  _amount amount of BNB to add to marketingBalanace.
+    /// @param  _amount Amount of BNB to add to marketingBalanace.
     /// @dev    Only callable by governanceToken
     function updateMarketingBalance(uint256 _amount) external onlyGovernanceToken {
         unchecked {
@@ -430,8 +430,8 @@ contract GogeDAO is Owned {
     }
 
     /// @notice A gatekeeper method for manually passing a poll.
-    /// @param  _pollNum unique poll identifier.
-    /// @dev    poll must be an active poll and have met quorum.
+    /// @param  _pollNum Unique poll identifier.
+    /// @dev    Poll must be an active poll and have met quorum.
     ///         If gatekeeping is enabled and a poll meets quorum it will stay in limbo
     ///         until passed manually by a gatekeeper or it expires and is revoked.
     function passPollAsGatekeeper(uint256 _pollNum) external onlyGatekeeper {
@@ -448,7 +448,7 @@ contract GogeDAO is Owned {
     // --------
 
     /// @notice Internal function for executing a poll.
-    /// @param _pollNum Unique poll number.
+    /// @param _pollNum Unique poll identifier.
     function _executeProposal(uint256 _pollNum) internal {
 
         _updateEndTime(_pollNum);
@@ -463,9 +463,9 @@ contract GogeDAO is Owned {
         else if (_pollType == PollType.funding) {
             Proposal memory funding = proposals[_pollNum];
             require(funding.amount <= marketingBalance, "Insufficient funds");
-            (bool success,) = funding.addr.call{value: funding.amount}("");
-            require(success, "Funding unsuccessful");
             marketingBalance -= funding.amount;
+            (bool funded,) = funding.addr.call{value: funding.amount}("");
+            require(funded, "Funding unsuccessful");
         }
         else if (_pollType == PollType.setGogeDao) {
             Proposal memory setGogeDao = proposals[_pollNum];
@@ -477,11 +477,11 @@ contract GogeDAO is Owned {
         }
         else if (_pollType == PollType.setDex) {
             Proposal memory setDex = proposals[_pollNum];
-            IGogeERC20(governanceToken).setAutomatedMarketMakerPair(setDex.addr, setDex.boolVar);
+            IGogeERC20(governanceToken).setAutomatedMarketMakerPair(setDex.addr, setDex.status);
         }
         else if (_pollType == PollType.excludeFromCirculatingSupply) {
             Proposal memory excludeFromCirculatingSupply = proposals[_pollNum];
-            IGogeERC20(governanceToken).excludeFromCirculatingSupply(excludeFromCirculatingSupply.addr, excludeFromCirculatingSupply.boolVar);
+            IGogeERC20(governanceToken).excludeFromCirculatingSupply(excludeFromCirculatingSupply.addr, excludeFromCirculatingSupply.status);
         }
         else if (_pollType == PollType.updateDividendToken) {
             Proposal memory updateDividendToken = proposals[_pollNum];
@@ -497,35 +497,35 @@ contract GogeDAO is Owned {
         }
         else if (_pollType == PollType.updateTeamMember) {
             Proposal memory updateTeamMember = proposals[_pollNum];
-            _setTeamMember(updateTeamMember.addr, updateTeamMember.boolVar);
+            _setTeamMember(updateTeamMember.addr, updateTeamMember.status);
         }
         else if (_pollType == PollType.updateGatekeeper) {
             Proposal memory modifyGateKeeper = proposals[_pollNum];
-            _setGatekeeper(modifyGateKeeper.addr, modifyGateKeeper.boolVar);
+            _setGatekeeper(modifyGateKeeper.addr, modifyGateKeeper.status);
         }
         else if (_pollType == PollType.setGatekeeping) {
             Proposal memory modifyGateKeeping = proposals[_pollNum];
-            _setGatekeeping(modifyGateKeeping.boolVar);
+            _setGatekeeping(modifyGateKeeping.status);
         }
         else if (_pollType == PollType.setBuyBackEnabled) {
             Proposal memory setBuyBackEnabled = proposals[_pollNum];
-            IGogeERC20(governanceToken).setBuyBackEnabled(setBuyBackEnabled.boolVar);
+            IGogeERC20(governanceToken).setBuyBackEnabled(setBuyBackEnabled.status);
         }
         else if (_pollType == PollType.setCakeDividendEnabled) {
             Proposal memory setCakeDividendEnabled = proposals[_pollNum];
-            IGogeERC20(governanceToken).setCakeDividendEnabled(setCakeDividendEnabled.boolVar);
+            IGogeERC20(governanceToken).setCakeDividendEnabled(setCakeDividendEnabled.status);
         }
         else if (_pollType == PollType.setMarketingEnabled) {
             Proposal memory setMarketingEnabled = proposals[_pollNum];
-            IGogeERC20(governanceToken).setMarketingEnabled(setMarketingEnabled.boolVar);
+            IGogeERC20(governanceToken).setMarketingEnabled(setMarketingEnabled.status);
         }
         else if (_pollType == PollType.setTeamEnabled) {
             Proposal memory setTeamEnabled = proposals[_pollNum];
-            IGogeERC20(governanceToken).setTeamEnabled(setTeamEnabled.boolVar);
+            IGogeERC20(governanceToken).setTeamEnabled(setTeamEnabled.status);
         }
         else if (_pollType == PollType.excludeFromFees) {
             Proposal memory excludeFromFees = proposals[_pollNum];
-            IGogeERC20(governanceToken).excludeFromFees(excludeFromFees.addr, excludeFromFees.boolVar);
+            IGogeERC20(governanceToken).excludeFromFees(excludeFromFees.addr, excludeFromFees.status);
         }
         else if (_pollType == PollType.excludeFromDividends) {
             Proposal memory excludeFromDividends = proposals[_pollNum];
@@ -533,7 +533,7 @@ contract GogeDAO is Owned {
         }
         else if (_pollType == PollType.modifyBlacklist) {
             Proposal memory modifyBlacklist = proposals[_pollNum];
-            IGogeERC20(governanceToken).modifyBlacklist(modifyBlacklist.addr, modifyBlacklist.boolVar);
+            IGogeERC20(governanceToken).modifyBlacklist(modifyBlacklist.addr, modifyBlacklist.status);
         }
         else if (_pollType == PollType.transferOwnership) {
             Proposal memory transferOwnership = proposals[_pollNum];
@@ -570,9 +570,9 @@ contract GogeDAO is Owned {
         emit ProposalPassed(_pollNum);
     }
 
-    /// @notice Internal method for adding voters to voterLibrary.
-    /// @param  _pollNum unique identifier for a poll.
-    /// @param  _voter address to add to voter library array.
+    /// @notice Internal method for adding voters to a poll's voter library.
+    /// @param  _pollNum Unique poll identifier.
+    /// @param  _voter Address to add to voterLibrary.
     function _addToVoterLibrary(uint256 _pollNum, address _voter) internal {
         uint256 length = voterLibrary[_pollNum].length;
         for (uint256 i; i < length;) {
@@ -586,9 +586,9 @@ contract GogeDAO is Owned {
         voterLibrary[_pollNum].push(_voter);
     }
 
-    /// @notice Internal method for adding polls to advocateFor.
-    /// @param  _pollNum unique identifier for a poll.
-    /// @param  _advocate address of advocate.
+    /// @notice Internal method for adding polls to a voter's advocate array.
+    /// @param  _pollNum Unique poll identifier.
+    /// @param  _advocate Address of advocate.
     function _addToAdvocateFor(uint256 _pollNum, address _advocate) internal {
         uint256 length = advocateFor[_advocate].length;
         for (uint256 i; i < length;) {
@@ -603,7 +603,7 @@ contract GogeDAO is Owned {
     }
 
     /// @notice A method for a voter to remove their votes from a single poll.
-    /// @param  _pollNum The poll number.
+    /// @param  _pollNum Unique poll identifier.
     function _removeVote(uint256 _pollNum) internal {
         uint256 _numVotes = polls[_pollNum][msg.sender];
         if(_numVotes > 0) {
@@ -616,7 +616,7 @@ contract GogeDAO is Owned {
     }
 
     /// @notice A method for all voters to be refunded after a poll that they've voted on has been passed.
-    /// @param  _pollNum The poll number.
+    /// @param  _pollNum Unique poll identifier.
     function _refundVoters(uint256 _pollNum) internal {
         uint256 length = voterLibrary[_pollNum].length;
         for (uint256 i = 0; i < length;) {
@@ -634,15 +634,15 @@ contract GogeDAO is Owned {
     }
 
     /// @notice Internal method for transferring governance tokens to a voter.
-    /// @param  _voter address of voter that needs to be refunded.
-    /// @param _amount amount of tokens to refund voter.
+    /// @param  _voter Address of voter to be refunded.
+    /// @param _amount Amount of tokens to refund voter.
     function _refundVoter(address _voter, uint256 _amount) internal {
         require(IGogeERC20(governanceToken).transfer(_voter, _amount), "Refund unsuccessful");
     }
 
     /// @notice A method for removing polls from an address's advocatesFor mapped array.
-    /// @param _advocate address of wallet that we are removing their advocacy.
-    /// @param _pollNum the number of the poll the address is no longer an advocate for.
+    /// @param _advocate Address of wallet that is removing advocacy.
+    /// @param _pollNum Unique poll identifier the address is no longer an advocate for.
     function _removeAdvocate(address _advocate, uint256 _pollNum) internal {
         uint256 length = advocateFor[_advocate].length;
         for (uint256 i; i < length;) {
@@ -658,14 +658,14 @@ contract GogeDAO is Owned {
     }
 
     /// @notice An internal method for changing gatekeeping status.
-    /// @param _enabled status of gatekeeping.
+    /// @param _enabled Status of gatekeeping.
     function _setGatekeeping(bool _enabled) internal {
         gatekeeping = _enabled;
     }
 
     /// @notice An internal method for adding a team member address to the teamMembers array.
-    /// @param  _addr address of team member.
-    /// @param  _value is a team member.
+    /// @param  _addr Address of team member.
+    /// @param  _value Is a team member.
     function _setTeamMember(address _addr, bool _value) internal {
         if (_value) {
             (bool _isTeamMember,) = isTeamMember(_addr);
@@ -680,7 +680,7 @@ contract GogeDAO is Owned {
     }
 
     /// @notice An internal method for removing a poll from activePolls array.
-    /// @param _pollNum unique identifier for a poll.
+    /// @param _pollNum Unique poll identifier.
     function _removePoll(uint256 _pollNum) internal {
         uint256 length = activePolls.length;
         for (uint256 i; i < length;) {
@@ -695,21 +695,21 @@ contract GogeDAO is Owned {
         }
     }
 
-    /// @notice An internal method for updating a poll's end unix to current block.timestamp.
-    /// @param  _pollNum unique poll identifier.
+    /// @notice An internal method for updating a poll's end timestamp to current block.timestamp.
+    /// @param  _pollNum Unique poll identifier.
     function _updateEndTime(uint256 _pollNum) internal {
         proposals[_pollNum].endTime = block.timestamp;
     }
 
     /// @notice An internal method for setting the status of a gatekeeper.
-    /// @param  _addr address of gatekeeper.
-    /// @param  _status is a gatekeeper.
+    /// @param  _addr Address of gatekeeper.
+    /// @param  _status Is a gatekeeper.
     function _setGatekeeper(address _addr, bool _status) internal {
         gatekeeper[_addr] = _status;
     }
 
     /// @notice An internal method for updating quorum value.
-    /// @param  _amount quorum value.
+    /// @param  _amount Quorum value.
     function _updateQuorum(uint8 _amount) internal {
         require(_amount <= 100 && _amount > 0, "_amount must be between 0 and 101");
         quorum = uint256(_amount);
@@ -729,19 +729,19 @@ contract GogeDAO is Owned {
     // ----
 
     /// @notice A view method for returning a poll's unique metadata.
-    /// @param _pollNum unique poll identifier.
+    /// @param _pollNum Unique poll identifier.
     function getProposal(uint256 _pollNum) external view returns (Proposal memory) {
         return proposals[_pollNum];
     }
 
     /// @notice A view method for returning a poll's current proportion of votes over circuating supply.
-    /// @param _pollNum unique poll identifier.
+    /// @param _pollNum Unique poll identifier.
     function getProportion(uint256 _pollNum) public view returns (uint256) {
         return pollVotes[_pollNum] * 100 / IGogeERC20(governanceToken).getCirculatingMinusReserve();
     }
 
     /// @notice A view method for returning the amount of active polls an author currently has.
-    /// @param  _account author's wallet address.
+    /// @param  _account Address of poll author.
     /// @return _num number of polls that are active, by author.
     function getActivePollsFromAuthor(address _account) public view returns (uint256 _num) {
         uint256 length = activePolls.length;
@@ -758,9 +758,9 @@ contract GogeDAO is Owned {
     }
 
     /// @notice A view method for returning whether a provided address is a team member.
-    /// @param  _account address of potential team member.
-    /// @return bool whether or not _account is inside teamMember array.
-    /// @return uint8 index in teamMember array in which _account resides.
+    /// @param  _account Address of potential team member.
+    /// @return bool Whether or not _account is inside teamMember array.
+    /// @return uint8 Index in teamMember array in which _account resides.
     function isTeamMember(address _account) public view returns(bool, uint8) {
         uint256 length = teamMembers.length;
         for (uint8 i; i < length;){
@@ -780,11 +780,13 @@ contract GogeDAO is Owned {
     }
 
     /// @notice Returns the voter array given a pollNum.
+    /// @param _pollNum Unique poll identifier.
     function getVoterLibrary(uint256 _pollNum) external view returns (address[] memory) {
         return voterLibrary[_pollNum];
     }
 
     /// @notice Returns an array of pollNum from advocateFor given _advocate.
+    /// @param _advocate Address to retrieve advocated polls for.
     function getAdvocateFor(address _advocate) external view returns (uint256[] memory) {
         return advocateFor[_advocate];
     }

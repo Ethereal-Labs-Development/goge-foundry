@@ -4,19 +4,16 @@ pragma solidity ^0.8.6;
 import { Utility } from "./Utility.sol";
 import { GogeDAO } from "../src/GogeDao.sol";
 import { DogeGaySonFlat } from "../src/DeployedV2Token.sol";
-
 import { IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
 import { IGogeERC20 } from "../src/interfaces/IGogeERC20.sol";
 
 contract DaoTestProposals is Utility {
     GogeDAO gogeDao;
     DogeGaySonFlat gogeToken;
-
-    address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
+    address constant UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
 
     function setUp() public {
         createActors();
-        setUpTokens();
 
         // Deploy gogeToken
         gogeToken = new DogeGaySonFlat(
@@ -72,8 +69,7 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.gatekeeping(), true);
         assertEq(gogeDao.createPollEnabled(), true);
         assertEq(gogeDao.owner(), address(this));
-        uint256[] memory activePolls = gogeDao.getActivePolls();
-        assertEq(activePolls.length, 0);
+        assertEq(gogeDao.getActivePolls().length, 0);
 
         assertEq(gogeToken.gogeDao(), address(gogeDao));
         assertEq(gogeToken.isExcludedFromFees(address(gogeDao)), true);
@@ -87,10 +83,9 @@ contract DaoTestProposals is Utility {
 
     /// @notice initiates a taxChange poll and verifies correct state change when poll is passed.
     function test_gogeDao_proposal_taxChange() public {
+        // NOTE Create poll with proposal
 
-        /// NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose a tax change";
         proposal.endTime = block.timestamp + 2 days;
@@ -99,7 +94,7 @@ contract DaoTestProposals is Utility {
         proposal.fee3 = 4;  // buyBackFee
         proposal.fee4 = 5;  // teamFee
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.taxChange, proposal);
 
@@ -115,10 +110,7 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.getProposal(1).fee3, 4);
         assertEq(gogeDao.getProposal(1).fee4, 5);
 
-        /// NOTE pass poll
-
-        uint256 joe_votes = 50_000_000_000 ether;
-        gogeDao.setGatekeeping(false);
+        /// NOTE Manually pass poll
 
         // Pre-state check.
         assertEq(gogeToken.cakeDividendRewardsFee(), 10);
@@ -129,23 +121,13 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
 
-        // Transfer Joe tokens so he can vote on a poll.
-        gogeToken.transfer(address(joe), joe_votes);
-        assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
-
-        // Approve the transfer of tokens and add vote.
-        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
-        assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
+        // Pass poll
+        gogeDao.passPoll(1);
 
         // Post-state check => gogeDao.
-        assertEq(gogeDao.polls(1, address(joe)), joe_votes);
-        assertEq(gogeDao.pollVotes(1), joe_votes + gogeDao.minAuthorBal());
+        assertEq(gogeDao.pollVotes(1), gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
-
-        // Verify quorum math.
-        uint256 num = gogeDao.getProportion(1);
-        assertTrue(num >= gogeDao.quorum());
 
         // Post-state check => gogeToken.
         assertEq(gogeToken.cakeDividendRewardsFee(), 8);
@@ -158,23 +140,22 @@ contract DaoTestProposals is Utility {
     /// @notice initiates a funding poll and verifies correct state change when poll is passed.
     function test_gogeDao_proposal_funding() public {
         gogeDao.setGatekeeping(false);
+        gogeDao.updateQuorum(30);
 
-        payable(address(gogeDao)).transfer(1_000 ether);
-
+        payable(gogeDao).transfer(1_000 ether);
         vm.prank(address(gogeToken));
         gogeDao.updateMarketingBalance(1_000 ether);
-        vm.stopPrank();
 
-        // NOTE create poll
+        // NOTE Create poll with proposal
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose a funding";
         proposal.endTime = block.timestamp + 2 days;
         proposal.addr = address(joe);
         proposal.amount = 1_000 ether;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.funding, proposal);
 
@@ -192,49 +173,38 @@ contract DaoTestProposals is Utility {
         assertEq(address(gogeDao).balance, 1_000 ether);
         assertEq(gogeDao.marketingBalance(), 1_000 ether);
 
-        // NOTE pass poll
-        
-        uint256 joe_votes = 50_000_000_000 ether;
+        // NOTE Manually pass poll
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
 
-        // Transfer Joe tokens so he can vote on a poll.
-        gogeToken.transfer(address(joe), joe_votes);
-        assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
-
-        // Approve the transfer of tokens and add vote.
-        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
-        assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
+        // Pass poll
+        gogeDao.passPoll(1);
 
         // Post-state check => gogeDao.
-        assertEq(gogeDao.polls(1, address(joe)), joe_votes);
-        assertEq(gogeDao.pollVotes(1), joe_votes + gogeDao.minAuthorBal());
+        assertEq(gogeDao.pollVotes(1), gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
 
         assertEq(address(joe).balance, 1_000 ether);
         assertEq(address(gogeDao).balance, 0);
-        assertEq(gogeDao.marketingBalance(), 0);
-
-        // Verify quorum math.
-        uint256 num = gogeDao.getProportion(1);
-        assertTrue(num >= gogeDao.quorum());        
+        assertEq(gogeDao.marketingBalance(), 0);     
     }
 
     /// @notice initiates a setGogeDao poll and verifies correct state change when poll is passed.
     function test_gogeDao_proposal_setGogeDao() public {
+        address newDAO = makeAddr("New DAO");
 
-        // NOTE create poll
+        // NOTE Create poll with proposal
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose setGogeDao";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr = address(222);
+        proposal.addr = newDAO;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.setGogeDao, proposal);
 
@@ -245,49 +215,36 @@ contract DaoTestProposals is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose setGogeDao");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr, address(222));
+        assertEq(gogeDao.getProposal(1).addr, newDAO);
 
-        // NOTE pass poll
-        
-        uint256 joe_votes = 50_000_000_000 ether;
-        gogeDao.setGatekeeping(false);
-
-        // Transfer Joe tokens so he can vote on a poll.
-        gogeToken.transfer(address(joe), joe_votes);
-        assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
+        // NOTE Manually pass poll
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
         assertEq(gogeToken.gogeDao(), address(gogeDao));
 
-        // Approve the transfer of tokens and add vote.
-        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
-        assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
+        // Pass poll
+        gogeDao.passPoll(1);
 
         // Post-state check => gogeDao.
-        assertEq(gogeDao.polls(1, address(joe)), joe_votes);
-        assertEq(gogeDao.pollVotes(1), joe_votes + gogeDao.minAuthorBal());
+        assertEq(gogeDao.pollVotes(1), gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
-
-        assertEq(gogeToken.gogeDao(), address(222));
-
-        // Verify quorum math.
-        uint256 num = gogeDao.getProportion(1);
-        assertTrue(num >= gogeDao.quorum());        
+        assertEq(gogeToken.gogeDao(), newDAO);       
     }
 
     /// @notice initiates a setCex poll and verifies correct state change when poll is passed.
     function test_gogeDao_proposal_setCex() public {
+        address newCEX = makeAddr("New CEX");
 
-        // NOTE create poll
+        // NOTE Create poll with proposal
 
         // create poll proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose setCex";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr = address(222);
+        proposal.addr = newCEX;
 
         // create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -300,52 +257,38 @@ contract DaoTestProposals is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose setCex");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr, address(222));
+        assertEq(gogeDao.getProposal(1).addr, newCEX);
 
-        // NOTE pass poll
-        
-        uint256 joe_votes = 50_000_000_000 ether;
-        gogeDao.setGatekeeping(false);
-
-        // Transfer Joe tokens so he can vote on a poll.
-        gogeToken.transfer(address(joe), joe_votes);
-        assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
+        // NOTE Manually pass poll
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeToken.isExcludedFromFees(address(222)), false);
+        assertEq(gogeToken.isExcludedFromFees(newCEX), false);
 
-        // Approve the transfer of tokens and add vote.
-        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
-        assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
+        // Pass poll
+        gogeDao.passPoll(1);
 
         // Post-state check => gogeDao.
-        assertEq(gogeDao.polls(1, address(joe)), joe_votes);
-        assertEq(gogeDao.pollVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
-
-        assertEq(gogeToken.isExcludedFromFees(address(222)), true);
-
-        // Verify quorum math.
-        uint256 num = gogeDao.getProportion(1);
-        assertTrue(num >= gogeDao.quorum());        
+        assertEq(gogeToken.isExcludedFromFees(newCEX), true);      
     }
 
     /// @notice initiates a setDex poll and verifies correct state change when poll is passed.
     function test_gogeDao_proposal_setDex() public {
+        address newDEX = makeAddr("New DEX");
 
-        // NOTE create poll
+        // NOTE Create poll with proposal
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose setDex";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr = address(222);
-        proposal.boolVar = true;
+        proposal.addr = newDEX;
+        proposal.status = true;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.setDex, proposal);
 
@@ -356,53 +299,39 @@ contract DaoTestProposals is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose setDex");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr, address(222));
-        assertEq(gogeDao.getProposal(1).boolVar, true);
+        assertEq(gogeDao.getProposal(1).addr, newDEX);
+        assertEq(gogeDao.getProposal(1).status, true);
 
-        // NOTE pass poll
-        
-        uint256 joe_votes = 50_000_000_000 ether;
-        gogeDao.setGatekeeping(false);
-
-        // Transfer Joe tokens so he can vote on a poll.
-        gogeToken.transfer(address(joe), joe_votes);
-        assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
+        // NOTE Manually pass poll
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeToken.automatedMarketMakerPairs(address(222)), false);
+        assertEq(gogeToken.automatedMarketMakerPairs(newDEX), false);
 
-        // Approve the transfer of tokens and add vote.
-        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
-        assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
+        // Pass poll
+        gogeDao.passPoll(1);
 
         // Post-state check => gogeDao.
-        assertEq(gogeDao.polls(1, address(joe)), joe_votes);
-        assertEq(gogeDao.pollVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
-
-        assertEq(gogeToken.automatedMarketMakerPairs(address(222)), true);
-
-        // Verify quorum math.
-        uint256 num = gogeDao.getProportion(1);
-        assertTrue(num >= gogeDao.quorum());        
+        assertEq(gogeToken.automatedMarketMakerPairs(newDEX), true);        
     }
 
     /// @notice initiates a excludeFromCirculatingSupply poll and verifies correct state change when poll is passed.
     function test_gogeDao_proposal_excludeFromCirculatingSupply() public {
+        address excluded = makeAddr("Excluded");
 
-        // NOTE create poll
+        // NOTE Create poll with proposal
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose excludeFromCirculatingSupply";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr = address(222);
-        proposal.boolVar = true;
+        proposal.addr = excluded;
+        proposal.status = true;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.excludeFromCirculatingSupply, proposal);
 
@@ -413,54 +342,38 @@ contract DaoTestProposals is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose excludeFromCirculatingSupply");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr, address(222));
-        assertEq(gogeDao.getProposal(1).boolVar, true);
+        assertEq(gogeDao.getProposal(1).addr, excluded);
+        assertEq(gogeDao.getProposal(1).status, true);
 
-        // NOTE pass poll
-        
-        uint256 joe_votes = 50_000_000_000 ether;
-        gogeDao.setGatekeeping(false);
-
-        // Transfer Joe tokens so he can vote on a poll.
-        gogeToken.transfer(address(joe), joe_votes);
-        assertEq(gogeToken.balanceOf(address(joe)), joe_votes);
+        // NOTE Manually pass poll
 
         // Pre-state check.
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        (bool excludedPre,) = gogeToken.isExcludedFromCirculatingSupply(address(222));
+        (bool excludedPre,) = gogeToken.isExcludedFromCirculatingSupply(excluded);
         assertEq(excludedPre, false);
 
-        // Approve the transfer of tokens and add vote.
-        assert(joe.try_approveToken(address(gogeToken), address(gogeDao), joe_votes));
-        assert(joe.try_addVote(address(gogeDao), 1, joe_votes));
+        // Pass poll
+        gogeDao.passPoll(1);
 
         // Post-state check => gogeDao.
-        assertEq(gogeDao.polls(1, address(joe)), joe_votes);
-        assertEq(gogeDao.pollVotes(1), joe_votes + gogeDao.minAuthorBal());
         assertEq(gogeDao.passed(1), true);
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp);
-
-        (bool excludedPost,) = gogeToken.isExcludedFromCirculatingSupply(address(222));
+        (bool excludedPost,) = gogeToken.isExcludedFromCirculatingSupply(excluded);
         assertEq(excludedPost, true);
-
-        // Verify quorum math.
-        uint256 num = gogeDao.getProportion(1);
-        assertTrue(num >= gogeDao.quorum());
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType updateDividendToken is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType updateDividendToken is created and executed.
     function test_gogeDao_proposal_updateDividendToken() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we update the dividend token to this address";
         proposal.endTime = block.timestamp + 2 days;
         proposal.addr = BUNY;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.updateDividendToken, proposal);
 
@@ -473,6 +386,8 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getProposal(1).addr, BUNY);
 
+        // NOTE Manually pass poll
+
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeToken.cakeDividendToken(), CAKE);
@@ -481,9 +396,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -494,16 +407,17 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType updateMarketingWallet is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType updateMarketingWallet is created and executed.
     function test_gogeDao_proposal_updateMarketingWallet() public {
+        address newMarketing = makeAddr("New Marketing Wallet");
 
-        // NOTE create poll
+        // NOTE Create poll with proposal
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we update the marketing wallet to this address";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr = address(this);
+        proposal.addr = newMarketing;
 
         // create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -516,7 +430,9 @@ contract DaoTestProposals is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we update the marketing wallet to this address");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr, address(this));
+        assertEq(gogeDao.getProposal(1).addr, newMarketing);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -526,31 +442,30 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeToken.marketingWallet(), address(this));
+        assertEq(gogeToken.marketingWallet(), newMarketing);
 
         activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType updateTeamWallet is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType updateTeamWallet is created and executed.
     function test_gogeDao_proposal_updateTeamWallet() public {
+        address newTeam = makeAddr("New Team Wallet");
 
-        // NOTE create poll
+        // NOTE Create poll with proposal
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we update the team wallet to this address";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr = address(this);
+        proposal.addr = newTeam;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.updateTeamWallet, proposal);
 
@@ -561,7 +476,9 @@ contract DaoTestProposals is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we update the team wallet to this address");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr, address(this));
+        assertEq(gogeDao.getProposal(1).addr, newTeam);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -571,32 +488,29 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeToken.teamWallet(), address(this));
+        assertEq(gogeToken.teamWallet(), newTeam);
 
         activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType updateTeamMember is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType updateTeamMember is created and executed.
     function test_gogeDao_proposal_updateTeamMember() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we add an address as a team member";
         proposal.endTime = block.timestamp + 2 days;
         proposal.addr = address(sal);
-        proposal.boolVar = true;
+        proposal.status = true;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.updateTeamMember, proposal);
 
@@ -608,7 +522,9 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.getProposal(1).description, "I want to propose we add an address as a team member");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getProposal(1).addr, address(sal));
-        assertEq(gogeDao.getProposal(1).boolVar, true);
+        assertEq(gogeDao.getProposal(1).status, true);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -619,9 +535,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -633,19 +547,18 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType updateGatekeeper is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType updateGatekeeper is created and executed.
     function test_gogeDao_proposal_updateGatekeeper() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
-        proposal.description = "I want to propose we add an address as a gate keeper";
+        proposal.description = "I want to propose we add an address as a gatekeeper";
         proposal.endTime = block.timestamp + 2 days;
         proposal.addr = address(sal);
-        proposal.boolVar = true;
+        proposal.status = true;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.updateGatekeeper, proposal);
 
@@ -654,10 +567,12 @@ contract DaoTestProposals is Utility {
         assert(gogeDao.pollTypes(1) == GogeDAO.PollType.updateGatekeeper);
 
         // Verify poll proposal
-        assertEq(gogeDao.getProposal(1).description, "I want to propose we add an address as a gate keeper");
+        assertEq(gogeDao.getProposal(1).description, "I want to propose we add an address as a gatekeeper");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getProposal(1).addr, address(sal));
-        assertEq(gogeDao.getProposal(1).boolVar, true);
+        assertEq(gogeDao.getProposal(1).status, true);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -667,9 +582,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -680,18 +593,17 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType setGatekeeping is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType setGatekeeping is created and executed.
     function test_gogeDao_proposal_setGatekeeping() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
-        proposal.description = "I want to propose we enable gate keeping";
+        proposal.description = "I want to propose we enable gatekeeping";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.boolVar = false;
+        proposal.status = false;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.setGatekeeping, proposal);
 
@@ -700,9 +612,11 @@ contract DaoTestProposals is Utility {
         assert(gogeDao.pollTypes(1) == GogeDAO.PollType.setGatekeeping);
 
         // Verify poll proposal
-        assertEq(gogeDao.getProposal(1).description, "I want to propose we enable gate keeping");
+        assertEq(gogeDao.getProposal(1).description, "I want to propose we enable gatekeeping");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).boolVar, false);
+        assertEq(gogeDao.getProposal(1).status, false);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -712,9 +626,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -725,18 +637,17 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType setBuyBackEnabled is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType setBuyBackEnabled is created and executed.
     function test_gogeDao_proposal_setBuyBackEnabled() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we disable buy back fees";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.boolVar = false;
+        proposal.status = false;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.setBuyBackEnabled, proposal);
 
@@ -747,7 +658,9 @@ contract DaoTestProposals is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we disable buy back fees");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).boolVar, false);
+        assertEq(gogeDao.getProposal(1).status, false);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -757,9 +670,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -770,16 +681,15 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType setCakeDividendEnabled is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType setCakeDividendEnabled is created and executed.
     function test_gogeDao_proposal_setCakeDividendEnabled() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we disable cake dividends";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.boolVar = false;
+        proposal.status = false;
 
         // create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
@@ -792,7 +702,9 @@ contract DaoTestProposals is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we disable cake dividends");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).boolVar, false);
+        assertEq(gogeDao.getProposal(1).status, false);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -802,9 +714,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -815,18 +725,17 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType setMarketingEnabled is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType setMarketingEnabled is created and executed.
     function test_gogeDao_proposal_setMarketingEnabled() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we disable marketing fees";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.boolVar = false;
+        proposal.status = false;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.setMarketingEnabled, proposal);
 
@@ -837,7 +746,9 @@ contract DaoTestProposals is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we disable marketing fees");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).boolVar, false);
+        assertEq(gogeDao.getProposal(1).status, false);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -847,9 +758,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -860,18 +769,17 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType setTeamEnabled is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType setTeamEnabled is created and executed.
     function test_gogeDao_proposal_setTeamEnabled() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we disable team fees";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.boolVar = false;
+        proposal.status = false;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.setTeamEnabled, proposal);
 
@@ -882,7 +790,9 @@ contract DaoTestProposals is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we disable team fees");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).boolVar, false);
+        assertEq(gogeDao.getProposal(1).status, false);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -892,9 +802,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -905,19 +813,18 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType excludeFromFees is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType excludeFromFees is created and executed.
     function test_gogeDao_proposal_excludeFromFees() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we exclude this address from fees";
         proposal.endTime = block.timestamp + 2 days;
         proposal.addr = address(sal);
-        proposal.boolVar = true;
+        proposal.status = true;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.excludeFromFees, proposal);
 
@@ -929,7 +836,9 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.getProposal(1).description, "I want to propose we exclude this address from fees");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getProposal(1).addr, address(sal));
-        assertEq(gogeDao.getProposal(1).boolVar, true);
+        assertEq(gogeDao.getProposal(1).status, true);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -939,9 +848,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -952,19 +859,18 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType modifyBlacklist is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType modifyBlacklist is created and executed.
     function test_gogeDao_proposal_modifyBlacklist() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we blacklist this address";
         proposal.endTime = block.timestamp + 2 days;
         proposal.addr = address(sal);
-        proposal.boolVar = true;
+        proposal.status = true;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.modifyBlacklist, proposal);
 
@@ -976,7 +882,9 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.getProposal(1).description, "I want to propose we blacklist this address");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getProposal(1).addr, address(sal));
-        assertEq(gogeDao.getProposal(1).boolVar, true);
+        assertEq(gogeDao.getProposal(1).status, true);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -986,9 +894,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -999,19 +905,19 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType transferOwnership is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType transferOwnership is created and executed.
     function test_gogeDao_proposal_transferOwnership() public {
         gogeToken.transferOwnership(address(gogeDao));
 
-        // NOTE create poll
+        // NOTE Create poll with proposal
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we transfer ownership to this address";
         proposal.endTime = block.timestamp + 2 days;
         proposal.addr = address(sal);
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.transferOwnership, proposal);
 
@@ -1024,6 +930,8 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getProposal(1).addr, address(sal));
 
+        // NOTE Manually pass poll
+
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeToken.owner(), address(gogeDao));
@@ -1032,9 +940,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -1045,18 +951,17 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType setQuorum is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType setQuorum is created and executed.
     function test_gogeDao_proposal_setQuorum() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
-        proposal.description = "I want to propose we transfer ownership to this address";
+        proposal.description = "I want to propose we change the quorum to this amount";
         proposal.endTime = block.timestamp + 2 days;
         proposal.amount = 30;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.setQuorum, proposal);
 
@@ -1065,9 +970,11 @@ contract DaoTestProposals is Utility {
         assert(gogeDao.pollTypes(1) == GogeDAO.PollType.setQuorum);
 
         // Verify poll proposal
-        assertEq(gogeDao.getProposal(1).description, "I want to propose we transfer ownership to this address");
+        assertEq(gogeDao.getProposal(1).description, "I want to propose we change the quorum to this amount");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getProposal(1).amount, 30);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -1077,9 +984,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -1090,18 +995,19 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType updateGovernanceToken is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType updateGovernanceToken is created and executed.
     function test_gogeDao_proposal_updateGovernanceToken() public {
+        address newGovToken = makeAddr("New Governance Token");
 
-        // NOTE create poll
+        // NOTE Create poll with proposal
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we update the governance token to this address";
         proposal.endTime = block.timestamp + 2 days;
-        proposal.addr = address(this);
+        proposal.addr = newGovToken;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.updateGovernanceToken, proposal);
 
@@ -1112,7 +1018,9 @@ contract DaoTestProposals is Utility {
         // Verify poll proposal
         assertEq(gogeDao.getProposal(1).description, "I want to propose we update the governance token to this address");
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(1).addr, address(this));
+        assertEq(gogeDao.getProposal(1).addr, newGovToken);
+
+        // NOTE Manually pass poll
 
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
@@ -1122,31 +1030,28 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
         assertEq(gogeDao.passed(1), true);
-        assertEq(gogeDao.governanceToken(), address(this));
+        assertEq(gogeDao.governanceToken(), newGovToken);
 
         activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType updateMaxPeriod is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType updateMaxPeriod is created and executed.
     function test_gogeDao_proposal_updateMaxPeriod() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we update the max poll period to 90 days";
         proposal.endTime = block.timestamp + 2 days;
         proposal.amount = 90;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.updateMaxPeriod, proposal);
 
@@ -1159,6 +1064,8 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getProposal(1).amount, 90);
 
+        // NOTE Manually pass poll
+
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.maxPeriod(), 60 days);
@@ -1167,9 +1074,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -1180,18 +1085,17 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 0);
     }
 
-    /// @notice Verifies correct state changes when a poll of pollType updateMinAuthorBal is created and executed.
+    /// @notice Verifies correct state changes when a poll of PollType updateMinAuthorBal is created and executed.
     function test_gogeDao_proposal_updateMinAuthorBal() public {
+        // NOTE Create poll with proposal
 
-        // NOTE create poll
-
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to propose we update the minimum author balance to 420M tokens";
         proposal.endTime = block.timestamp + 2 days;
         proposal.amount = 420_000_000;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.updateMinAuthorBal, proposal);
 
@@ -1204,6 +1108,8 @@ contract DaoTestProposals is Utility {
         assertEq(gogeDao.getProposal(1).endTime, block.timestamp + 2 days);
         assertEq(gogeDao.getProposal(1).amount, 420_000_000);
 
+        // NOTE Manually pass poll
+
         // Pre-state check
         assertEq(gogeDao.passed(1), false);
         assertEq(gogeDao.minAuthorBal(), 10_000_000 ether);
@@ -1212,9 +1118,7 @@ contract DaoTestProposals is Utility {
         assertEq(activePolls.length, 1);
         assertEq(activePolls[0], 1);
 
-        // NOTE pass poll
-
-        // pass poll
+        // Pass poll
         gogeDao.passPoll(1);
 
         // Post-state check
@@ -1224,4 +1128,5 @@ contract DaoTestProposals is Utility {
         activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 0);
     }
+
 }

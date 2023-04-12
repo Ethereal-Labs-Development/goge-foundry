@@ -2,12 +2,10 @@
 pragma solidity ^0.8.6;
 
 import { Utility } from "./Utility.sol";
-
-import { IUniswapV2Router01, IUniswapV2Router02, IUniswapV2Factory, IUniswapV2Pair, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
-import { IGogeERC20 } from "../src/interfaces/IGogeERC20.sol";
-
 import { DogeGaySon } from "../src/GogeToken.sol";
 import { DogeGaySon1 } from "../src/TokenV1.sol";
+import { IUniswapV2Router01, IUniswapV2Router02, IUniswapV2Factory, IUniswapV2Pair, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
+import { IGogeERC20 } from "../src/interfaces/IGogeERC20.sol";
 
 interface AggregatorInterface {
     function latestAnswer() external view returns (int256);
@@ -21,23 +19,19 @@ interface AggregatorInterface {
 }
 
 contract MigrationTesting is Utility {
-
-    DogeGaySon  gogeToken_v2;
     DogeGaySon1 gogeToken_v1;
-
-    address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E; //bsc
-
-    address BnbPriceFeedOracle = 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE;
+    DogeGaySon  gogeToken_v2;
+    address constant UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E; //bsc
+    address constant BNB_PRICE_FEED_ORACLE = 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE;
 
     function setUp() public {
         createActors();
-        setUpTokens();
         
         // Deploy v1
         gogeToken_v1 = new DogeGaySon1();
 
-        uint BNB_DEPOSIT = 300 ether;
-        uint TOKEN_DEPOSIT = 22_345_616_917 ether;
+        uint256 BNB_DEPOSIT = 300 ether;
+        uint256 TOKEN_DEPOSIT = 22_345_616_917 ether;
 
         IWETH(WBNB).deposit{value: BNB_DEPOSIT}();
 
@@ -94,7 +88,7 @@ contract MigrationTesting is Utility {
         path[1] = WBNB;
         path[2] = BUSD;
 
-        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut(
+        uint256[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut(
             1 ether,
             path
         );
@@ -395,7 +389,7 @@ contract MigrationTesting is Utility {
         path[0] = address(gogeToken_v1);
         path[1] = WBNB;
 
-        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( amountTokens, path );
+        uint256[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( amountTokens, path );
 
         // -------------------- MIGRATE --------------------
 
@@ -448,7 +442,7 @@ contract MigrationTesting is Utility {
         emit log_named_uint("v1 bnb balance", v1_reserveBnb);
 
         // Calculate price with oracle feed
-        //uint256 pricePerToken = (uint256(v1_reserveBnb) * uint256(AggregatorInterface(BnbPriceFeedOracle).latestAnswer())) / v1_reserveTokens;
+        //uint256 pricePerToken = (uint256(v1_reserveBnb) * uint256(AggregatorInterface(BNB_PRICE_FEED_ORACLE).latestAnswer())) / v1_reserveTokens;
         //uint256 balanceValue = (pricePerToken * amountTokens) / 10**8;
 
 
@@ -456,7 +450,7 @@ contract MigrationTesting is Utility {
 
         // 1. Grab token reserves of LP and multiply by BNB price using chainlink oracle.
         (v1_reserveTokens, v1_reserveBnb,) = IUniswapV2Pair(v1Pair).getReserves();
-        uint256 tokenPrice1 = (uint256(v1_reserveBnb) * uint256(AggregatorInterface(BnbPriceFeedOracle).latestAnswer())) / v1_reserveTokens;
+        uint256 tokenPrice1 = (uint256(v1_reserveBnb) * uint256(AggregatorInterface(BNB_PRICE_FEED_ORACLE).latestAnswer())) / v1_reserveTokens;
         emit log_named_uint("price method 1", tokenPrice1);
         emit log_named_uint("balance USD value", tokenPrice1 * amountTokens / 10**8); // 1.380000000000000000 -> $1.38
 
@@ -464,8 +458,8 @@ contract MigrationTesting is Utility {
         address[] memory path = new address[](2);
         path[0] = theRealGogeV1;
         path[1] = WBNB;
-        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut(1 ether, path);
-        uint256 tokenPrice2 = amounts[1] * uint256(AggregatorInterface(BnbPriceFeedOracle).latestAnswer());
+        uint256[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut(1 ether, path);
+        uint256 tokenPrice2 = amounts[1] * uint256(AggregatorInterface(BNB_PRICE_FEED_ORACLE).latestAnswer());
         emit log_named_uint("price method 2", tokenPrice2);
         emit log_named_uint("balance USD value", tokenPrice2 * amountTokens / 10**26); // 1.382671927830074038 -> $1.38
 

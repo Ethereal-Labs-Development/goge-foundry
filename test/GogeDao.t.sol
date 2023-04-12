@@ -5,19 +5,16 @@ import { Utility } from "./Utility.sol";
 import { Actor } from "../src/users/Actor.sol";
 import { GogeDAO } from "../src/GogeDao.sol";
 import { DogeGaySonFlat } from "../src/DeployedV2Token.sol";
-
 import { IUniswapV2Router01, IUniswapV2Router02, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
 import { IGogeERC20 } from "../src/interfaces/IGogeERC20.sol";
 
 contract DaoTest is Utility {
     GogeDAO gogeDao;
     DogeGaySonFlat gogeToken;
-
-    address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
+    address constant UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
 
     function setUp() public {
         createActors();
-        setUpTokens();
 
         // Deploy gogeToken
         gogeToken = new DogeGaySonFlat(
@@ -73,8 +70,7 @@ contract DaoTest is Utility {
         assertEq(gogeDao.gatekeeping(), true);
         assertEq(gogeDao.createPollEnabled(), true);
         assertEq(gogeDao.owner(), address(this));
-        uint256[] memory activePolls = gogeDao.getActivePolls();
-        assertEq(activePolls.length, 0);
+        assertEq(gogeDao.getActivePolls().length, 0);
 
         assertEq(gogeToken.gogeDao(), address(gogeDao));
         assertEq(gogeToken.isExcludedFromFees(address(gogeDao)), true);
@@ -90,21 +86,21 @@ contract DaoTest is Utility {
     function create_mock_poll() public {
         uint256 _pollNum = gogeDao.pollNum();
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "This is a mock poll, for testing";
         proposal.endTime = block.timestamp + 5 days;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.other, proposal);
 
         // Verify state change
-        assertEq(gogeDao.pollNum(), _pollNum + 1);
-        assertEq(gogeDao.getProposal(gogeDao.pollNum()).description, "This is a mock poll, for testing");
-        assertEq(gogeDao.getProposal(gogeDao.pollNum()).endTime, block.timestamp + 5 days);
-        assertEq(gogeDao.pollAuthor(gogeDao.pollNum()), address(this));
-        assert(gogeDao.pollTypes(gogeDao.pollNum()) == GogeDAO.PollType.other);
+        assertEq(gogeDao.pollNum(), ++_pollNum);
+        assertEq(gogeDao.getProposal(_pollNum).description, "This is a mock poll, for testing");
+        assertEq(gogeDao.getProposal(_pollNum).endTime, block.timestamp + 5 days);
+        assertEq(gogeDao.pollAuthor(_pollNum), address(this));
+        assert(gogeDao.pollTypes(_pollNum) == GogeDAO.PollType.other);
     }
 
     /// @notice Perform a buy to generate fees
@@ -177,43 +173,43 @@ contract DaoTest is Utility {
         uint256[] memory activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 0);
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "I want to add Joe to the naughty list";
         proposal.endTime = block.timestamp + 2 days;
         proposal.addr = address(joe);
-        proposal.boolVar = true;
+        proposal.status = true;
 
-        // create poll
+        // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.modifyBlacklist, proposal);
 
         // Post-state check
-        assertEq(gogeDao.pollNum(), _pollNum + 1);
-        assertEq(gogeDao.pollAuthor(gogeDao.pollNum()), address(this));
-        assert(gogeDao.pollTypes(gogeDao.pollNum()) == GogeDAO.PollType.modifyBlacklist);
+        assertEq(gogeDao.pollNum(), ++_pollNum);
+        assertEq(gogeDao.pollAuthor(_pollNum), address(this));
+        assert(gogeDao.pollTypes(_pollNum) == GogeDAO.PollType.modifyBlacklist);
 
-        assertEq(gogeDao.getProposal(gogeDao.pollNum()).description, "I want to add Joe to the naughty list");
-        assertEq(gogeDao.getProposal(gogeDao.pollNum()).endTime, block.timestamp + 2 days);
-        assertEq(gogeDao.getProposal(gogeDao.pollNum()).addr, address(joe));
-        assertEq(gogeDao.getProposal(gogeDao.pollNum()).boolVar, true);
+        assertEq(gogeDao.getProposal(_pollNum).description, "I want to add Joe to the naughty list");
+        assertEq(gogeDao.getProposal(_pollNum).endTime, block.timestamp + 2 days);
+        assertEq(gogeDao.getProposal(_pollNum).addr, address(joe));
+        assertEq(gogeDao.getProposal(_pollNum).status, true);
 
-        assertEq(gogeDao.polls(gogeDao.pollNum(), address(this)), gogeDao.minAuthorBal());
-        assertEq(gogeDao.pollVotes(gogeDao.pollNum()), gogeDao.minAuthorBal());
+        assertEq(gogeDao.polls(_pollNum, address(this)), gogeDao.minAuthorBal());
+        assertEq(gogeDao.pollVotes(_pollNum), gogeDao.minAuthorBal());
         assertEq(gogeToken.balanceOf(address(gogeDao)), gogeDao.minAuthorBal());
         assertEq(gogeToken.balanceOf(address(this)), _preBal - gogeDao.minAuthorBal());
 
-        voters = gogeDao.getVoterLibrary(gogeDao.pollNum());
+        voters = gogeDao.getVoterLibrary(_pollNum);
         assertEq(voters.length, 1);
         assertEq(voters[0], address(this));
 
         advocateFor = gogeDao.getAdvocateFor(address(this));
         assertEq(advocateFor.length, 1);
-        assertEq(advocateFor[0], gogeDao.pollNum());
+        assertEq(advocateFor[0], _pollNum);
 
         activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 1);
-        assertEq(activePolls[0], gogeDao.pollNum());
+        assertEq(activePolls[0], _pollNum);
     }
 
     /// @notice Verify restricted edge cases when creating a poll
@@ -1196,7 +1192,7 @@ contract DaoTest is Utility {
     /// @notice Verifies minAuthorBal implementation -> poll creators MUST have a token balance greater than minAuthorBal
     function test_gogeDao_minAuthorBal() public {
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "This is a mock poll, for testing";
         proposal.endTime = block.timestamp + 5 days;
@@ -1234,7 +1230,7 @@ contract DaoTest is Utility {
     /// @notice Verifies maxPollsPerAuthor implementation -> Creators can only have x amount of activePolls at the same time ( x == maxPollsPerAuthor ).
     function test_gogeDao_maxPollsPerAuthor() public {
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "This is a mock poll, for testing";
         proposal.endTime = block.timestamp + 5 days;
@@ -1419,12 +1415,12 @@ contract DaoTest is Utility {
         uint256[] memory activePolls = gogeDao.getActivePolls();
         assertEq(activePolls.length, 0);
 
-        // create poll proposal
+        // Create proposal
         GogeDAO.Proposal memory proposal;
         proposal.description = "This is a mock poll, for testing";
         proposal.endTime = block.timestamp + 5 days;
 
-        // create poll
+        // Create poll
         vm.startPrank(address(joe));
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());
         gogeDao.createPoll(GogeDAO.PollType.other, proposal);
@@ -1566,7 +1562,7 @@ contract DaoTest is Utility {
         proposal.description = "I want to add Joe to the naughty list";
         proposal.endTime = block.timestamp + 2 days;
         proposal.addr = address(joe);
-        proposal.boolVar = true;
+        proposal.status = true;
 
         // Create poll
         gogeToken.approve(address(gogeDao), gogeDao.minAuthorBal());

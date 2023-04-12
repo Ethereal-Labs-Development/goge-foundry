@@ -3,19 +3,16 @@ pragma solidity ^0.8.6;
 
 import { Utility } from "./Utility.sol";
 import { DogeGaySon, CakeDividendTracker } from "../src/GogeToken.sol";
-
-import { IUniswapV2Router02, IUniswapV2Pair, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
-import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
+import { IUniswapV2Router01, IUniswapV2Router02, IUniswapV2Pair, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
+import { IGogeERC20 } from "../src/interfaces/IGogeERC20.sol";
 
 contract TokenTest is Utility {
     DogeGaySon gogeToken;
     CakeDividendTracker cakeTracker;
-
-    address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
+    address constant UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
 
     function setUp() public {
         createActors();
-        setUpTokens();
         
         // deploy token.
         gogeToken = new DogeGaySon(

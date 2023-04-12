@@ -3,21 +3,16 @@ pragma solidity ^0.8.6;
 
 import { Utility } from "./Utility.sol";
 import { DogeGaySon, CakeDividendTracker } from "../src/GogeToken.sol";
-
-import { IUniswapV2Router02, IUniswapV2Router01, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
-import { IGogeERC20 } from "../src/extensions/IGogeERC20.sol";
+import { IUniswapV2Router01, IUniswapV2Router02, IWETH, IERC20 } from "../src/interfaces/Interfaces.sol";
+import { IGogeERC20 } from "../src/interfaces/IGogeERC20.sol";
 
 contract Royalties is Utility {
     DogeGaySon gogeToken;
     CakeDividendTracker cakeTracker;
-
-    address UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E; //bsc
-
-    //event log_bool(bool a);
+    address constant UNIV2_ROUTER = 0x10ED43C718714eb63d5aA57B78B54704E256024E; //bsc
 
     function setUp() public {
         createActors();
-        setUpTokens();
         
         // Deploy Token
         gogeToken = new DogeGaySon(
@@ -33,8 +28,8 @@ contract Royalties is Utility {
         //gogeToken.transfer(address(dev), 100_000_000_000 ether);
         //gogeToken._transferOwnership(address(dev));
 
-        uint BNB_DEPOSIT = 200 ether;
-        uint TOKEN_DEPOSIT = 5000000000 ether;
+        uint256 BNB_DEPOSIT = 200 ether;
+        uint256 TOKEN_DEPOSIT = 5000000000 ether;
 
         IWETH(WBNB).deposit{value: BNB_DEPOSIT}();
 
@@ -132,7 +127,7 @@ contract Royalties is Utility {
         uint256 preBal = gogeToken.balanceOf(address(this));
 
         // Deposit 10 BNB
-        uint BNB_DEPOSIT = 10 ether;
+        uint256 BNB_DEPOSIT = 10 ether;
         IWETH(WBNB).deposit{value: BNB_DEPOSIT}();
 
         // approve purchase
@@ -143,7 +138,7 @@ contract Royalties is Utility {
         path[1] = address(gogeToken);
 
         // Get Quoted amount
-        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( 5 ether, path );
+        uint256[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( 5 ether, path );
 
         // Execute purchase
         IUniswapV2Router02(UNIV2_ROUTER).swapExactTokensForTokensSupportingFeeOnTransferTokens(
@@ -176,7 +171,7 @@ contract Royalties is Utility {
         uint256 preBal = gogeToken.balanceOf(address(this));
 
         // Deposit 10 BNB
-        uint BNB_DEPOSIT = 10 ether;
+        uint256 BNB_DEPOSIT = 10 ether;
         IWETH(WBNB).deposit{value: BNB_DEPOSIT}();
 
         // approve purchase
@@ -187,7 +182,7 @@ contract Royalties is Utility {
         path[1] = address(gogeToken);
 
         // Get Quoted amount
-        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( 5 ether, path );
+        uint256[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( 5 ether, path );
 
         // Execute purchase
         IUniswapV2Router02(UNIV2_ROUTER).swapExactTokensForTokensSupportingFeeOnTransferTokens(
@@ -230,7 +225,7 @@ contract Royalties is Utility {
         path[1] = WBNB;
 
         // Get Quoted amount
-        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( tradeAmt, path );
+        uint256[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( tradeAmt, path );
 
         // Execute purchase
         IUniswapV2Router02(UNIV2_ROUTER).swapExactTokensForTokensSupportingFeeOnTransferTokens(
@@ -272,7 +267,7 @@ contract Royalties is Utility {
         path[1] = WBNB;
 
         // Get Quoted amount
-        uint[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( tradeAmt, path );
+        uint256[] memory amounts = IUniswapV2Router01(UNIV2_ROUTER).getAmountsOut( tradeAmt, path );
 
         // Execute purchase
         IUniswapV2Router02(UNIV2_ROUTER).swapExactTokensForTokensSupportingFeeOnTransferTokens(
@@ -770,7 +765,7 @@ contract Royalties is Utility {
         assertEq(_isExcluded69, true);
         assertEq(pos2, 1);
 
-        (bool _isExcluded79, uint pos5) = gogeToken.isExcludedFromCirculatingSupply(address(79));
+        (bool _isExcluded79, uint8 pos5) = gogeToken.isExcludedFromCirculatingSupply(address(79));
         assertEq(_isExcluded79, true);
         assertEq(pos5, 2);
     }

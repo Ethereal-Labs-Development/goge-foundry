@@ -5,14 +5,13 @@ import { Actor } from "../src/users/Actor.sol";
 import { Test } from "../lib/forge-std/src/Test.sol";
 import { IERC20 } from "../src/interfaces/Interfaces.sol";
 
-
-// NOTE: All contract addresses provided below have been configured for a Binance Smart Chain contract.
-
+/// @notice All contract addresses provided below have been configured for a Binance Smart Chain contract.
 contract Utility is Test {
 
     /***********************/
     /*** Protocol Actors ***/
     /***********************/
+
     Actor  joe;
     Actor  dev;
     Actor  sal;
@@ -20,9 +19,11 @@ contract Utility is Test {
     Actor  nik;
     Actor  tim;
 
+
     /**********************************/
     /*** Mainnet Contract Addresses ***/
     /**********************************/
+
     address constant WBNB  = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address constant BUSD  = 0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3;
     address constant CAKE  = 0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82;
@@ -35,9 +36,11 @@ contract Utility is Test {
     address constant UNISWAP_V2_ROUTER_02 = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D; // Uniswap V2 Router
     address constant UNISWAP_V2_FACTORY   = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f; // Uniswap V2 factory.
 
+
     /*****************/
     /*** Constants ***/
     /*****************/
+
     uint8 public constant CL_FACTORY = 0;  // Factory type of `CollateralLockerFactory`.
     uint8 public constant DL_FACTORY = 1;  // Factory type of `DebtLockerFactory`.
     uint8 public constant FL_FACTORY = 2;  // Factory type of `FundingLockerFactory`.
@@ -53,37 +56,31 @@ contract Utility is Test {
     uint256 constant WAD = 10 ** 18;
     uint256 constant RAY = 10 ** 27;
 
-    /*****************/
-    /*** Utilities ***/
-    /*****************/
-
-    event Debug(string, uint256);
-    event Debug(string, address);
-    event Debug(string, bool);
-    event Debug(string, string);
-
-    constructor() public {}
 
     /**************************************/
     /*** Actor/Multisig Setup Functions ***/
     /**************************************/
+
     function createActors() public {
         sal = new Actor();
         jon = new Actor();
         nik = new Actor();
         tim = new Actor();
         joe = new Actor();
-
         dev = new Actor();
+
+        vm.label(address(sal), "Sal");
+        vm.label(address(jon), "Jon");
+        vm.label(address(nik), "Nik");
+        vm.label(address(tim), "Tim");
+        vm.label(address(joe), "Joe");
+        vm.label(address(dev), "Dev");
     }
 
 
     /******************************/
     /*** Test Utility Functions ***/
     /******************************/
-    function setUpTokens() public {
-        
-    }
 
     // Verify equality within accuracy decimals.
     function withinPrecision(uint256 val0, uint256 val1, uint256 accuracy) public {
